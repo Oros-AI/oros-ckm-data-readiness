@@ -1,0 +1,21 @@
+ID,Name,Age,Sex,Height,Weight,Diagnosis1,Diagnosis2,Medication1,Medication2,Lab1,Lab2,Procedure1,Procedure2
+P001,John Smith,45,M,175,85,Diabetes,Hypertension,Metformin,Lisinopril,HbA1c,Cholesterol,Blood Draw,EKG
+P002,Jane Doe,32,F,162,68,Asthma,,Albuterol,,Glucose,HDL,X-Ray,
+P003,Michael Johnson,58,M,180,95,Diabetes,Obesity,Metformin,Atorvastatin,HbA1c,LDL,Blood Draw,CT Scan
+P004,Sarah Williams,41,F,168,72,Hypertension,,Lisinopril,,Cholesterol,HDL,Blood Draw,EKG
+P005,Robert Brown,67,M,173,88,Diabetes,Hypertension,Metformin,Lisinopril,HbA1c,Glucose,Blood Draw,MRI
+P006,Emily Davis,29,F,165,60,Depression,,Sertraline,,Glucose,Cholesterol,Blood Draw,
+P007,David Miller,52,M,178,92,Obesity,Hypertension,Atorvastatin,Lisinopril,Cholesterol,LDL,Blood Draw,CT Scan
+P008,Lisa Wilson,38,F,160,65,Asthma,,Albuterol,,Glucose,HDL,X-Ray,
+P009,James Moore,61,M,176,89,Diabetes,Obesity,Metformin,Atorvastatin,HbA1c,Cholesterol,Blood Draw,EKG
+P010,Maria Garcia,47,F,164,70,Hypertension,Depression,Lisinopril,Sertraline,Cholesterol,Glucose,Blood Draw,MRI
+P011,William Taylor,55,M,182,98,Diabetes,Obesity,Metformin,Atorvastatin,HbA1c,LDL,Blood Draw,CT Scan
+P012,Jennifer Anderson,34,F,167,63,Asthma,,Albuterol,,Glucose,HDL,X-Ray,
+P013,Thomas Martinez,49,M,174,86,Hypertension,,Lisinopril,,Cholesterol,HDL,Blood Draw,EKG
+P014,Elizabeth Thomas,43,F,161,68,Depression,,Sertraline,,Glucose,Cholesterol,Blood Draw,
+P015,Christopher Jackson,59,M,179,91,Diabetes,Hypertension,Metformin,Lisinopril,HbA1c,Glucose,Blood Draw,MRI
+P016,Amanda White,36,F,163,66,Asthma,,Albuterol,,Glucose,HDL,X-Ray,
+P017,Matthew Harris,64,M,177,94,Diabetes,Obesity,Metformin,Atorvastatin,HbA1c,LDL,Blood Draw,CT Scan
+P018,Jessica Martin,40,F,166,71,Hypertension,,Lisinopril,,Cholesterol,HDL,Blood Draw,EKG
+P019,Daniel Thompson,53,M,181,96,Obesity,Hypertension,Atorvastatin,Lisinopril,Cholesterol,LDL,Blood Draw,CT Scan
+P020,Ashley Lee,31,F,159,62,Depression,,Sertraline,,Glucose,Cholesterol,Blood Draw,
