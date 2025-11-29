@@ -1,133 +1,67 @@
-# Step Specs – V3 Wizard
+# Oros DQ Pipeline – Step Specifications (Index)
 
-This document captures deterministic + agentic behavior per step.
-
----
-
-## Step 1 – Ingestion
-
-*(To be filled in as we finalize the spec.)*
+This document serves as an index for all step specifications in the Oros DQ Demo (v3).  
+Each step is defined in its own modular file under `docs/pipeline-specs/`.  
+This improves clarity, collaboration, and future extension of deterministic and agentic workflows.
 
 ---
 
-## Step 2 – Translation
+## 📘 Step Specification Modules
 
-*(To be filled in as we finalize the spec.)*
-
----
-
-## Step 3 – Normalization
-
-### Deterministic Behavior
-
-- Input: translated JSON records (per patient).
-- Tasks:
-  - Map diagnoses to ICD-10 codes.
-  - Map medications to RxNorm codes.
-  - Map labs to LOINC codes.
-  - Map procedures to SNOMED CT codes.
-  - Normalize demographics:
-    - Age in years.
-    - Height in standardized unit (cm, if possible).
-    - Weight in standardized unit (kg, if possible).
-    - Sex normalized to M/F/Other.
-
-- For V3 demo:
-  - Start with **simple, opinionated rules**:
-    - Height:
-      - If value > 3 and < 3m -> assume cm or inches and convert if clearly inches.
-    - Weight:
-      - If value > threshold -> assume pounds and convert to kg, else assume kg.
-  - Use internal lookup tables for common codes (ICD-10, RxNorm, etc.).
-  - Non-matched values remain as raw strings but are highlighted.
-
-- Output:
-  - A `normalizedRecords` array where each record includes:
-    - Standardized demographics.
-    - Code fields populated where lookup succeeds.
-    - Original raw values preserved alongside codes if helpful.
-
-### Agentic Behavior (Archia)
-
-- Trigger condition:
-  - Normalization detects issues such as:
-    - Missing or ambiguous codes.
-    - Implausible units or values (e.g., absurd weight/height).
-- When `AI_ENABLED = true`:
-  1. Backend creates a payload and calls `POST /archia/agent`:
-     - `step: "Normalization"`
-     - `errorType` and `errorDetails`
-     - `sampleRows` (subset of problematic rows)
-     - optional metadata (e.g., which value sets were used).
-  2. Archia responds with:
-     - `root_cause`
-     - `suggested_fixes[]`
-     - `patched_rows[]` (optional)
-     - `step_by_step_report`.
-
-- Frontend behavior:
-  - Opens the **AI side drawer** for Normalization.
-  - Shows:
-    - Short explanation (root cause).
-    - List of suggested fixes.
-    - A toggle to view **Original** vs **Patched** rows.
-    - A narrative “What the agent did” section.
-  - User can:
-    - Accept a patch (create a new dataset version).
-    - Or keep the original data.
-
-### Data Versioning & Audit
-
-- Normalization step must never silently overwrite the original dataset.
-- We track:
-  - `datasetId` (for the source CSV).
-  - `version` numbers for:
-    - Original deterministic normalization.
-    - Any subsequent Archia-assisted patches.
-- On patch apply:
-  - Create a new `normalizedRecords` version.
-  - Record an audit entry with:
-    - `step: "Normalization"`
-    - old vs new values (diff summary)
-    - reference to Archia response (if used)
-    - timestamp and user identity (when available).
-
-### UI Behavior
-
-- Main panel:
-  - “Normalized Data Preview” table.
-  - Summary of normalization standards (ICD-10, RxNorm, LOINC, SNOMED CT, units).
-- Side drawer (when AI triggered):
-  - Title: “Normalization – AI Analysis”
-  - Sections:
-    - “Root Cause”
-    - “Suggested Fixes”
-    - “Original vs Patched” table preview
-    - “Analysis Report” (step-by-step narrative)
-  - Actions:
-    - **Apply Patch & Re-run** – re-run downstream steps on patched data.
-    - **Dismiss** – keep original deterministic result.
+### **Step 1 — Ingestion**
+**File:** `pipeline-specs/step01-ingestion.md`  
+Process input CSVs, validate column structure, preview ingested records, trigger agentic fallback for malformed rows.
 
 ---
 
-## Step 4 – Scoring
-
-*(To be filled in – currently completeness-based, will stay mostly deterministic.)*
-
----
-
-## Step 5 – Persistence
-
-*(To be filled in – includes NDJSON export and eventual logging.)*
+### **Step 2 — Translation**
+**File:** `pipeline-specs/step02-translation.md`  
+Convert CSV rows → structured JSON, detect schema mismatches, support FHIR-lite evolution, surface translation errors.
 
 ---
 
-## Step 6 – Enrichment
-
-*(To be filled in.)*
+### **Step 3 — Normalization**
+**File:** `pipeline-specs/step03-normalization.md`  
+Normalize terminology (ICD-10/RxNorm/LOINC/SNOMED-CT), demographics units, handle invalid/missing codes, agentic fixes with versioning.
 
 ---
 
-## Step 7 – Analytics
+### **Step 4 — Scoring**
+**File:** `pipeline-specs/step04-scoring.md`  
+Deterministic PIQI-lite completeness scoring (0–100), domain-level thresholds, and optional PIQI-inspired agentic scoring extension.
 
-*(To be filled in: deterministic reports + Ask-Anything tab.)*
+---
+
+### **Step 5 — Persistence**
+**File:** `pipeline-specs/step05-persistence.md`  
+Mock write to DuckDB or persistence layer, generate NDJSON export, support agentic data patch logging.
+
+---
+
+### **Step 6 — Enrichment**
+**File:** `pipeline-specs/step06-enrichment.md`  
+Compute BMI, diabetes risk scores, risk tiers, and derived features. Agentic support for medical plausibility checks.
+
+---
+
+### **Step 7 — Analytics**
+**File:** `pipeline-specs/step07-analytics.md`  
+Two-tab analytics: deterministic dashboards and agentic “Ask Anything” NLP interface.  
+Respects global `AI_ENABLED` configuration.
+
+---
+
+## 🧭 How to Use This Index
+
+1. The implementation team should reference the individual step files when building or modifying the pipeline.
+2. The UX/UI team can design screens directly against the requirements defined in each step module.
+3. The Archia integration team can follow the agentic sections inside each step (e.g., agent triggers, payloads, patch flows).
+4. The index will stay stable even as individual step specs evolve.
+
+---
+
+## 🧩 Notes
+
+- Each step specification includes: deterministic logic, agentic triggers, data contracts, UI expectations, and logging requirements.
+- This index and module structure aligns with the v3 architecture document.
+- All updates to pipeline steps should be made inside the appropriate `pipeline-specs/stepXX-*.md` file.
