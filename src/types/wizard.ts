@@ -73,8 +73,11 @@ export interface NormalizedRecord {
 
 export interface QualityScore {
   domain: string;
-  score: number;
+  score: number; // Integer score 0-100
   recordsBelowThreshold: number;
+  label?: string; // Quality label: "Excellent", "Good", "Fair", or "Poor"
+  present?: number; // Number of non-missing values
+  total?: number; // Total possible values
 }
 
 export interface EnrichedRecord extends NormalizedRecord {

@@ -1,13 +1,63 @@
+import { NormalizedRecord } from '../types/wizard';
+
 interface PersistenceStepProps {
   persistedCount: number;
   persistedFailures: number;
+  normalizedRecords: NormalizedRecord[];
 }
 
-export function PersistenceStep({ persistedCount, persistedFailures }: PersistenceStepProps) {
+export function PersistenceStep({ persistedCount, persistedFailures, normalizedRecords }: PersistenceStepProps) {
   const hasData = persistedCount > 0 || persistedFailures > 0;
   const successRate = hasData 
     ? ((persistedCount / (persistedCount + persistedFailures)) * 100).toFixed(1)
     : '0';
+
+  /**
+   * Browser-side NDJSON generation for demo purposes.
+   * 
+   * This function converts normalized records to NDJSON (Newline Delimited JSON) format,
+   * where each record is a JSON object on a single line, separated by newlines.
+   * 
+   * Note: This is a client-side implementation for demonstration. In production,
+   * NDJSON generation would typically occur server-side or during batch processing.
+   */
+  const generateNDJSON = (): string => {
+    return normalizedRecords.map(r => JSON.stringify(r)).join('\n');
+  };
+
+  /**
+   * Handle downloading the NDJSON file to the user's computer.
+   * Uses browser Blob API and creates a temporary download link.
+   */
+  const handleDownloadNDJSON = () => {
+    if (normalizedRecords.length === 0) {
+      return;
+    }
+
+    const ndjson = generateNDJSON();
+    const blob = new Blob([ndjson], { type: 'application/x-ndjson' });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'pipeline-output.ndjson';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Clean up the object URL after a short delay
+    setTimeout(() => URL.revokeObjectURL(url), 100);
+  };
+
+  // Get preview of first 3 lines of NDJSON
+  const getNDJSONPreview = (): string => {
+    if (normalizedRecords.length === 0) {
+      return '';
+    }
+    const ndjson = generateNDJSON();
+    const lines = ndjson.split('\n');
+    return lines.slice(0, 3).join('\n');
+  };
 
   return (
     <div className="space-y-6">
@@ -88,6 +138,41 @@ export function PersistenceStep({ persistedCount, persistedFailures }: Persisten
                 </p>
               </div>
             )}
+
+            {/* NDJSON Export Section */}
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+              <h4 className="font-semibold text-gray-900 mb-3">NDJSON Export</h4>
+              
+              {normalizedRecords.length > 0 ? (
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-sm text-gray-700 mb-2">Preview (first 3 lines):</p>
+                    <pre className="bg-gray-800 text-green-400 p-3 rounded text-xs overflow-x-auto font-mono">
+                      {getNDJSONPreview()}
+                    </pre>
+                  </div>
+                  
+                  <button
+                    onClick={handleDownloadNDJSON}
+                    disabled={normalizedRecords.length === 0}
+                    className="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Download NDJSON
+                  </button>
+                  <p className="text-xs text-gray-600">
+                    Downloads {normalizedRecords.length} record{normalizedRecords.length !== 1 ? 's' : ''} as pipeline-output.ndjson
+                  </p>
+                </div>
+              ) : (
+                <div className="text-center py-4 text-gray-500">
+                  <p className="text-sm">No normalized records available for export.</p>
+                  <p className="text-xs mt-1">Please complete the normalization step first.</p>
+                </div>
+              )}
+            </div>
           </div>
         ) : (
           <div className="text-center py-12 text-gray-500">

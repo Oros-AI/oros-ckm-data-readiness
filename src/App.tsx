@@ -160,6 +160,7 @@ function App() {
           <PersistenceStep 
             persistedCount={state.persistedCount}
             persistedFailures={state.persistedFailures}
+            normalizedRecords={state.normalizedRecords}
           />
         )}
         {state.currentStep === 'enrichment' && (
