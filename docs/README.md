@@ -105,48 +105,23 @@ flowchart LR
 
 ```mermaid
 flowchart TB
+  subgraph FE[Frontend (React / Vite)]
+    FE1[Wizard UI – Steps 1–7]
+    FE2[Side Drawer – Agentic Insights]
+  end
 
-%% ---------------------------------
-%% LAYOUT CONTROL
-%% ---------------------------------
-classDef box fill=#2e2e2e,stroke=#999,color=#fff,rx=4,ry=4
-classDef label fill=transparent,stroke=transparent,color=#bbb
+  subgraph BE[Backend (Node / TS)]
+    BE1[Deterministic Pipeline Engine]
+    BE2[Archia Client]
+  end
 
-%% ---------------------------------
-%% FRONTEND (FE)
-%% ---------------------------------
-subgraph FE["Frontend (React / Vite)"]
-    FE1["Wizard UI<br/>Steps 1–7"]:::box
-    FE2["Side Drawer<br/>Agentic Insights"]:::box
-end
-class FE label
+  %% main data flow
+  FE1 --> BE1
+  BE1 --> FE1
 
-%% ---------------------------------
-%% BACKEND (BE)
-%% ---------------------------------
-subgraph BE["Backend (Node / TS)"]
-    BE1["Deterministic Pipeline Engine"]:::box
-    BE2["Archia Client"]:::box
-end
-class BE label
-
-%% ---------------------------------
-%% MAIN DATA FLOW
-%% ---------------------------------
-FE1 --> BE1
-BE1 --> FE1
-
-%% ---------------------------------
-%% AGENTIC FALLBACK ON ERROR
-%% ---------------------------------
-BE1 -. "On error" .-> BE2
-BE2 --> FE2
-
-%% ------------------------------
-%% AGENTIC FALLBACK ON ERROR
-%% ------------------------------
-BE1 -. "On error" .-> BE2
-BE2 --> FE2
+  %% agentic fallback on error
+  BE1 -. "On error" .-> BE2
+  BE2 --> FE2
 ```
 
 ---
