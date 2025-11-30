@@ -12,6 +12,7 @@ import { DataQualityScoringStep } from './steps/DataQualityScoringStep';
 import { PersistenceStep } from './steps/PersistenceStep';
 import { EnrichmentStep } from './steps/EnrichmentStep';
 import { AnalyticsStep } from './steps/AnalyticsStep';
+import { OrosLogo } from './assets/oros-logo.png';
 
 function App() {
   const [state, setState] = useState<WizardState>(initialWizardState);
@@ -192,16 +193,24 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-100">
+      
+      {/* Oros Header */}
+      <header className="w-full flex justify-center items-center py-4 border-b border-gray-300 mb-4 bg-white">
+        <img
+          src={OrosLogo}
+          alt="Oros Logo"
+          className="h-12 w-auto opacity-90"
+        />
+      </header>
+
       <TopPipelineBar
         currentStep={state.currentStep}
         stepStates={state.stepStates}
         onStepClick={handleStepClick}
       />
-      
-      <StepWorkspace>
-        {renderStepContent()}
-      </StepWorkspace>
-      
+
+      <StepWorkspace>{renderStepContent()}</StepWorkspace>
+
       <BottomStatusBar
         currentStep={state.currentStep}
         status={state.stepStates[state.currentStep].status}

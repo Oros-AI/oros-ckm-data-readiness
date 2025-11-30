@@ -7,10 +7,11 @@ It supports **deterministic processing** and optional **agentic fallback workflo
 
 ## Quickstart
 
-Prerequisites  
-- Node.js 20+ (LTS)  
-- npm  
-- Git  
+Prerequisites
+
+- Node.js 20+ (LTS)
+- npm
+- Git
 
 Clone the repository:
 
@@ -41,16 +42,16 @@ Then open the URL printed by Vite (usually `http://localhost:5173`).
 
 ### What to do in the UI
 
-1. Upload **CSV A (clean)** to see the full deterministic “happy path.”  
-2. Upload **CSV B (errorful)** to see error messaging and (when `AI_ENABLED=true`) optional agentic analysis in eligible steps.  
+1. Upload **CSV A (clean)** to see the full deterministic “happy path.”
+2. Upload **CSV B (errorful)** to see error messaging and (when `AI_ENABLED=true`) optional agentic analysis in eligible steps.
 3. Navigate through the 7-step pipeline using the top navigation bar:
-   - Ingestion  
-   - Translation  
-   - Normalization  
-   - Scoring  
-   - Persistence  
-   - Enrichment  
-   - Analytics  
+   - Ingestion
+   - Translation
+   - Normalization
+   - Scoring
+   - Persistence
+   - Enrichment
+   - Analytics
 
 ### AI / Agentic Behavior
 
@@ -62,28 +63,30 @@ AI_ENABLED=false  # deterministic-only mode
 ```
 
 When `AI_ENABLED=false`:
-- No agentic calls are made  
-- The side drawer stays hidden  
-- The Ask Anything analytics tab is disabled  
+
+- No agentic calls are made
+- The side drawer stays hidden
+- The Ask Anything analytics tab is disabled
 
 When `AI_ENABLED=true`:
-- Errors in Ingestion, Translation, or Normalization may trigger Archia analysis  
-- The side drawer appears with root cause, suggested fixes, optional patches, and narratives  
+
+- Errors in Ingestion, Translation, or Normalization may trigger Archia analysis
+- The side drawer appears with root cause, suggested fixes, optional patches, and narratives
 
 ---
 
 This README provides:
 
-- A unified architecture overview  
-- A full step index (Steps 1–7)  
-- Mermaid diagrams (pipeline, architecture, data flow)  
-- Deterministic vs agentic behavior rules  
-- UX conventions for the wizard  
-- Archia integration contract  
-- Dataset versioning rules  
-- Developer onboarding  
-- Links to step specifications  
-- Optional references (Miro board, future PIQI Diabetes Rubric)  
+- A unified architecture overview
+- A full step index (Steps 1–7)
+- Mermaid diagrams (pipeline, architecture, data flow)
+- Deterministic vs agentic behavior rules
+- UX conventions for the wizard
+- Archia integration contract
+- Dataset versioning rules
+- Developer onboarding
+- Links to step specifications
+- Optional references (Miro board, future PIQI Diabetes Rubric)
 
 This is the **source of truth** for engineers implementing v3.
 
@@ -93,13 +96,13 @@ This is the **source of truth** for engineers implementing v3.
 
 The Pipeline Wizard is a **single-page, step-driven UI** that walks users through:
 
-1. **Ingestion** (CSV → internal raw rows)  
-2. **Translation** (raw rows → FHIR-like records)  
-3. **Normalization** (value mapping → ICD-10, LOINC, RxNorm, units)  
-4. **Scoring** (PIQI-lite DQ metrics)  
-5. **Persistence** (mock DB + NDJSON export)  
-6. **Enrichment** (BMI, risk strata, diabetes heuristics)  
-7. **Analytics** (deterministic dashboards + optional NLP “Ask Anything”)  
+1. **Ingestion** (CSV → internal raw rows)
+2. **Translation** (raw rows → FHIR-like records)
+3. **Normalization** (value mapping → ICD-10, LOINC, RxNorm, units)
+4. **Scoring** (PIQI-lite DQ metrics)
+5. **Persistence** (mock DB + NDJSON export)
+6. **Enrichment** (BMI, risk strata, diabetes heuristics)
+7. **Analytics** (deterministic dashboards + optional NLP “Ask Anything”)
 
 At each stage, failures can trigger **agentic analysis** (if AI is enabled).  
 Deterministic processing remains the authoritative system of record.
@@ -110,44 +113,48 @@ Deterministic processing remains the authoritative system of record.
 
 Click into any step for full detail:
 
-| Step | File | Purpose |
-|------|------|---------|
-| **01 — Ingestion** | [pipeline-specs/step01-ingestion.md](pipeline-specs/step01-ingestion.md) | Upload CSV, parse into raw rows, detect ingestion errors |
-| **02 — Translation** | [pipeline-specs/step02-translation.md](pipeline-specs/step02-translation.md) | Map raw fields to FHIR-like structure (demo) |
+| Step                   | File                                                                             | Purpose                                                                      |
+| ---------------------- | -------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| **01 — Ingestion**     | [pipeline-specs/step01-ingestion.md](pipeline-specs/step01-ingestion.md)         | Upload CSV, parse into raw rows, detect ingestion errors                     |
+| **02 — Translation**   | [pipeline-specs/step02-translation.md](pipeline-specs/step02-translation.md)     | Map raw fields to FHIR-like structure (demo)                                 |
 | **03 — Normalization** | [pipeline-specs/step03-normalization.md](pipeline-specs/step03-normalization.md) | Map codes & units to ICD-10, LOINC, RxNorm; produce structured clinical data |
-| **04 — Scoring** | [pipeline-specs/step04-scoring.md](pipeline-specs/step04-scoring.md) | PIQI-lite completeness, conformance, plausibility scoring |
-| **05 — Persistence** | [pipeline-specs/step05-persistence.md](pipeline-specs/step05-persistence.md) | Persist normalized data + NDJSON export |
-| **06 — Enrichment** | [pipeline-specs/step06-enrichment.md](pipeline-specs/step06-enrichment.md) | BMI, BMI category, diabetes risk tier, cohort flags |
-| **07 — Analytics** | [pipeline-specs/step07-analytics.md](pipeline-specs/step07-analytics.md) | Deterministic reports + AI chat surface |
+| **04 — Scoring**       | [pipeline-specs/step04-scoring.md](pipeline-specs/step04-scoring.md)             | PIQI-lite completeness, conformance, plausibility scoring                    |
+| **05 — Persistence**   | [pipeline-specs/step05-persistence.md](pipeline-specs/step05-persistence.md)     | Persist normalized data + NDJSON export                                      |
+| **06 — Enrichment**    | [pipeline-specs/step06-enrichment.md](pipeline-specs/step06-enrichment.md)       | BMI, BMI category, diabetes risk tier, cohort flags                          |
+| **07 — Analytics**     | [pipeline-specs/step07-analytics.md](pipeline-specs/step07-analytics.md)         | Deterministic reports + AI chat surface                                      |
 
 ---
 
 # 3. Deterministic vs Agentic Behavior (Core Rules)
 
 ### Deterministic
-- Always produces the authoritative dataset  
-- Runs even when AI is disabled  
-- User sees clear structured errors  
-- No silent mutations  
-- Dataset versions:  
-  - `v3_normalized`  
-  - `v3_normalized_ai`  
-  - `v3_enriched`  
-  - `v3_enriched_ai`  
+
+- Always produces the authoritative dataset
+- Runs even when AI is disabled
+- User sees clear structured errors
+- No silent mutations
+- Dataset versions:
+  - `v3_normalized`
+  - `v3_normalized_ai`
+  - `v3_enriched`
+  - `v3_enriched_ai`
 
 ### Agentic (Archia)
+
 Triggered **only** when:
-- A step errors  
-- A user explicitly requests AI analysis  
-- AI is enabled (`AI_ENABLED=true`)  
+
+- A step errors
+- A user explicitly requests AI analysis
+- AI is enabled (`AI_ENABLED=true`)
 
 Agentic behavior:
-- Diagnoses errors  
-- Suggests root causes  
-- Proposes patches  
-- Provides reasoning narratives  
-- Never silently changes data  
-- Any “patched” dataset requires **user approval**  
+
+- Diagnoses errors
+- Suggests root causes
+- Proposes patches
+- Provides reasoning narratives
+- Never silently changes data
+- Any “patched” dataset requires **user approval**
 
 All agentic interactions appear in a **right-hand side drawer**.
 
@@ -175,6 +182,7 @@ flowchart LR
 The system has two main layers:
 
 - **Frontend (FE) – React / Vite**
+
   - **Wizard UI (Steps 1–7)** – deterministic CSV pipeline UI
   - **Side Drawer – Agentic Insights** – shows Archia explanations, suggested fixes, and patched-row previews
 
@@ -198,7 +206,7 @@ The system has two main layers:
    - optional patched rows
    - narrative report
 4. FE shows this in the **Side Drawer – Agentic Insights**:
-   - toggle between *original* vs *patched* rows
+   - toggle between _original_ vs _patched_ rows
    - accept / reject fixes
 5. If the user accepts, BE re-runs the deterministic pipeline on the patched data and updates the main UI.
 
@@ -217,9 +225,10 @@ flowchart TB
 ```
 
 Rules:
-- Version suffix `_ai` only appears after a user accepts an AI patch  
-- Analytics always operates on **currently active dataset**  
-- Persistence step explicitly reports dataset version  
+
+- Version suffix `_ai` only appears after a user accepts an AI patch
+- Analytics always operates on **currently active dataset**
+- Persistence step explicitly reports dataset version
 
 ---
 
@@ -258,28 +267,35 @@ Rules:
 # 8. UX Conventions (Consistent Across Steps)
 
 ### Side Drawer
+
 Used for:
-- Agentic insights  
-- Root cause analysis  
-- Proposed fixes  
-- Narrative summaries  
+
+- Agentic insights
+- Root cause analysis
+- Proposed fixes
+- Narrative summaries
 
 ### Bottom Status Bar
-- Shows: Pending, Success, Warning, Error  
-- Always visible  
+
+- Shows: Pending, Success, Warning, Error
+- Always visible
 
 ### Run Step
-- Runs only current step  
+
+- Runs only current step
 
 ### Run All
-- Sequentially executes downstream steps  
+
+- Sequentially executes downstream steps
 
 ### Dataset Version Badge
-- Shows dataset lineage at top-right of main pane  
+
+- Shows dataset lineage at top-right of main pane
 
 ### Analytics Tabs
-- Tab 1: Deterministic Reports  
-- Tab 2: Ask Anything (enabled only when AI_ENABLED=true)  
+
+- Tab 1: Deterministic Reports
+- Tab 2: Ask Anything (enabled only when AI_ENABLED=true)
 
 ---
 
@@ -310,8 +326,8 @@ AI_ENABLED=false
 
 We use two demo CSVs:
 
-- Clean (runs end-to-end deterministically)  
-- Errorful (triggers agentic fallback at Ingestion, Translation, or Normalization)  
+- Clean (runs end-to-end deterministically)
+- Errorful (triggers agentic fallback at Ingestion, Translation, or Normalization)
 
 Place them in:
 
@@ -324,22 +340,26 @@ Place them in:
 # 10. Future Integration Slots
 
 ### PIQI Diabetes Rubric (Full Version)
-- Will replace PIQI-lite logic in Step 4  
-- Will live in: `/dq-rubrics/diabetes.json`  
-- Will reference terminology service  
+
+- Will replace PIQI-lite logic in Step 4
+- Will live in: `/dq-rubrics/diabetes.json`
+- Will reference terminology service
 
 ### Terminology Service
-- ICD-10, LOINC, RxNorm  
-- Future integration via `/services/terminology-client.ts`  
+
+- ICD-10, LOINC, RxNorm
+- Future integration via `/services/terminology-client.ts`
 
 ### Real Persistence Layer
-- DuckDB or Postgres  
-- Replace mock persistence in Step 5  
+
+- DuckDB or Postgres
+- Replace mock persistence in Step 5
 
 ### RTA / HIE Integration
-- Eventual API contract for ingestion  
-- Patient registry alignment  
-- Data Quality dashboards  
+
+- Eventual API contract for ingestion
+- Patient registry alignment
+- Data Quality dashboards
 
 ---
 
@@ -415,3 +435,54 @@ flowchart LR
     U -->|Accept| R[Re-run Deterministic Step]
     U -->|Reject| D2[Continue Deterministic Path]
 ```
+
+---
+
+## 13. UI Branding – Oros Header (v3 Demo)
+
+The v3 wizard includes **minimal Oros branding** so the demo feels cohesive without locking us into a final design system.
+
+### 13.1 Logo asset
+
+- File: `src/assets/oros-logo.png`
+- Current variant: **black line logo on white background**
+- Recommended min size: 40–48px height (the app uses Tailwind class `h-12`)
+
+You can swap this file later (same name, same path) to update the logo without changing any code.
+
+### 13.2 Header placement in the app
+
+The logo is rendered in a simple top header, centered above the wizard steps:
+
+```tsx
+// src/App.tsx (within the main return)
+<div className="min-h-screen bg-gray-100">
+  {/* Oros Header */}
+  <header className="w-full flex justify-center items-center py-4 border-b border-gray-300 mb-4 bg-white">
+    <img src={OrosLogo} alt="Oros Logo" className="h-12 w-auto opacity-90" />
+  </header>
+
+  <TopPipelineBar
+    currentStep={state.currentStep}
+    stepStates={state.stepStates}
+    onStepClick={handleStepClick}
+  />
+  {/* ...rest of layout... */}
+</div>
+```
+
+### 13.3 Branding scope (for the demo)
+
+For the **December demo**, branding changes are intentionally minimal:
+
+- ✅ Show Oros logo in a clean header
+- ✅ Keep existing neutral colors (`bg-gray-100`, white panels, Tailwind defaults)
+- ✅ Avoid tight coupling to a specific design system
+
+Later, when the broader Oros branding and marketing site are finalized, we can:
+
+- Introduce a **design token layer** (primary/secondary colors, typography scale)
+- Replace generic Tailwind grays with Oros brand colors
+- Add layout and component tweaks (cards, buttons, typography) in a dedicated `ui/` or `design-system/` folder
+
+For now, this section is the **single source of truth** for how the Oros logo is integrated in the v3 wizard UI.
