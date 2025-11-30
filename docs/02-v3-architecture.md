@@ -16,6 +16,7 @@
 ## High-Level Components
 
 - **Frontend (React / Vite)**
+
   - Single-page wizard UI (steps 1–7).
   - Side drawer for AI explanations, suggested fixes, and patches.
   - Analytics section with:
@@ -23,6 +24,7 @@
     - Ask-Anything (NLP) tab
 
 - **Backend (Node / Express – planned)**
+
   - Orchestrates deterministic pipeline operations that need a server.
   - Provides stable API endpoints for the frontend:
     - `/pipeline/*` endpoints (future)
@@ -37,7 +39,37 @@
     - patch versions & audit logs
     - analytics aggregates.
 
+### Database Decision Placeholder (To Be Finalized)
+
+> **The selection of the primary database for the v3 demo is intentionally deferred until Dominique + Sivaram finalize requirements.**
+>
+> The wizard treats the persistence layer as a **pluggable database**, meaning all components (Pipeline Steps 5–7, Analytics, and Archia patch storage) refer only to a generic “primary database” rather than a specific technology.
+
+#### Assumptions (independent of DB choice)
+
+- One _logical_ database per environment (local or demo)
+- Supports basic transactional operations (insert/update of runs, patient records)
+- Can persist normalized records and derived artifacts
+- Can be queried by Step 7 Analytics (counts, distributions, metrics)
+- Can store dataset versions (deterministic vs patched runs)
+
+#### Candidate technologies under evaluation
+
+- **SQLite + Prisma** – simple, file-based, developer-friendly for demos
+- **PostgreSQL** – production-grade, ideal long-term
+- **DuckDB** – analytics-optimized, columnar, in-process
+- **Couchbase FHIR CE** – FHIR-native, document-oriented
+- **Other options** depending on constraints
+
+#### Decision Status
+
+👉 **TBD.**  
+This section will be replaced with the final DB selection after Dominique + Sivaram alignment.
+
+Only this architecture area — and Step Specs **5** (Persistence) & **7** (Analytics) — will require updates once the database is finalized.
+
 - **Archia API (external)**
+
   - LLM/agentic runtime used as a “copilot”:
     - Explains root causes of pipeline errors.
     - Suggests fixes / patches.
@@ -66,6 +98,7 @@
 - `AI_ENABLED = true`
 - Pipeline still runs deterministically first.
 - When a supported step fails (initially: Ingestion, Translation, Normalization):
+
   1. Backend prepares an error payload with:
      - `step`, `errorType`, `errorDetails`, `sampleRows`, and relevant metadata.
   2. Backend calls `POST /archia/agent`.
@@ -86,6 +119,7 @@
 ### 3. Analytics
 
 - **Deterministic Reports tab**
+
   - Uses the final chosen dataset (original or patched).
   - Purely deterministic; does not require AI.
 
@@ -114,10 +148,12 @@
 ## Extension Points
 
 - **Archia client module (`archiaClient.ts`, planned)**
+
   - Single place where backend talks to Archia.
   - Easy to swap for another agent runtime in future.
 
 - **Terminology client module (`terminologyClient.ts`, planned)**
+
   - Encapsulates all normalization lookups.
 
 - **Audit log model**
