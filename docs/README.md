@@ -105,14 +105,16 @@ flowchart LR
 
 ```mermaid
 flowchart TB
-  subgraph FE[Frontend (React / Vite)]
-    FE1[Wizard UI – Steps 1–7]
-    FE2[Side Drawer – Agentic Insights]
+  %% FRONTEND (FE)
+  subgraph FE["Frontend (React / Vite)"]
+    FE1["Wizard UI - Steps 1-7"]
+    FE2["Side Drawer - Agentic Insights"]
   end
 
-  subgraph BE[Backend (Node / TS)]
-    BE1[Deterministic Pipeline Engine]
-    BE2[Archia Client]
+  %% BACKEND (BE)
+  subgraph BE["Backend (Node / TS)"]
+    BE1["Deterministic Pipeline Engine"]
+    BE2["Archia Client"]
   end
 
   %% main data flow
