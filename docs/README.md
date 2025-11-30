@@ -3,6 +3,75 @@
 This repository contains the **modular 7-step pipeline wizard** used to ingest, translate, normalize, score, enrich, persist, and analyze healthcare data (for the demo: synthetic CSVs).  
 It supports **deterministic processing** and optional **agentic fallback workflows** via Archia.
 
+---
+
+## Quickstart
+
+Prerequisites  
+- Node.js 20+ (LTS)  
+- npm  
+- Git  
+
+Clone the repository:
+
+```bash
+git clone https://github.com/Oros-AI/oros-health-pipeline-ui.git
+cd oros-health-pipeline-ui
+```
+
+Check out the v3 development branch:
+
+```bash
+git checkout v3-wizard-agentic
+```
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Start the local dev server:
+
+```bash
+npm run dev
+```
+
+Then open the URL printed by Vite (usually `http://localhost:5173`).
+
+### What to do in the UI
+
+1. Upload **CSV A (clean)** to see the full deterministic “happy path.”  
+2. Upload **CSV B (errorful)** to see error messaging and (when `AI_ENABLED=true`) optional agentic analysis in eligible steps.  
+3. Navigate through the 7-step pipeline using the top navigation bar:
+   - Ingestion  
+   - Translation  
+   - Normalization  
+   - Scoring  
+   - Persistence  
+   - Enrichment  
+   - Analytics  
+
+### AI / Agentic Behavior
+
+Agentic behavior is controlled via a single backend flag:
+
+```env
+AI_ENABLED=true   # enable Archia integration
+AI_ENABLED=false  # deterministic-only mode
+```
+
+When `AI_ENABLED=false`:
+- No agentic calls are made  
+- The side drawer stays hidden  
+- The Ask Anything analytics tab is disabled  
+
+When `AI_ENABLED=true`:
+- Errors in Ingestion, Translation, or Normalization may trigger Archia analysis  
+- The side drawer appears with root cause, suggested fixes, optional patches, and narratives  
+
+---
+
 This README provides:
 
 - A unified architecture overview  
