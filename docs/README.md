@@ -104,37 +104,43 @@ flowchart LR
 # 5. Deterministic + Agentic Architecture
 
 ```mermaid
-fflowchart TB
+flowchart TB
 
-%% ------------------------------
+%% ---------------------------------
 %% LAYOUT CONTROL
-%% ------------------------------
+%% ---------------------------------
 classDef box fill=#2e2e2e,stroke=#999,color=#fff,rx=4,ry=4
 classDef label fill=transparent,stroke=transparent,color=#bbb
 
-%% ------------------------------
+%% ---------------------------------
 %% FRONTEND (FE)
-%% ------------------------------
-subgraph FE["Frontend (React/Vite)"]
+%% ---------------------------------
+subgraph FE["Frontend (React / Vite)"]
     FE1["Wizard UI<br/>Steps 1–7"]:::box
     FE2["Side Drawer<br/>Agentic Insights"]:::box
 end
 class FE label
 
-%% ------------------------------
+%% ---------------------------------
 %% BACKEND (BE)
-%% ------------------------------
+%% ---------------------------------
 subgraph BE["Backend (Node / TS)"]
-    BE1["Deterministic<br/>Pipeline Engine"]:::box
+    BE1["Deterministic Pipeline Engine"]:::box
     BE2["Archia Client"]:::box
 end
 class BE label
 
-%% ------------------------------
+%% ---------------------------------
 %% MAIN DATA FLOW
-%% ------------------------------
+%% ---------------------------------
 FE1 --> BE1
 BE1 --> FE1
+
+%% ---------------------------------
+%% AGENTIC FALLBACK ON ERROR
+%% ---------------------------------
+BE1 -. "On error" .-> BE2
+BE2 --> FE2
 
 %% ------------------------------
 %% AGENTIC FALLBACK ON ERROR
