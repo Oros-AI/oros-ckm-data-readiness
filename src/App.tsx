@@ -12,7 +12,7 @@ import { DataQualityScoringStep } from './steps/DataQualityScoringStep';
 import { PersistenceStep } from './steps/PersistenceStep';
 import { EnrichmentStep } from './steps/EnrichmentStep';
 import { AnalyticsStep } from './steps/AnalyticsStep';
-import { OrosLogo } from './assets/oros-logo.png';
+import { OrosLogo } from './assets/logo/oros-logo.png';
 
 function App() {
   const [state, setState] = useState<WizardState>(initialWizardState);
