@@ -103,28 +103,35 @@ flowchart LR
 
 # 5. Deterministic + Agentic Architecture
 
-```mermaid
-flowchart TB
-  %% FRONTEND (FE)
-  subgraph FE["Frontend (React / Vite)"]
-    FE1["Wizard UI - Steps 1-7"]
-    FE2["Side Drawer - Agentic Insights"]
-  end
+The system has two main layers:
 
-  %% BACKEND (BE)
-  subgraph BE["Backend (Node / TS)"]
-    BE1["Deterministic Pipeline Engine"]
-    BE2["Archia Client"]
-  end
+- **Frontend (FE) – React / Vite**
+  - **Wizard UI (Steps 1–7)** – deterministic CSV pipeline UI
+  - **Side Drawer – Agentic Insights** – shows Archia explanations, suggested fixes, and patched-row previews
 
-  %% main data flow
-  FE1 --> BE1
-  BE1 --> FE1
+- **Backend (BE) – Node / TypeScript**
+  - **Deterministic Pipeline Engine** – runs the 7-step pipeline, owns the source-of-truth data
+  - **Archia Client** – thin client that calls Archia’s APIs when AI is enabled
 
-  %% agentic fallback on error
-  BE1 -. "On error" .-> BE2
-  BE2 --> FE2
-```
+**Normal data flow (AI disabled or no errors):**
+
+1. FE → BE deterministic engine to run each step.
+2. BE returns updated pipeline state to FE.
+3. Wizard UI + Analytics tabs render results from deterministic state.
+
+**Agentic fallback on error (only when `AI_ENABLED=true`):**
+
+1. A step fails in the deterministic engine (e.g., ingestion, translation, normalization).
+2. BE calls **Archia Client**, which sends the error context + sample rows to Archia.
+3. Archia returns:
+   - root cause
+   - suggested fixes
+   - optional patched rows
+   - narrative report
+4. FE shows this in the **Side Drawer – Agentic Insights**:
+   - toggle between *original* vs *patched* rows
+   - accept / reject fixes
+5. If the user accepts, BE re-runs the deterministic pipeline on the patched data and updates the main UI.
 
 ---
 
