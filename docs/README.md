@@ -105,21 +105,23 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    subgraph FE[Frontend (React / Vite)]
-        FE1[Wizard UI<br>Steps 1–7]
-        FE2[Side Drawer<br>Agentic Insights]
-    end
+  subgraph FE
+    FE1["Wizard UI – Steps 1–7"]
+    FE2["Side Drawer – Agentic Insights"]
+  end
 
-    subgraph BE[Backend (Node/TS)]
-        BE1[Deterministic Pipeline Engine]
-        BE2[Archia Client]
-    end
+  subgraph BE
+    BE1["Deterministic Pipeline Engine"]
+    BE2["Archia Client"]
+  end
 
-    FE1 --> BE1
-    BE1 --> FE1
+  %% main data flow
+  FE1 --> BE1
+  BE1 --> FE1
 
-    BE1 -. On Error .-> BE2
-    BE2 --> FE2
+  %% agentic fallback on error
+  BE1 -. "On error" .-> BE2
+  BE2 --> FE2
 ```
 
 ---
