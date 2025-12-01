@@ -1,5 +1,6 @@
 import { StepName, StepStatus } from '../types/wizard';
 import { STEPS } from '../state/wizardState';
+import OrosLogo from "../assets/logo/oros-logo.png";
 
 interface TopPipelineBarProps {
   currentStep: StepName;
