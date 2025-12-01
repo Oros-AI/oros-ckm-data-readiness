@@ -21,6 +21,9 @@ function App() {
   // Initialize drawer visibility directly from AI_ENABLED config
   // This ensures it stays open unless explicitly closed by the user
   const [showAgentDrawer, setShowAgentDrawer] = useState<boolean>(AppConfig.AI_ENABLED);
+  
+  // Store agent insights from the engine (when AI is enabled)
+  const [agentInsightsByStep, setAgentInsightsByStep] = useState<Record<string, any>>({});
 
   // Create a single pipeline engine instance
   // Using useMemo to ensure it's only created once
@@ -28,6 +31,21 @@ function App() {
 
   // Log config status (can be removed after verification)
   console.log('AI Features Enabled:', AppConfig.AI_ENABLED);
+
+  // Helper to sync agent insights from engine to UI
+  const syncAgentInsights = useCallback(() => {
+    if (AppConfig.AI_ENABLED) {
+      const engineState = pipelineEngine.getState();
+      if (engineState.agentInsights) {
+        // Convert Map to plain object for React state
+        const insights: Record<string, any> = {};
+        engineState.agentInsights.forEach((value, key) => {
+          insights[key] = value;
+        });
+        setAgentInsightsByStep(insights);
+      }
+    }
+  }, [pipelineEngine]);
 
   const setStepStatus = useCallback(
     (step: StepName, status: StepStatus, error?: string) => {
@@ -75,6 +93,8 @@ function App() {
                 translatedRecords: translationResult.data.records 
               }));
               setStepStatus(stepName, "success");
+              // Sync agent insights after step completes
+              syncAgentInsights();
             } else {
               throw new Error("Translation failed");
             }
@@ -96,6 +116,8 @@ function App() {
                 normalizedRecords: normalizationResult.data.records 
               }));
               setStepStatus(stepName, "success");
+              // Sync agent insights after step completes
+              syncAgentInsights();
             } else {
               throw new Error("Normalization failed");
             }
@@ -192,7 +214,7 @@ function App() {
         setStepStatus(stepName, "error", errorMessage);
       }
     },
-    [state, setStepStatus, pipelineEngine]
+    [state, setStepStatus, pipelineEngine, syncAgentInsights]
   );
 
   const runAllSteps = useCallback(async () => {
@@ -321,6 +343,7 @@ function App() {
         onClose={() => setShowAgentDrawer(false)}
         title="AI Pipeline Assistant"
         currentStep={state.currentStep}
+        insightsByStep={agentInsightsByStep}
       />
     </div>
   );

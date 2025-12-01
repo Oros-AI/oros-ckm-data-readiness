@@ -21,6 +21,9 @@ interface AgentInsightsDrawerProps {
   /** Current pipeline step (for context) */
   currentStep?: string;
   
+  /** Agent insights by step name (from the engine) */
+  insightsByStep?: Record<string, any>;
+  
   /** Children to render in the drawer body */
   children?: React.ReactNode;
 }
@@ -34,6 +37,7 @@ export const AgentInsightsDrawer: React.FC<AgentInsightsDrawerProps> = ({
   onClose,
   title = 'AI Analysis',
   currentStep,
+  insightsByStep,
   children,
 }) => {
   // Don't render anything if closed
@@ -81,6 +85,9 @@ export const AgentInsightsDrawer: React.FC<AgentInsightsDrawerProps> = ({
         <div className="flex-1 overflow-y-auto p-6">
           {children ? (
             children
+          ) : insightsByStep && currentStep && insightsByStep[currentStep] ? (
+            // Render actual insights for the current step
+            <AgentInsightsContent insights={insightsByStep[currentStep]} />
           ) : (
             // Default placeholder content
             <div className="space-y-6">
@@ -179,6 +186,186 @@ export const AgentInsightsDrawer: React.FC<AgentInsightsDrawerProps> = ({
           </div>
         </div>
     </aside>
+  );
+};
+
+/**
+ * Component to render actual agent insights from the engine
+ * Displays root cause analysis, suggestions, and patch previews
+ */
+const AgentInsightsContent: React.FC<{ insights: any }> = ({ insights }) => {
+  // Handle different severity levels with appropriate colors
+  const getSeverityColor = (severity: string) => {
+    switch (severity) {
+      case 'critical': return 'red';
+      case 'high': return 'orange';
+      case 'medium': return 'yellow';
+      case 'low': return 'blue';
+      default: return 'gray';
+    }
+  };
+
+  const severityColor = getSeverityColor(insights.summary?.severity || 'low');
+
+  return (
+    <div className="space-y-6">
+      {/* Status Summary */}
+      {insights.summary && (
+        <div className={`bg-${severityColor}-50 border border-${severityColor}-200 rounded-lg p-4`}>
+          <div className="flex items-start">
+            <svg
+              className={`w-5 h-5 text-${severityColor}-500 mt-0.5 mr-3`}
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path
+                fillRule="evenodd"
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm0-8a1 1 0 00-2 0v4a1 1 0 102 0V6z"
+                clipRule="evenodd"
+              />
+            </svg>
+            <div>
+              <h3 className={`text-sm font-medium text-${severityColor}-900`}>
+                {insights.summary.stepName} - {insights.summary.severity} severity
+              </h3>
+              <p className={`text-sm text-${severityColor}-700 mt-1`}>
+                {insights.summary.shortSummary}
+              </p>
+              <p className={`text-xs text-${severityColor}-600 mt-1`}>
+                {insights.summary.issueCount} issue(s) detected
+                {insights.summary.hasPatchesAvailable && ' - Patches available'}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Root Cause Analysis */}
+      {insights.rootCauseAnalysis && insights.rootCauseAnalysis.length > 0 && (
+        <div>
+          <h3 className="text-lg font-medium text-gray-900 mb-3">
+            Root Cause Analysis
+          </h3>
+          <ul className="space-y-2">
+            {insights.rootCauseAnalysis.map((cause: string, index: number) => (
+              <li key={index} className="flex items-start">
+                <span className="text-gray-400 mr-2">•</span>
+                <span className="text-sm text-gray-700">{cause}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Suggested Fixes */}
+      {insights.suggestedFixes && insights.suggestedFixes.length > 0 && (
+        <div>
+          <h3 className="text-lg font-medium text-gray-900 mb-3">
+            Suggested Fixes
+          </h3>
+          <div className="space-y-2">
+            {insights.suggestedFixes.map((fix: any, index: number) => (
+              <div key={index} className="flex items-start">
+                <svg
+                  className={`w-5 h-5 text-${
+                    fix.automated ? 'green' : 'gray'
+                  }-500 mr-2 mt-0.5`}
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d={fix.automated 
+                      ? "M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                      : "M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm0-8a1 1 0 00-2 0v4a1 1 0 102 0V6z"
+                    }
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <div className="flex-1">
+                  <span className="text-sm text-gray-700">{fix.description}</span>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className={`text-xs px-2 py-0.5 rounded bg-${
+                      fix.impact === 'high' ? 'red' : fix.impact === 'medium' ? 'yellow' : 'green'
+                    }-100 text-${
+                      fix.impact === 'high' ? 'red' : fix.impact === 'medium' ? 'yellow' : 'green'
+                    }-800`}>
+                      {fix.impact} impact
+                    </span>
+                    {fix.automated && (
+                      <span className="text-xs px-2 py-0.5 rounded bg-blue-100 text-blue-800">
+                        Can be automated
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Patch Preview */}
+      {insights.patchPreview && insights.patchPreview.length > 0 && (
+        <div>
+          <h3 className="text-lg font-medium text-gray-900 mb-3">
+            Patch Preview
+          </h3>
+          <div className="space-y-2">
+            {insights.patchPreview.slice(0, 3).map((patch: any, index: number) => (
+              <div key={index} className="bg-gray-50 rounded-lg p-3 text-xs">
+                <div className="font-mono text-gray-600 mb-1">
+                  Record: {patch.recordId} | Field: {patch.field}
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <span className="text-gray-500">Current:</span>
+                    <div className="text-red-600 truncate">
+                      {JSON.stringify(patch.currentValue)}
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Suggested:</span>
+                    <div className="text-green-600 truncate">
+                      {JSON.stringify(patch.suggestedValue)}
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-1 text-gray-500">
+                  Confidence: {(patch.confidence * 100).toFixed(0)}%
+                </div>
+              </div>
+            ))}
+            {insights.patchPreview.length > 3 && (
+              <p className="text-xs text-gray-500 text-center">
+                ... and {insights.patchPreview.length - 3} more patches
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Action buttons (disabled for Phase 2) */}
+      <div className="border-t pt-4">
+        <div className="flex gap-3">
+          <button
+            disabled
+            className="flex-1 px-4 py-2 bg-gray-300 text-gray-500 font-medium rounded-lg cursor-not-allowed"
+          >
+            Apply Patches
+          </button>
+          <button
+            disabled
+            className="flex-1 px-4 py-2 bg-gray-300 text-gray-500 font-medium rounded-lg cursor-not-allowed"
+          >
+            Reject
+          </button>
+        </div>
+        <p className="text-xs text-gray-500 mt-2 text-center">
+          Patch application will be enabled in the next phase
+        </p>
+      </div>
+    </div>
   );
 };
 
