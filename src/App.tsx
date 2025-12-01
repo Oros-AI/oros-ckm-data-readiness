@@ -47,6 +47,38 @@ function App() {
     }
   }, [pipelineEngine]);
 
+  // Handle applying a patch (non-destructive, updates engine state only)
+  const handleApplyPatch = useCallback((stepName: string, patchId: string) => {
+    if (!AppConfig.AI_ENABLED) return;
+    
+    console.log('Applying mock patch:', { stepName, patchId });
+    
+    // Call engine method to apply the patch (non-destructive)
+    const success = pipelineEngine.applyMockPatch(stepName, patchId);
+    
+    if (success) {
+      // Refresh insights to reflect the updated patch status
+      syncAgentInsights();
+      console.log('Patch applied (mock). Dataset version may have changed to v3_normalized_ai');
+    }
+  }, [pipelineEngine, syncAgentInsights]);
+
+  // Handle rejecting a patch
+  const handleRejectPatch = useCallback((stepName: string, patchId: string) => {
+    if (!AppConfig.AI_ENABLED) return;
+    
+    console.log('Rejecting patch:', { stepName, patchId });
+    
+    // Call engine method to reject the patch
+    const success = pipelineEngine.rejectPatch(stepName, patchId);
+    
+    if (success) {
+      // Refresh insights to reflect the updated patch status
+      syncAgentInsights();
+      console.log('Patch rejected');
+    }
+  }, [pipelineEngine, syncAgentInsights]);
+
   const setStepStatus = useCallback(
     (step: StepName, status: StepStatus, error?: string) => {
       setState((prev) => ({
@@ -344,6 +376,8 @@ function App() {
         title="AI Pipeline Assistant"
         currentStep={state.currentStep}
         insightsByStep={agentInsightsByStep}
+        onApplyPatch={handleApplyPatch}
+        onRejectPatch={handleRejectPatch}
       />
     </div>
   );

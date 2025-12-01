@@ -24,6 +24,12 @@ interface AgentInsightsDrawerProps {
   /** Agent insights by step name (from the engine) */
   insightsByStep?: Record<string, any>;
   
+  /** Callback for applying a patch (non-destructive) */
+  onApplyPatch?: (stepName: string, patchId: string) => void;
+  
+  /** Callback for rejecting a patch */
+  onRejectPatch?: (stepName: string, patchId: string) => void;
+  
   /** Children to render in the drawer body */
   children?: React.ReactNode;
 }
@@ -38,6 +44,8 @@ export const AgentInsightsDrawer: React.FC<AgentInsightsDrawerProps> = ({
   title = 'AI Analysis',
   currentStep,
   insightsByStep,
+  onApplyPatch,
+  onRejectPatch,
   children,
 }) => {
   // Don't render anything if closed
@@ -87,7 +95,12 @@ export const AgentInsightsDrawer: React.FC<AgentInsightsDrawerProps> = ({
             children
           ) : insightsByStep && currentStep && insightsByStep[currentStep] ? (
             // Render actual insights for the current step
-            <AgentInsightsContent insights={insightsByStep[currentStep]} />
+            <AgentInsightsContent 
+              insights={insightsByStep[currentStep]} 
+              stepName={currentStep}
+              onApplyPatch={onApplyPatch}
+              onRejectPatch={onRejectPatch}
+            />
           ) : (
             // Default placeholder content
             <div className="space-y-6">
@@ -193,7 +206,12 @@ export const AgentInsightsDrawer: React.FC<AgentInsightsDrawerProps> = ({
  * Component to render actual agent insights from the engine
  * Displays root cause analysis, suggestions, and patch previews
  */
-const AgentInsightsContent: React.FC<{ insights: any }> = ({ insights }) => {
+const AgentInsightsContent: React.FC<{ 
+  insights: any;
+  stepName?: string;
+  onApplyPatch?: (stepName: string, patchId: string) => void;
+  onRejectPatch?: (stepName: string, patchId: string) => void;
+}> = ({ insights, stepName, onApplyPatch, onRejectPatch }) => {
   // Handle different severity levels with appropriate colors
   const getSeverityColor = (severity: string) => {
     switch (severity) {
@@ -345,26 +363,112 @@ const AgentInsightsContent: React.FC<{ insights: any }> = ({ insights }) => {
         </div>
       )}
 
-      {/* Action buttons (disabled for Phase 2) */}
-      <div className="border-t pt-4">
-        <div className="flex gap-3">
-          <button
-            disabled
-            className="flex-1 px-4 py-2 bg-gray-300 text-gray-500 font-medium rounded-lg cursor-not-allowed"
-          >
-            Apply Patches
-          </button>
-          <button
-            disabled
-            className="flex-1 px-4 py-2 bg-gray-300 text-gray-500 font-medium rounded-lg cursor-not-allowed"
-          >
-            Reject
-          </button>
+      {/* Patch Management for Normalization Step */}
+      {stepName === 'normalization' && insights.patches && insights.patches.length > 0 && (
+        <div className="border-t pt-4">
+          <h3 className="text-lg font-medium text-gray-900 mb-3">
+            Patch Management
+          </h3>
+          
+          {/* Show overall patch status */}
+          {insights.patchStatus && insights.patchStatus !== 'none' && (
+            <div className={`mb-3 px-3 py-2 rounded text-sm ${
+              insights.patchStatus === 'applied' ? 'bg-green-50 text-green-800' :
+              insights.patchStatus === 'rejected' ? 'bg-red-50 text-red-800' :
+              insights.patchStatus === 'mixed' ? 'bg-yellow-50 text-yellow-800' :
+              'bg-gray-50 text-gray-800'
+            }`}>
+              Status: {insights.patchStatus === 'applied' ? 'Patches Applied (Mock)' :
+                       insights.patchStatus === 'rejected' ? 'Patches Rejected' :
+                       insights.patchStatus === 'mixed' ? 'Mixed (Some Applied)' :
+                       'Patches Proposed'}
+            </div>
+          )}
+          
+          <div className="space-y-3">
+            {insights.patches.map((patch: any) => (
+              <div key={patch.patchId} className="bg-gray-50 rounded-lg p-3">
+                <div className="text-xs mb-2">
+                  <div className="font-medium text-gray-700">
+                    {patch.reason}
+                  </div>
+                  <div className="text-gray-600 mt-1">
+                    Field: {patch.field} | Confidence: {(patch.confidence * 100).toFixed(0)}%
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-xs mb-2">
+                  <div>
+                    <span className="text-gray-500">From:</span>
+                    <div className="text-red-600 font-mono">
+                      {JSON.stringify(patch.originalValue)}
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">To:</span>
+                    <div className="text-green-600 font-mono">
+                      {JSON.stringify(patch.patchedValue)}
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Patch action buttons */}
+                <div className="flex gap-2">
+                  {patch.status === 'proposed' ? (
+                    <>
+                      <button
+                        onClick={() => onApplyPatch?.(stepName, patch.patchId)}
+                        className="flex-1 px-3 py-1 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700 transition-colors"
+                      >
+                        Apply
+                      </button>
+                      <button
+                        onClick={() => onRejectPatch?.(stepName, patch.patchId)}
+                        className="flex-1 px-3 py-1 bg-red-600 text-white text-xs font-medium rounded hover:bg-red-700 transition-colors"
+                      >
+                        Reject
+                      </button>
+                    </>
+                  ) : (
+                    <div className={`flex-1 text-center px-3 py-1 text-xs rounded ${
+                      patch.status === 'applied' ? 'bg-green-100 text-green-800' :
+                      'bg-red-100 text-red-800'
+                    }`}>
+                      {patch.status === 'applied' ? '✓ Applied (Mock)' : '✗ Rejected'}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          <p className="text-xs text-gray-500 mt-3 text-center">
+            Note: Patches are mock demonstrations. No actual data is modified.
+          </p>
         </div>
-        <p className="text-xs text-gray-500 mt-2 text-center">
-          Patch application will be enabled in the next phase
-        </p>
-      </div>
+      )}
+      
+      {/* Default action buttons for non-normalization steps */}
+      {stepName !== 'normalization' && (
+        <div className="border-t pt-4">
+          <div className="flex gap-3">
+            <button
+              disabled
+              className="flex-1 px-4 py-2 bg-gray-300 text-gray-500 font-medium rounded-lg cursor-not-allowed"
+            >
+              Apply Patches
+            </button>
+            <button
+              disabled
+              className="flex-1 px-4 py-2 bg-gray-300 text-gray-500 font-medium rounded-lg cursor-not-allowed"
+            >
+              Reject
+            </button>
+          </div>
+          <p className="text-xs text-gray-500 mt-2 text-center">
+            Patch application will be enabled in the next phase
+          </p>
+        </div>
+      )}
     </div>
   );
 };

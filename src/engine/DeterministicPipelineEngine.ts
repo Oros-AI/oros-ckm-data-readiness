@@ -511,6 +511,93 @@ export class DeterministicPipelineEngine implements PipelineEngine {
     }
   }
 
+  /**
+   * Apply a mock patch (NON-DESTRUCTIVE)
+   * Updates patch status and optionally dataset version, but does NOT modify actual data
+   */
+  applyMockPatch(stepName: string, patchId: string): boolean {
+    if (!AppConfig.AI_ENABLED || !this.state.agentInsights) {
+      return false;
+    }
+
+    const stepInsights = this.state.agentInsights.get(stepName);
+    if (!stepInsights || !stepInsights.patches) {
+      return false;
+    }
+
+    // Find the patch and update its status
+    const patch = stepInsights.patches.find(p => p.patchId === patchId);
+    if (!patch) {
+      return false;
+    }
+
+    // Mark patch as applied
+    patch.status = 'applied';
+
+    // Update overall patch status
+    const statuses = stepInsights.patches.map(p => p.status);
+    if (statuses.every(s => s === 'applied')) {
+      stepInsights.patchStatus = 'applied';
+    } else if (statuses.some(s => s === 'applied') && statuses.some(s => s === 'rejected')) {
+      stepInsights.patchStatus = 'mixed';
+    } else if (statuses.some(s => s === 'applied')) {
+      stepInsights.patchStatus = 'applied';
+    }
+
+    // For normalization, demo updating the dataset version
+    if (stepName === 'normalization' && stepInsights.patches.some(p => p.status === 'applied')) {
+      this.state.context.datasetVersion = 'v3_normalized_ai';
+      this.logAudit('normalization', 'patched', { 
+        patchId, 
+        mockApplied: true, 
+        datasetVersion: 'v3_normalized_ai' 
+      });
+    }
+
+    return true;
+  }
+
+  /**
+   * Reject a patch (NON-DESTRUCTIVE)
+   * Updates patch status only, no data changes
+   */
+  rejectPatch(stepName: string, patchId: string): boolean {
+    if (!AppConfig.AI_ENABLED || !this.state.agentInsights) {
+      return false;
+    }
+
+    const stepInsights = this.state.agentInsights.get(stepName);
+    if (!stepInsights || !stepInsights.patches) {
+      return false;
+    }
+
+    // Find the patch and update its status
+    const patch = stepInsights.patches.find(p => p.patchId === patchId);
+    if (!patch) {
+      return false;
+    }
+
+    // Mark patch as rejected
+    patch.status = 'rejected';
+
+    // Update overall patch status
+    const statuses = stepInsights.patches.map(p => p.status);
+    if (statuses.every(s => s === 'rejected')) {
+      stepInsights.patchStatus = 'rejected';
+    } else if (statuses.some(s => s === 'applied') && statuses.some(s => s === 'rejected')) {
+      stepInsights.patchStatus = 'mixed';
+    } else if (statuses.some(s => s === 'rejected')) {
+      stepInsights.patchStatus = 'rejected';
+    }
+
+    this.logAudit(stepName, 'patched', { 
+      patchId, 
+      rejected: true 
+    });
+
+    return true;
+  }
+
   getAuditLog(): AuditEntry[] {
     return [...this.auditLog];
   }
@@ -600,6 +687,22 @@ export class DeterministicPipelineEngine implements PipelineEngine {
           suggestedValue: patch.suggestedValue,
           confidence: patch.confidence || 0.8,
         })),
+        // Add full patch suggestions for normalization step
+        patches: stepName === 'normalization' && agentResponse.patches?.length > 0 
+          ? agentResponse.patches.map((patch: any, index: number) => ({
+              patchId: `patch-${stepName}-${index}`,
+              recordId: patch.recordId || 'record-1',
+              field: patch.field || 'diagnosis',
+              originalValue: patch.currentValue || 'Diabetes Type II',
+              patchedValue: patch.suggestedValue || 'E11.9',
+              reason: patch.reason || 'Map to standard ICD-10 code',
+              confidence: patch.confidence || 0.85,
+              status: 'proposed' as const,
+            }))
+          : undefined,
+        patchStatus: stepName === 'normalization' && agentResponse.patches?.length > 0 
+          ? 'proposed' 
+          : 'none',
         timestamp: new Date(),
         analysisTimeMs: Date.now() - startTime,
         rawResponse: agentResponse,

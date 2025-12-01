@@ -236,6 +236,21 @@ export interface StepAgentInsights {
     confidence: number;
   }[];
   
+  /** Full patch suggestions with metadata */
+  patches?: Array<{
+    patchId: string;
+    recordId: string;
+    field: string;
+    originalValue: any;
+    patchedValue: any;
+    reason: string;
+    confidence: number;
+    status: 'proposed' | 'applied' | 'rejected';
+  }>;
+  
+  /** Overall patch status for this step */
+  patchStatus?: 'none' | 'proposed' | 'applied' | 'rejected' | 'mixed';
+  
   /** When this analysis was generated */
   timestamp: Date;
   
