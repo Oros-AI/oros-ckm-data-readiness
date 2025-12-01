@@ -1,0 +1,186 @@
+/**
+ * Engine-specific types for the v3 Pipeline
+ * 
+ * These types extend and complement the existing wizard types,
+ * providing a cleaner abstraction for the pipeline engine.
+ */
+
+import {
+  CSVRow,
+  TranslatedRecord,
+  NormalizedRecord,
+  QualityScore,
+  EnrichedRecord,
+  AnalyticsSummary,
+} from '../types/wizard';
+
+/**
+ * Represents the version of a dataset after pipeline processing
+ */
+export type DatasetVersion = 
+  | 'v3_raw'
+  | 'v3_translated'
+  | 'v3_normalized'
+  | 'v3_normalized_ai'  // After AI patches applied
+  | 'v3_enriched'
+  | 'v3_enriched_ai';   // After AI enrichments
+
+/**
+ * Pipeline execution context passed between steps
+ */
+export interface PipelineContext {
+  runId: string;
+  startTime: Date;
+  datasetVersion: DatasetVersion;
+  aiEnabled: boolean;
+  metadata?: Record<string, any>;
+}
+
+/**
+ * Result of a pipeline step execution
+ */
+export interface StepResult<T = any> {
+  success: boolean;
+  data?: T;
+  errors?: PipelineError[];
+  warnings?: PipelineWarning[];
+  duration?: number;  // milliseconds
+  metadata?: Record<string, any>;
+}
+
+/**
+ * Pipeline-specific error structure
+ */
+export interface PipelineError {
+  code: string;
+  message: string;
+  step?: string;
+  field?: string;
+  rowIndex?: number;
+  severity: 'error' | 'critical';
+  details?: any;
+}
+
+/**
+ * Pipeline warning (non-blocking issues)
+ */
+export interface PipelineWarning {
+  code: string;
+  message: string;
+  step?: string;
+  field?: string;
+  rowIndex?: number;
+  details?: any;
+}
+
+/**
+ * Ingestion-specific types
+ */
+export interface IngestionResult {
+  records: CSVRow[];
+  totalRows: number;
+  successfulRows: number;
+  failedRows: number;
+  errors: IngestionError[];
+}
+
+export interface IngestionError {
+  rowIndex: number;  // 1-based
+  field?: string;
+  type: 'missing' | 'invalid' | 'out_of_range' | 'schema';
+  message: string;
+  rawValue?: string;
+}
+
+/**
+ * Translation-specific types
+ */
+export interface TranslationResult {
+  records: TranslatedRecord[];
+  mappedFields: number;
+  unmappedFields: number;
+  issues: TranslationIssue[];
+}
+
+export interface TranslationIssue {
+  recordId: string;
+  field: string;
+  issue: string;
+  severity: 'warning' | 'error';
+}
+
+/**
+ * Normalization-specific types
+ */
+export type NormalizationStatus = 
+  | 'mapped' 
+  | 'unmapped' 
+  | 'unknown' 
+  | 'mapped_via_ai';
+
+export interface NormalizationResult {
+  records: NormalizedRecord[];
+  statistics: {
+    totalCodes: number;
+    mappedCodes: number;
+    unmappedCodes: number;
+    aiMappedCodes: number;
+  };
+  issues: NormalizationIssue[];
+}
+
+export interface NormalizationIssue {
+  recordId: string;
+  domain: 'diagnosis' | 'medication' | 'lab' | 'procedure';
+  sourceValue: string;
+  issue: 'unmapped' | 'ambiguous' | 'invalid';
+  suggestedMapping?: string;
+}
+
+/**
+ * Persistence result
+ */
+export interface PersistenceResult {
+  persistedCount: number;
+  failedCount: number;
+  ndjson?: string;
+  datasetVersion: DatasetVersion;
+  storageLocation?: string;
+}
+
+/**
+ * Complete pipeline state at any point
+ */
+export interface PipelineState {
+  context: PipelineContext;
+  
+  // Step outputs
+  ingestionResult?: IngestionResult;
+  translationResult?: TranslationResult;
+  normalizationResult?: NormalizationResult;
+  qualityScores?: QualityScore[];
+  persistenceResult?: PersistenceResult;
+  enrichedRecords?: EnrichedRecord[];
+  analyticsSummary?: AnalyticsSummary;
+  
+  // Tracking
+  currentStep?: string;
+  completedSteps: string[];
+  failedSteps: string[];
+  
+  // Audit trail (for future use)
+  auditLog?: AuditEntry[];
+}
+
+/**
+ * Audit log entry for tracking changes
+ */
+export interface AuditEntry {
+  timestamp: Date;
+  step: string;
+  action: 'started' | 'completed' | 'failed' | 'patched';
+  userId?: string;
+  details?: Record<string, any>;
+  datasetVersionBefore?: DatasetVersion;
+  datasetVersionAfter?: DatasetVersion;
+}

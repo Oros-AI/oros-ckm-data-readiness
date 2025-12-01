@@ -1,7 +1,8 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { StepName, StepStatus } from "./types/wizard";
 import { WizardState, initialWizardState, STEPS } from "./state/wizardState";
-import { pipelineService } from "./services/pipelineService";
+import { DeterministicPipelineEngine } from "./engine/DeterministicPipelineEngine";
+import { AppConfig } from "./config/AppConfig";
 import { TopPipelineBar } from "./components/TopPipelineBar";
 import { StepWorkspace } from "./components/StepWorkspace";
 import { BottomStatusBar } from "./components/BottomStatusBar";
@@ -12,10 +13,21 @@ import { DataQualityScoringStep } from "./steps/DataQualityScoringStep";
 import { PersistenceStep } from "./steps/PersistenceStep";
 import { EnrichmentStep } from "./steps/EnrichmentStep";
 import { AnalyticsStep } from "./steps/AnalyticsStep";
+import { AgentInsightsDrawer } from "./components/AgentInsightsDrawer";
 import OrosLogo from "./assets/logo/oros-logo.png";
 
 function App() {
   const [state, setState] = useState<WizardState>(initialWizardState);
+  // Initialize drawer visibility directly from AI_ENABLED config
+  // This ensures it stays open unless explicitly closed by the user
+  const [showAgentDrawer, setShowAgentDrawer] = useState<boolean>(AppConfig.AI_ENABLED);
+
+  // Create a single pipeline engine instance
+  // Using useMemo to ensure it's only created once
+  const pipelineEngine = useMemo(() => new DeterministicPipelineEngine(), []);
+
+  // Log config status (can be removed after verification)
+  console.log('AI Features Enabled:', AppConfig.AI_ENABLED);
 
   const setStepStatus = useCallback(
     (step: StepName, status: StepStatus, error?: string) => {
@@ -53,11 +65,19 @@ function App() {
                 "No data to translate. Please complete ingestion first."
               );
             }
-            const translated = await pipelineService.translateRecords(
+            // Use pipeline engine instead of direct service call
+            const translationResult = await pipelineEngine.translate(
               state.ingestedRows
             );
-            setState((prev) => ({ ...prev, translatedRecords: translated }));
-            setStepStatus(stepName, "success");
+            if (translationResult.success && translationResult.data) {
+              setState((prev) => ({ 
+                ...prev, 
+                translatedRecords: translationResult.data.records 
+              }));
+              setStepStatus(stepName, "success");
+            } else {
+              throw new Error("Translation failed");
+            }
             break;
 
           case "normalization":
@@ -66,11 +86,19 @@ function App() {
                 "No translated data. Please complete translation first."
               );
             }
-            const normalized = await pipelineService.normalizeRecords(
+            // Use pipeline engine
+            const normalizationResult = await pipelineEngine.normalize(
               state.translatedRecords
             );
-            setState((prev) => ({ ...prev, normalizedRecords: normalized }));
-            setStepStatus(stepName, "success");
+            if (normalizationResult.success && normalizationResult.data) {
+              setState((prev) => ({ 
+                ...prev, 
+                normalizedRecords: normalizationResult.data.records 
+              }));
+              setStepStatus(stepName, "success");
+            } else {
+              throw new Error("Normalization failed");
+            }
             break;
 
           case "dataQualityScoring":
@@ -79,11 +107,19 @@ function App() {
                 "No normalized data. Please complete normalization first."
               );
             }
-            const scores = await pipelineService.calculateQualityScores(
+            // Use pipeline engine
+            const scoringResult = await pipelineEngine.calculateQualityScores(
               state.normalizedRecords
             );
-            setState((prev) => ({ ...prev, qualityScores: scores }));
-            setStepStatus(stepName, "success");
+            if (scoringResult.success && scoringResult.data) {
+              setState((prev) => ({ 
+                ...prev, 
+                qualityScores: scoringResult.data 
+              }));
+              setStepStatus(stepName, "success");
+            } else {
+              throw new Error("Quality scoring failed");
+            }
             break;
 
           case "persistence":
@@ -92,15 +128,20 @@ function App() {
                 "No data to persist. Please complete normalization first."
               );
             }
-            const { count, failures } = await pipelineService.persistRecords(
+            // Use pipeline engine
+            const persistResult = await pipelineEngine.persist(
               state.normalizedRecords
             );
-            setState((prev) => ({
-              ...prev,
-              persistedCount: count,
-              persistedFailures: failures,
-            }));
-            setStepStatus(stepName, "success");
+            if (persistResult.success && persistResult.data) {
+              setState((prev) => ({
+                ...prev,
+                persistedCount: persistResult.data.persistedCount,
+                persistedFailures: persistResult.data.failedCount,
+              }));
+              setStepStatus(stepName, "success");
+            } else {
+              throw new Error("Persistence failed");
+            }
             break;
 
           case "enrichment":
@@ -109,11 +150,19 @@ function App() {
                 "No data to enrich. Please complete normalization first."
               );
             }
-            const enriched = await pipelineService.enrichRecords(
+            // Use pipeline engine
+            const enrichmentResult = await pipelineEngine.enrich(
               state.normalizedRecords
             );
-            setState((prev) => ({ ...prev, enrichedRecords: enriched }));
-            setStepStatus(stepName, "success");
+            if (enrichmentResult.success && enrichmentResult.data) {
+              setState((prev) => ({ 
+                ...prev, 
+                enrichedRecords: enrichmentResult.data 
+              }));
+              setStepStatus(stepName, "success");
+            } else {
+              throw new Error("Enrichment failed");
+            }
             break;
 
           case "analytics":
@@ -122,11 +171,19 @@ function App() {
                 "No enriched data. Please complete enrichment first."
               );
             }
-            const analytics = await pipelineService.generateAnalytics(
+            // Use pipeline engine
+            const analyticsResult = await pipelineEngine.generateAnalytics(
               state.enrichedRecords
             );
-            setState((prev) => ({ ...prev, analyticsSummary: analytics }));
-            setStepStatus(stepName, "success");
+            if (analyticsResult.success && analyticsResult.data) {
+              setState((prev) => ({ 
+                ...prev, 
+                analyticsSummary: analyticsResult.data 
+              }));
+              setStepStatus(stepName, "success");
+            } else {
+              throw new Error("Analytics generation failed");
+            }
             break;
         }
       } catch (error) {
@@ -135,7 +192,7 @@ function App() {
         setStepStatus(stepName, "error", errorMessage);
       }
     },
-    [state, setStepStatus]
+    [state, setStepStatus, pipelineEngine]
   );
 
   const runAllSteps = useCallback(async () => {
@@ -256,6 +313,14 @@ function App() {
       <BottomStatusBar
         currentStep={state.currentStep}
         status={state.stepStates[state.currentStep].status}
+      />
+      
+      {/* Agent Insights Drawer - shown when AI is enabled */}
+      <AgentInsightsDrawer
+        isOpen={showAgentDrawer}
+        onClose={() => setShowAgentDrawer(false)}
+        title="AI Pipeline Assistant"
+        currentStep={state.currentStep}
       />
     </div>
   );
