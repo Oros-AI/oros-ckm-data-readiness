@@ -24,10 +24,13 @@ import {
   PersistenceResult,
   PipelineState,
   AuditEntry,
+  StepAgentInsights,
+  AgentInsightSummary,
 } from './types';
 
 import { PipelineEngine } from './PipelineEngine';
 import { AppConfig } from '../config/AppConfig';
+import { AgentHooks } from '../agents/AgentHooks';
 
 // Reuse existing pipeline service logic for now
 // In Step 6, we'll refactor to use this engine directly
@@ -36,9 +39,15 @@ import { pipelineService } from '../services/pipelineService';
 export class DeterministicPipelineEngine implements PipelineEngine {
   private state: PipelineState;
   private auditLog: AuditEntry[] = [];
+  private agentHooks: AgentHooks;
 
   constructor(config?: Record<string, any>) {
     this.state = this.createInitialState();
+    // Initialize agent hooks (uses ArchiaMockClient internally for now)
+    this.agentHooks = new AgentHooks({
+      apiKey: 'mock-key', // Will use mock client
+      orgId: 'mock-org',
+    });
   }
 
   private createInitialState(): PipelineState {
@@ -56,6 +65,8 @@ export class DeterministicPipelineEngine implements PipelineEngine {
       completedSteps: [],
       failedSteps: [],
       auditLog: [],
+      // Initialize agentInsights map if AI is enabled
+      agentInsights: AppConfig.AI_ENABLED ? new Map() : undefined,
     };
   }
 
@@ -128,6 +139,15 @@ export class DeterministicPipelineEngine implements PipelineEngine {
       this.state.completedSteps.push('ingestion');
       this.logAudit('ingestion', 'completed', { result });
 
+      // Analyze with agent if there are errors
+      if (errors.length > 0 && AppConfig.AI_ENABLED) {
+        await this.analyzeWithAgent('ingestion', {
+          errors,
+          records: rows.slice(0, 5),
+          description: 'Errors during CSV ingestion and validation',
+        });
+      }
+
       return {
         success: true,
         data: result,
@@ -162,17 +182,36 @@ export class DeterministicPipelineEngine implements PipelineEngine {
       // Delegate to existing service for now
       const translated = await pipelineService.translateRecords(rows);
       
+      // Add placeholder issues for demo purposes when AI is enabled
+      const issues = AppConfig.AI_ENABLED && translated.length > 0 ? [
+        {
+          recordId: translated[0].id,
+          field: 'date',
+          issue: 'Non-standard date format detected',
+          severity: 'warning' as const,
+        },
+      ] : [];
+
       const result: TranslationResult = {
         records: translated,
         mappedFields: translated.length * 14, // Approximate
-        unmappedFields: 0,
-        issues: [],
+        unmappedFields: issues.length,
+        issues,
       };
 
       this.state.translationResult = result;
       this.state.context.datasetVersion = 'v3_translated';
       this.state.completedSteps.push('translation');
       this.logAudit('translation', 'completed', { result });
+
+      // Analyze with agent if there are issues
+      if (issues.length > 0 && AppConfig.AI_ENABLED) {
+        await this.analyzeWithAgent('translation', {
+          issues,
+          records: translated.slice(0, 5),
+          description: 'Issues during field translation and mapping',
+        });
+      }
 
       return {
         success: true,
@@ -208,21 +247,48 @@ export class DeterministicPipelineEngine implements PipelineEngine {
       // Delegate to existing service
       const normalized = await pipelineService.normalizeRecords(records);
       
+      // Add placeholder issues for demo purposes when AI is enabled
+      const issues = AppConfig.AI_ENABLED && normalized.length > 0 ? [
+        {
+          recordId: normalized[0].id,
+          domain: 'diagnosis' as const,
+          sourceValue: 'Diabetes Type II',
+          issue: 'unmapped' as const,
+          suggestedMapping: 'E11.9 - Type 2 diabetes mellitus without complications',
+        },
+        {
+          recordId: normalized[Math.min(1, normalized.length - 1)].id,
+          domain: 'medication' as const,
+          sourceValue: 'Metformin 500',
+          issue: 'ambiguous' as const,
+          suggestedMapping: 'A10BA02 - Metformin',
+        },
+      ] : [];
+      
       const result: NormalizationResult = {
         records: normalized,
         statistics: {
           totalCodes: normalized.length * 8, // Approximate (2 diagnoses + 2 meds + 2 labs + 2 procedures)
-          mappedCodes: normalized.length * 8, // Assume all mapped for now
-          unmappedCodes: 0,
+          mappedCodes: normalized.length * 8 - issues.length,
+          unmappedCodes: issues.length,
           aiMappedCodes: 0,
         },
-        issues: [],
+        issues,
       };
 
       this.state.normalizationResult = result;
       this.state.context.datasetVersion = 'v3_normalized';
       this.state.completedSteps.push('normalization');
       this.logAudit('normalization', 'completed', { result });
+
+      // Analyze with agent if there are issues
+      if (issues.length > 0 && AppConfig.AI_ENABLED) {
+        await this.analyzeWithAgent('normalization', {
+          issues,
+          records: normalized.slice(0, 5),
+          description: 'Issues during medical code normalization',
+        });
+      }
 
       return {
         success: true,
@@ -439,6 +505,10 @@ export class DeterministicPipelineEngine implements PipelineEngine {
   reset(): void {
     this.state = this.createInitialState();
     this.auditLog = [];
+    // Clear agent insights if they exist
+    if (this.state.agentInsights) {
+      this.state.agentInsights.clear();
+    }
   }
 
   getAuditLog(): AuditEntry[] {
@@ -463,6 +533,93 @@ export class DeterministicPipelineEngine implements PipelineEngine {
     this.auditLog.push(entry);
     if (this.state.auditLog) {
       this.state.auditLog.push(entry);
+    }
+  }
+
+  /**
+   * Analyze issues with the AI agent and store insights
+   * Only runs when AI is enabled
+   */
+  private async analyzeWithAgent(
+    stepName: string,
+    context: {
+      errors?: any[];
+      issues?: any[];
+      records?: any[];
+      description?: string;
+    }
+  ): Promise<void> {
+    // Skip if AI is disabled or no agentInsights map
+    if (!AppConfig.AI_ENABLED || !this.state.agentInsights) {
+      return;
+    }
+
+    const startTime = Date.now();
+
+    try {
+      // Determine severity based on error/issue count
+      const issueCount = (context.errors?.length || 0) + (context.issues?.length || 0);
+      let severity: 'low' | 'medium' | 'high' | 'critical' = 'low';
+      if (issueCount > 10) severity = 'critical';
+      else if (issueCount > 5) severity = 'high';
+      else if (issueCount > 0) severity = 'medium';
+
+      // Call agent for analysis
+      const agentResponse = await this.agentHooks.analyzeIngestionErrors({
+        errors: context.errors || context.issues || [],
+        records: context.records?.slice(0, 5), // Sample records
+        context: {
+          step: stepName,
+          runId: this.state.context.runId,
+          description: context.description,
+        },
+      });
+
+      // Transform agent response into StepAgentInsights
+      const insights: StepAgentInsights = {
+        summary: {
+          stepName,
+          severity,
+          shortSummary: agentResponse.summary || `Found ${issueCount} issues in ${stepName}`,
+          issueCount,
+          hasPatchesAvailable: agentResponse.patches?.length > 0,
+        },
+        rootCauseAnalysis: agentResponse.rootCauses || [
+          `Detected ${issueCount} issues during ${stepName}`,
+          'Analysis available when processing errorful data',
+        ],
+        suggestedFixes: agentResponse.suggestedFixes?.map(fix => ({
+          description: fix,
+          impact: 'medium' as const,
+          automated: false,
+        })) || [],
+        patchPreview: agentResponse.patches?.slice(0, 5).map(patch => ({
+          recordId: patch.recordId || 'unknown',
+          field: patch.field || 'unknown',
+          currentValue: patch.currentValue,
+          suggestedValue: patch.suggestedValue,
+          confidence: patch.confidence || 0.8,
+        })),
+        timestamp: new Date(),
+        analysisTimeMs: Date.now() - startTime,
+        rawResponse: agentResponse,
+      };
+
+      // Store insights in state
+      this.state.agentInsights.set(stepName, insights);
+      
+      this.logAudit(stepName, 'patched', {
+        agentAnalysis: true,
+        issueCount,
+        severity,
+      });
+    } catch (error) {
+      // Log but don't fail the pipeline on agent errors
+      console.warn(`Agent analysis failed for ${stepName}:`, error);
+      this.logAudit(stepName, 'failed', {
+        agentAnalysis: true,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
     }
   }
 }

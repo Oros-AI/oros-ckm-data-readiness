@@ -168,6 +168,9 @@ export interface PipelineState {
   completedSteps: string[];
   failedSteps: string[];
   
+  // Agent insights per step (only populated when AI is enabled)
+  agentInsights?: Map<string, StepAgentInsights>;
+  
   // Audit trail (for future use)
   auditLog?: AuditEntry[];
 }
@@ -183,4 +186,62 @@ export interface AuditEntry {
   details?: Record<string, any>;
   datasetVersionBefore?: DatasetVersion;
   datasetVersionAfter?: DatasetVersion;
+}
+
+/**
+ * Agent insight summary for a pipeline step
+ * High-level summary of what the AI agent found
+ */
+export interface AgentInsightSummary {
+  /** The step name this insight is for */
+  stepName: string;
+  
+  /** Overall severity of issues found */
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  
+  /** Short summary of the main issue (1-2 sentences) */
+  shortSummary: string;
+  
+  /** Number of issues detected */
+  issueCount: number;
+  
+  /** Whether AI has patches available */
+  hasPatchesAvailable: boolean;
+}
+
+/**
+ * Detailed agent insights for a specific step
+ * Contains root cause analysis, suggestions, and patches
+ */
+export interface StepAgentInsights {
+  /** Summary information */
+  summary: AgentInsightSummary;
+  
+  /** Root cause analysis - bullet points */
+  rootCauseAnalysis: string[];
+  
+  /** Suggested fixes - actionable recommendations */
+  suggestedFixes: {
+    description: string;
+    impact: 'low' | 'medium' | 'high';
+    automated: boolean;
+  }[];
+  
+  /** Preview of available patches (if any) */
+  patchPreview?: {
+    recordId: string;
+    field: string;
+    currentValue: any;
+    suggestedValue: any;
+    confidence: number;
+  }[];
+  
+  /** When this analysis was generated */
+  timestamp: Date;
+  
+  /** Time taken for analysis in ms */
+  analysisTimeMs: number;
+  
+  /** Raw response from agent (for debugging) */
+  rawResponse?: any;
 }
