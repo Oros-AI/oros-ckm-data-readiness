@@ -1,120 +1,488 @@
-# Healthcare Data Pipeline Wizard
+# Oros Health Data Pipeline Wizard (v3) — Overview & Index
 
-A single-page React application that provides a visual, interactive wizard for processing healthcare data through a 7-step pipeline workflow.
+This repository contains the **modular 7-step pipeline wizard** used to ingest, translate, normalize, score, enrich, persist, and analyze healthcare data (for the demo: synthetic CSVs).  
+It supports **deterministic processing** and optional **agentic fallback workflows** via Archia.
 
-## Features
+---
 
-### 7-Step Pipeline Workflow
+## Quickstart
 
-1. **Ingestion**: Upload and parse CSV files with patient data
-2. **Translation**: Convert CSV rows into structured JSON objects
-3. **Normalization**: Map medical codes to standard terminologies (ICD-10, RxNorm, LOINC, SNOMED-CT)
-4. **Data Quality Scoring**: Compute PIQI-like quality scores per domain
-5. **Persistence**: Simulate writing data to DuckDB database
-6. **Enrichment**: Calculate BMI and diabetes risk scores
-7. **Analytics**: Visualize data with interactive D3 charts
+Prerequisites
 
-### UI Layout
+- Node.js 20+ (LTS)
+- npm
+- Git
 
-- **Top Bar (15% viewport)**: Train-track pipeline visualization with clickable, color-coded step circles
-  - Grey = Pending
-  - Blue = Running
-  - Green = Success
-  - Red = Error
-- **Middle Section (80% viewport)**: Dynamic workspace showing step-specific content, data previews, and controls
-- **Bottom Bar (5% viewport)**: Persistent status bar showing current step and state
+Clone the repository:
 
-### Key Capabilities
+```bash
+git clone https://github.com/Oros-AI/oros-health-pipeline-ui.git
+cd oros-health-pipeline-ui
+```
 
-- Real CSV file upload and parsing (client-side using PapaParse)
-- Step-by-step execution with "Run Step" button
-- Batch execution with "Run All" button
-- State management for all 7 steps
-- Error handling with clear messages and suggested fixes
-- Interactive data visualizations using D3.js
-- Mock backend simulation with artificial delays
+Check out the v3 development branch:
 
-## Tech Stack
+```bash
+git checkout v3-wizard-agentic
+```
 
-- **React** + **TypeScript**
-- **Vite** (build tool)
-- **TailwindCSS** (styling)
-- **PapaParse** (CSV parsing)
-- **D3.js** (data visualization)
-
-## Getting Started
-
-### Install Dependencies
+Install dependencies:
 
 ```bash
 npm install
 ```
 
-### Run Development Server
+Start the local dev server:
 
 ```bash
 npm run dev
 ```
 
-The app will be available at `http://localhost:5173`
+Then open the URL printed by Vite (usually `http://localhost:5173`).
 
-### Build for Production
+### What to do in the UI
+
+1. Upload **CSV A (clean)** to see the full deterministic “happy path.”
+2. Upload **CSV B (errorful)** to see error messaging and (when `AI_ENABLED=true`) optional agentic analysis in eligible steps.
+3. Navigate through the 7-step pipeline using the top navigation bar:
+   - Ingestion
+   - Translation
+   - Normalization
+   - Scoring
+   - Persistence
+   - Enrichment
+   - Analytics
+
+### AI / Agentic Behavior
+
+Agentic behavior is controlled via a single backend flag:
+
+```env
+AI_ENABLED=true   # enable Archia integration
+AI_ENABLED=false  # deterministic-only mode
+```
+
+When `AI_ENABLED=false`:
+
+- No agentic calls are made
+- The side drawer stays hidden
+- The Ask Anything analytics tab is disabled
+
+When `AI_ENABLED=true`:
+
+- Errors in Ingestion, Translation, or Normalization may trigger Archia analysis
+- The side drawer appears with root cause, suggested fixes, optional patches, and narratives
+
+---
+
+This README provides:
+
+- A unified architecture overview
+- A full step index (Steps 1–7)
+- Mermaid diagrams (pipeline, architecture, data flow)
+- Deterministic vs agentic behavior rules
+- UX conventions for the wizard
+- Archia integration contract
+- Dataset versioning rules
+- Developer onboarding
+- Links to step specifications
+- Optional references (Miro board, future PIQI Diabetes Rubric)
+
+This is the **source of truth** for engineers implementing v3.
+
+---
+
+# 1. High-Level Concept
+
+The Pipeline Wizard is a **single-page, step-driven UI** that walks users through:
+
+1. **Ingestion** (CSV → internal raw rows)
+2. **Translation** (raw rows → FHIR-like records)
+3. **Normalization** (value mapping → ICD-10, LOINC, RxNorm, units)
+4. **Scoring** (PIQI-lite DQ metrics)
+5. **Persistence** (mock DB + NDJSON export)
+6. **Enrichment** (BMI, risk strata, diabetes heuristics)
+7. **Analytics** (deterministic dashboards + optional NLP “Ask Anything”)
+
+At each stage, failures can trigger **agentic analysis** (if AI is enabled).  
+Deterministic processing remains the authoritative system of record.
+
+---
+
+# 2. Quick Navigation — Step Specifications
+
+Click into any step for full detail:
+
+| Step                   | File                                                                             | Purpose                                                                      |
+| ---------------------- | -------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| **01 — Ingestion**     | [pipeline-specs/step01-ingestion.md](pipeline-specs/step01-ingestion.md)         | Upload CSV, parse into raw rows, detect ingestion errors                     |
+| **02 — Translation**   | [pipeline-specs/step02-translation.md](pipeline-specs/step02-translation.md)     | Map raw fields to FHIR-like structure (demo)                                 |
+| **03 — Normalization** | [pipeline-specs/step03-normalization.md](pipeline-specs/step03-normalization.md) | Map codes & units to ICD-10, LOINC, RxNorm; produce structured clinical data |
+| **04 — Scoring**       | [pipeline-specs/step04-scoring.md](pipeline-specs/step04-scoring.md)             | PIQI-lite completeness, conformance, plausibility scoring                    |
+| **05 — Persistence**   | [pipeline-specs/step05-persistence.md](pipeline-specs/step05-persistence.md)     | Persist normalized data + NDJSON export                                      |
+| **06 — Enrichment**    | [pipeline-specs/step06-enrichment.md](pipeline-specs/step06-enrichment.md)       | BMI, BMI category, diabetes risk tier, cohort flags                          |
+| **07 — Analytics**     | [pipeline-specs/step07-analytics.md](pipeline-specs/step07-analytics.md)         | Deterministic reports + AI chat surface                                      |
+
+---
+
+# 3. Deterministic vs Agentic Behavior (Core Rules)
+
+### Deterministic
+
+- Always produces the authoritative dataset
+- Runs even when AI is disabled
+- User sees clear structured errors
+- No silent mutations
+- Dataset versions:
+  - `v3_normalized`
+  - `v3_normalized_ai`
+  - `v3_enriched`
+  - `v3_enriched_ai`
+
+### Agentic (Archia)
+
+Triggered **only** when:
+
+- A step errors
+- A user explicitly requests AI analysis
+- AI is enabled (`AI_ENABLED=true`)
+
+Agentic behavior:
+
+- Diagnoses errors
+- Suggests root causes
+- Proposes patches
+- Provides reasoning narratives
+- Never silently changes data
+- Any “patched” dataset requires **user approval**
+
+All agentic interactions appear in a **right-hand side drawer**.
+
+---
+
+# 4. Top-Level Pipeline Diagram (High-Level Mermaid)
+
+```mermaid
+flowchart LR
+    A1[Upload CSV<br>Step 1: Ingestion]
+    A2[Translate to FHIR-like<br>Step 2: Translation]
+    A3[Normalize Codes<br>Step 3: Normalization]
+    A4[PIQI-Lite Scoring<br>Step 4: Scoring]
+    A5[Persist + NDJSON<br>Step 5: Persistence]
+    A6[Enrichment<br>Step 6: Enrichment]
+    A7[Analytics<br>Step 7: Analytics]
+
+    A1 --> A2 --> A3 --> A4 --> A5 --> A6 --> A7
+```
+
+---
+
+# 5. Deterministic + Agentic Architecture
+
+The system has two main layers:
+
+- **Frontend (FE) – React / Vite**
+
+  - **Wizard UI (Steps 1–7)** – deterministic CSV pipeline UI
+  - **Side Drawer – Agentic Insights** – shows Archia explanations, suggested fixes, and patched-row previews
+
+- **Backend (BE) – Node / TypeScript**
+  - **Deterministic Pipeline Engine** – runs the 7-step pipeline, owns the source-of-truth data
+  - **Archia Client** – thin client that calls Archia’s APIs when AI is enabled
+
+**Normal data flow (AI disabled or no errors):**
+
+1. FE → BE deterministic engine to run each step.
+2. BE returns updated pipeline state to FE.
+3. Wizard UI + Analytics tabs render results from deterministic state.
+
+**Agentic fallback on error (only when `AI_ENABLED=true`):**
+
+1. A step fails in the deterministic engine (e.g., ingestion, translation, normalization).
+2. BE calls **Archia Client**, which sends the error context + sample rows to Archia.
+3. Archia returns:
+   - root cause
+   - suggested fixes
+   - optional patched rows
+   - narrative report
+4. FE shows this in the **Side Drawer – Agentic Insights**:
+   - toggle between _original_ vs _patched_ rows
+   - accept / reject fixes
+5. If the user accepts, BE re-runs the deterministic pipeline on the patched data and updates the main UI.
+
+---
+
+# 6. Dataset Versioning Model
+
+```mermaid
+flowchart TB
+    RAW[Raw CSV Rows]
+    TRANS[FHIR-like Translated Records]
+    NORM[v3_normalized / v3_normalized_ai]
+    ENRICH[v3_enriched / v3_enriched_ai]
+
+    RAW --> TRANS --> NORM --> ENRICH
+```
+
+Rules:
+
+- Version suffix `_ai` only appears after a user accepts an AI patch
+- Analytics always operates on **currently active dataset**
+- Persistence step explicitly reports dataset version
+
+---
+
+# 7. Archia Integration Contract
+
+### Standard Request Payload
+
+```json
+{
+  "step": "<step-name>",
+  "ai_enabled": true,
+  "errors": [],
+  "sample_records": [],
+  "context": {},
+  "dataset_version": "v3_normalized",
+  "metadata": {
+    "runId": "2025-01-12T10:22:11Z"
+  }
+}
+```
+
+### Standard Response Shape
+
+```json
+{
+  "root_cause": "...",
+  "suggested_fixes": ["..."],
+  "patched_rows": [],
+  "insights": [],
+  "step_by_step_report": "..."
+}
+```
+
+---
+
+# 8. UX Conventions (Consistent Across Steps)
+
+### Side Drawer
+
+Used for:
+
+- Agentic insights
+- Root cause analysis
+- Proposed fixes
+- Narrative summaries
+
+### Bottom Status Bar
+
+- Shows: Pending, Success, Warning, Error
+- Always visible
+
+### Run Step
+
+- Runs only current step
+
+### Run All
+
+- Sequentially executes downstream steps
+
+### Dataset Version Badge
+
+- Shows dataset lineage at top-right of main pane
+
+### Analytics Tabs
+
+- Tab 1: Deterministic Reports
+- Tab 2: Ask Anything (enabled only when AI_ENABLED=true)
+
+---
+
+# 9. Developer Onboarding
+
+### Run locally
 
 ```bash
-npm run build
+npm install
+npm run dev
 ```
 
-### Preview Production Build
+### Enable/Disable AI
+
+In `.env`:
 
 ```bash
-npm run preview
+AI_ENABLED=true
 ```
 
-## Using the Application
+or
 
-1. **Start with Ingestion**: Click on the first step (Ingestion) and upload the sample CSV file (`sample-patient-data.csv`)
-2. **Run Individual Steps**: Click "Run Step" to execute the current step
-3. **Run All Steps**: Click "Run All Steps" to execute the entire pipeline sequentially
-4. **Navigate Steps**: Click on any step circle in the top bar to view its content
-5. **View Results**: Each step shows previews of input/output data, status indicators, and relevant metrics
-
-## Sample Data
-
-A sample CSV file (`sample-patient-data.csv`) is included with 20 mock patient records containing:
-- Patient demographics (ID, Name, Age, Sex, Height, Weight)
-- Diagnoses (Diabetes, Hypertension, Asthma, Depression, Obesity)
-- Medications (Metformin, Lisinopril, Albuterol, Sertraline, Atorvastatin)
-- Lab tests (HbA1c, Glucose, Cholesterol, HDL, LDL)
-- Procedures (Blood Draw, X-Ray, MRI, CT Scan, EKG)
-
-## Project Structure
-
-```
-src/
-├── components/          # Layout components
-│   ├── TopPipelineBar.tsx
-│   ├── StepWorkspace.tsx
-│   └── BottomStatusBar.tsx
-├── steps/              # Step-specific components
-│   ├── IngestionStep.tsx
-│   ├── TranslationStep.tsx
-│   ├── NormalizationStep.tsx
-│   ├── DataQualityScoringStep.tsx
-│   ├── PersistenceStep.tsx
-│   ├── EnrichmentStep.tsx
-│   └── AnalyticsStep.tsx
-├── services/           # Business logic
-│   └── pipelineService.ts
-├── state/              # State management
-│   └── wizardState.ts
-├── types/              # TypeScript types
-│   └── wizard.ts
-└── App.tsx             # Main application
+```bash
+AI_ENABLED=false
 ```
 
-## Notes
+### Test Clean vs Errorful CSV
 
-- This is a **single-page application** - no routing, all content orchestrated in one main layout
-- All data processing happens **client-side** (no backend required)
-- Pipeline steps simulate backend operations with artificial delays for realistic UX
-- The persistence step mocks database operations (no actual DuckDB connection)
+We use two demo CSVs:
+
+- Clean (runs end-to-end deterministically)
+- Errorful (triggers agentic fallback at Ingestion, Translation, or Normalization)
+
+Place them in:
+
+```text
+/demo-data/
+```
+
+---
+
+# 10. Future Integration Slots
+
+### PIQI Diabetes Rubric (Full Version)
+
+- Will replace PIQI-lite logic in Step 4
+- Will live in: `/dq-rubrics/diabetes.json`
+- Will reference terminology service
+
+### Terminology Service
+
+- ICD-10, LOINC, RxNorm
+- Future integration via `/services/terminology-client.ts`
+
+### Real Persistence Layer
+
+- DuckDB or Postgres
+- Replace mock persistence in Step 5
+
+### RTA / HIE Integration
+
+- Eventual API contract for ingestion
+- Patient registry alignment
+- Data Quality dashboards
+
+---
+
+# 11. Additional Reference (Optional)
+
+**Miro Board – Working Notes & Ideation**  
+_(Exploratory, not source-of-truth)_  
+https://miro.com/app/board/uXjVJOTpxV4=/?share_link_id=77225652384
+
+---
+
+# 12. Detailed Diagrams Appendix
+
+(Full-size diagrams — ideal for Fibery import or engineering discussions.)
+
+---
+
+## 12.1 Full Pipeline (Expanded)
+
+```mermaid
+flowchart TB
+    subgraph RAW[Step 1 – Ingestion]
+        R1[Upload CSV]
+        R2[Parse Rows]
+        R3[Validate Structure]
+    end
+
+    subgraph TRANS[Step 2 – Translation]
+        T1[Map Fields to FHIR-like]
+        T2[Detect Missing Fields]
+    end
+
+    subgraph NORM[Step 3 – Normalization]
+        N1[ICD-10 Mapping]
+        N2[LOINC Mapping]
+        N3[RxNorm Mapping]
+        N4[Unit Conversion]
+    end
+
+    subgraph SCORE[Step 4 – Scoring]
+        S1[Completeness]
+        S2[Conformance]
+        S3[Plausibility]
+    end
+
+    subgraph PERSIST[Step 5 – Persistence]
+        P1[Mock DB Write]
+        P2[NDJSON Export]
+    end
+
+    subgraph ENRICH[Step 6 – Enrichment]
+        E1[BMI]
+        E2[Risk Tier]
+        E3[Flags]
+    end
+
+    subgraph ANALYTICS[Step 7 – Analytics]
+        A1[Deterministic Reports]
+        A2[NLP Ask Anything]
+    end
+
+    RAW --> TRANS --> NORM --> SCORE --> PERSIST --> ENRICH --> ANALYTICS
+```
+
+---
+
+## 12.2 Agentic Fallback Routing
+
+```mermaid
+flowchart LR
+    D[Deterministic Step Runs] -->|Error| A[Archia Agentic Analysis]
+    A -->|Suggestions| U[User Reviews Fixes]
+    U -->|Accept| R[Re-run Deterministic Step]
+    U -->|Reject| D2[Continue Deterministic Path]
+```
+
+---
+
+## 13. UI Branding – Oros Header (v3 Demo)
+
+The v3 wizard includes **minimal Oros branding** so the demo feels cohesive without locking us into a final design system.
+
+### 13.1 Logo asset
+
+- File: `src/assets/oros-logo.png`
+- Current variant: **black line logo on white background**
+- Recommended min size: 40–48px height (the app uses Tailwind class `h-12`)
+
+You can swap this file later (same name, same path) to update the logo without changing any code.
+
+### 13.2 Header placement in the app
+
+The logo is rendered in a simple top header, centered above the wizard steps:
+
+```tsx
+// src/App.tsx (within the main return)
+<div className="min-h-screen bg-gray-100">
+  {/* Oros Header */}
+  <header className="w-full flex justify-center items-center py-4 border-b border-gray-300 mb-4 bg-white">
+    <img src={OrosLogo} alt="Oros Logo" className="h-12 w-auto opacity-90" />
+  </header>
+
+  <TopPipelineBar
+    currentStep={state.currentStep}
+    stepStates={state.stepStates}
+    onStepClick={handleStepClick}
+  />
+  {/* ...rest of layout... */}
+</div>
+```
+
+### 13.3 Branding scope (for the demo)
+
+For the **December demo**, branding changes are intentionally minimal:
+
+- ✅ Show Oros logo in a clean header
+- ✅ Keep existing neutral colors (`bg-gray-100`, white panels, Tailwind defaults)
+- ✅ Avoid tight coupling to a specific design system
+
+Later, when the broader Oros branding and marketing site are finalized, we can:
+
+- Introduce a **design token layer** (primary/secondary colors, typography scale)
+- Replace generic Tailwind grays with Oros brand colors
+- Add layout and component tweaks (cards, buttons, typography) in a dedicated `ui/` or `design-system/` folder
+
+For now, this section is the **single source of truth** for how the Oros logo is integrated in the v3 wizard UI.
