@@ -6,7 +6,7 @@
  * and will be enhanced in Phase 2 to show real agent responses.
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 
 interface AgentInsightsDrawerProps {
   /** Whether the drawer is open */
@@ -48,8 +48,60 @@ export const AgentInsightsDrawer: React.FC<AgentInsightsDrawerProps> = ({
   onRejectPatch,
   children,
 }) => {
+  // Tab state
+  const [activeTab, setActiveTab] = useState<'insights' | 'askAnything'>('insights');
+  
+  // Ask Anything state
+  const [question, setQuestion] = useState<string>('');
+  const [answer, setAnswer] = useState<string | null>(null);
+  const [isAsking, setIsAsking] = useState<boolean>(false);
+  
   // Don't render anything if closed
   if (!isOpen) return null;
+
+  // Handle Ask Anything submission
+  const handleAskQuestion = async () => {
+    if (!question.trim()) {
+      return; // Do nothing if question is empty
+    }
+
+    setIsAsking(true);
+    setAnswer(null);
+    
+    // Simulate a small delay for better UX
+    await new Promise(resolve => setTimeout(resolve, 800));
+    
+    // Generate mock answer based on question keywords
+    // TODO: In a future phase, replace this mock implementation with a real Archia /query call via a backend proxy.
+    const mockAnswer = generateMockAnalyticsAnswer(question);
+    
+    setAnswer(mockAnswer);
+    setIsAsking(false);
+  };
+
+  // Generate contextual mock answers
+  const generateMockAnalyticsAnswer = (q: string): string => {
+    const lowerQ = q.toLowerCase();
+    
+    if (lowerQ.includes('quality') || lowerQ.includes('score')) {
+      return "The dataset shows an overall quality score of 85%, with high completeness (92%) but moderate consistency issues (78%). The main quality concerns are in the normalization step where 2 diagnosis codes could not be mapped to standard ICD-10 codes. Consider reviewing the unmapped codes and applying the suggested patches.";
+    }
+    
+    if (lowerQ.includes('error') || lowerQ.includes('issue') || lowerQ.includes('problem')) {
+      return "The pipeline identified 2 normalization issues: 'Diabetes Type II' could not be automatically mapped to ICD-10, and 'Metformin 500' has an ambiguous medication code. These issues affect 2 out of your total records. The AI agent has proposed patches that would map these to standard codes with 85% confidence.";
+    }
+    
+    if (lowerQ.includes('patient') || lowerQ.includes('demographic')) {
+      return "Based on the enriched dataset, the patient population includes diverse age groups (18-85 years) with a balanced gender distribution. The most common diagnoses are diabetes-related conditions, and the medication profile suggests a focus on chronic disease management. Lab values show normal distributions for most biomarkers.";
+    }
+    
+    if (lowerQ.includes('trend') || lowerQ.includes('pattern')) {
+      return "Analysis reveals several patterns: 1) Higher prevalence of diabetes in older age cohorts, 2) Correlation between HbA1c levels and medication adherence, 3) Seasonal variations in certain lab test frequencies. These insights could inform targeted intervention strategies.";
+    }
+    
+    // Default response
+    return "This dataset has been successfully processed through all 7 pipeline steps. The normalization achieved 99% code mapping, with minor issues flagged for review. Data quality metrics indicate the dataset is suitable for downstream analytics and reporting. Consider applying the AI-suggested patches to achieve 100% normalization.";
+  };
 
   return (
     /* Fixed right panel without backdrop - main wizard remains fully interactive */
@@ -59,7 +111,7 @@ export const AgentInsightsDrawer: React.FC<AgentInsightsDrawerProps> = ({
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-xl font-semibold">{title}</h2>
-              {currentStep && (
+              {activeTab === 'insights' && currentStep && (
                 <p className="text-blue-100 text-sm mt-1">
                   Step: {currentStep}
                 </p>
@@ -89,11 +141,39 @@ export const AgentInsightsDrawer: React.FC<AgentInsightsDrawerProps> = ({
           </div>
         </div>
 
+        {/* Tab Navigation */}
+        <div className="bg-gray-50 border-b px-4 py-2">
+          <div className="flex gap-2">
+            <button
+              onClick={() => setActiveTab('insights')}
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                activeTab === 'insights'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              Data Quality Insights
+            </button>
+            <button
+              onClick={() => setActiveTab('askAnything')}
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                activeTab === 'askAnything'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              Ask Anything
+            </button>
+          </div>
+        </div>
+
         {/* Body */}
         <div className="flex-1 overflow-y-auto p-6">
-          {children ? (
-            children
-          ) : insightsByStep && currentStep && insightsByStep[currentStep] ? (
+          {activeTab === 'insights' ? (
+            // Data Quality Insights Tab
+            children ? (
+              children
+            ) : insightsByStep && currentStep && insightsByStep[currentStep] ? (
             // Render actual insights for the current step
             <AgentInsightsContent 
               insights={insightsByStep[currentStep]} 
@@ -184,6 +264,89 @@ export const AgentInsightsDrawer: React.FC<AgentInsightsDrawerProps> = ({
                   Actions will be enabled when AI suggestions are available
                 </p>
               </div>
+            </div>
+          )
+          ) : (
+            // Ask Anything Tab
+            <div className="space-y-6">
+              {/* Introduction */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h3 className="text-sm font-medium text-blue-900 mb-2">
+                  Analytics Chat
+                </h3>
+                <p className="text-sm text-blue-700">
+                  Ask a question about this dataset or pipeline run. This is a mock demo; no real Archia call is made.
+                </p>
+              </div>
+
+              {/* Question Input */}
+              <div>
+                <label htmlFor="question" className="block text-sm font-medium text-gray-700 mb-2">
+                  Your Question
+                </label>
+                <textarea
+                  id="question"
+                  value={question}
+                  onChange={(e) => setQuestion(e.target.value)}
+                  placeholder="e.g., What are the main data quality issues?"
+                  className="w-full h-24 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  disabled={isAsking}
+                />
+              </div>
+
+              {/* Ask Button */}
+              <div>
+                <button
+                  onClick={handleAskQuestion}
+                  disabled={isAsking || !question.trim()}
+                  className={`w-full px-4 py-2 font-medium rounded-lg transition-colors ${
+                    isAsking || !question.trim()
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                  }`}
+                >
+                  {isAsking ? 'Analyzing...' : 'Ask'}
+                </button>
+              </div>
+
+              {/* Answer Display */}
+              {answer && (
+                <div>
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">
+                    Answer
+                  </h3>
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                    <p className="text-sm text-gray-800 leading-relaxed">
+                      {answer}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Sample Questions */}
+              {!answer && (
+                <div>
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">
+                    Sample Questions
+                  </h3>
+                  <div className="space-y-2">
+                    {[
+                      'What are the data quality scores?',
+                      'Are there any normalization issues?',
+                      'Tell me about patient demographics',
+                      'What patterns do you see in the data?'
+                    ].map((sample, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setQuestion(sample)}
+                        className="w-full text-left px-3 py-2 text-sm text-gray-600 bg-white border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
+                      >
+                        {sample}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
