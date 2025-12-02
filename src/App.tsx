@@ -373,7 +373,7 @@ function App() {
       <AgentInsightsDrawer
         isOpen={showAgentDrawer}
         onClose={() => setShowAgentDrawer(false)}
-        title="AI Pipeline Assistant"
+        title="Data Quality Insights"
         currentStep={state.currentStep}
         insightsByStep={agentInsightsByStep}
         onApplyPatch={handleApplyPatch}

@@ -1,12 +1,16 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import { AnalyticsSummary } from '../types/wizard';
+import { AppConfig } from '../config/AppConfig';
+import { AskAnythingPanel } from '../components/AskAnythingPanel';
 
 interface AnalyticsStepProps {
   analyticsSummary: AnalyticsSummary | null;
 }
 
 export function AnalyticsStep({ analyticsSummary }: AnalyticsStepProps) {
+  const [activeTab, setActiveTab] = useState<'standardReports' | 'askAnything'>('standardReports');
+  
   const sexChartRef = useRef<HTMLDivElement>(null);
   const ageChartRef = useRef<HTMLDivElement>(null);
   const diagnosisChartRef = useRef<HTMLDivElement>(null);
@@ -185,9 +189,40 @@ export function AnalyticsStep({ analyticsSummary }: AnalyticsStepProps) {
           Visualize patient data insights with interactive charts and distributions.
         </p>
 
-        {analyticsSummary ? (
-          <div className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Tab Navigation - only show if AI is enabled */}
+        {AppConfig.AI_ENABLED && (
+          <div className="border-b mb-6">
+            <div className="flex gap-4">
+              <button
+                onClick={() => setActiveTab('standardReports')}
+                className={`pb-3 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'standardReports'
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Standard Reports
+              </button>
+              <button
+                onClick={() => setActiveTab('askAnything')}
+                className={`pb-3 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'askAnything'
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Ask Anything
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Tab Content */}
+        {activeTab === 'standardReports' ? (
+          // Standard Reports Tab
+          analyticsSummary ? (
+            <div className="space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Sex Distribution</h3>
                 <div ref={sexChartRef} className="flex justify-center" />
@@ -239,7 +274,11 @@ export function AnalyticsStep({ analyticsSummary }: AnalyticsStepProps) {
           <div className="text-center py-12 text-gray-500">
             No analytics data available. Please run the analytics step.
           </div>
-        )}
+        )
+        ) : activeTab === 'askAnything' ? (
+          // Ask Anything Tab (only shown when AI is enabled)
+          <AskAnythingPanel />
+        ) : null}
       </div>
     </div>
   );
