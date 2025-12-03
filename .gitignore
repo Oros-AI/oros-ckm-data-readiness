@@ -24,3 +24,7 @@ dist-ssr
 *.sw?
 
 .env.local
+
+# Backend environment (DO NOT COMMIT)
+.env.backend
+.env.backend.*
