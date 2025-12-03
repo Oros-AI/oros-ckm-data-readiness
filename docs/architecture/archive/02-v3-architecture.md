@@ -1,3 +1,4 @@
+⚠️ **Deprecated Document**
 # V3 Architecture – Deterministic + Agentic + NLP
 
 ## Goals

@@ -1,3 +1,4 @@
+⚠️ **Deprecated Document**
 # Archia Integration – V3 Agentic Behavior
 
 This document specifies how the Oros Health Data Pipeline Wizard talks to Archia’s agentic backend (or any equivalent agent runtime).
