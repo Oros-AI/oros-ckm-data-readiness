@@ -27,4 +27,4 @@ dist-ssr
 
 # Backend environment (DO NOT COMMIT)
 .env.backend
-.env.backend.*
+.env.backend.*scripts/.env
