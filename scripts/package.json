@@ -1,0 +1,17 @@
+{
+  "name": "ckm-data-readiness-scripts",
+  "version": "1.0.0",
+  "description": "Data loading and management scripts for CKM Data Readiness POC",
+  "scripts": {
+    "load:a": "node load_dataset.js --dataset a",
+    "load:b": "node load_dataset.js --dataset b",
+    "load:c": "node load_dataset.js --dataset c",
+    "reset": "node reset_session.js --session",
+    "reset:all": "node reset_session.js --all"
+  },
+  "dependencies": {
+    "csv-parse": "^5.5.6",
+    "dotenv": "^16.4.5",
+    "pg": "^8.13.0"
+  }
+}
