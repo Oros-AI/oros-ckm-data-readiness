@@ -2,7 +2,7 @@
 
 **Project:** Oros CKM Data Readiness Infrastructure  
 **Status:** Design specification — POC implementation pending  
-**Last updated:** 2026-04-05  
+**Last updated:** 2026-04-08 (updated to reflect ADR Decision 1 and Decision 2 — peer sidecar placement, triggerRescore function)  
 **Audience:** Technical collaborators, agentic infrastructure partners
 
 ---
@@ -66,45 +66,48 @@ Kris Kowal's Endo technology (hardened JavaScript compartments) provides the gov
 
 ---
 
-## Architecture Stack
+## Architecture — Peer Sidecar Placement (ADR Decision 1, Option C)
+
+The agentic backend is an **independent peer sidecar service** — not embedded in or spanning the data pipeline tiers. It has two explicit connections to the primary stack: it reads check result records from Tier 3, and it reads from and writes to the SQL layer to trigger re-scoring after approved patches. NL queries operate on clean remediated data only.
+
+This placement was chosen over Options A (spanning side panel) and B (gap zone component) because Option C is the only placement that makes all three agentic functions explicit and separable, and provides the cleanest boundary for eventual Endo integration. See Architecture Decision Record (April 8, 2026) Decision 1 for full rationale.
 
 ```
-┌─────────────────────────────────────────────────────┐
-│                    UI LAYER                         │
-│  Deterministic Pipeline  │  AI Drawer (optional)    │
-│  [always on]             │  [toggle on/off]         │
-└─────────────────────────────────────────────────────┘
-                           │
-                    [toggle gate]
-                           │
-┌─────────────────────────────────────────────────────┐
-│         ORCHESTRATION LAYER (harness)               │
-│  Defines agents, rules, workflows                   │
-│  Runs inside Endo compartment (post-POC)            │
-│  POC: Claude API direct (thin abstraction)          │
-│  Post-POC: Archia evaluation (terms TBD)            │
-├─────────────────────────────────────────────────────┤
-│         ENDO RUNTIME FOUNDATION (post-POC)          │
-│  Hardened JS compartments                           │
-│  Capability boundaries physically enforced          │
-│  Governance rules unbypassable at runtime level     │
-├─────────────────────────────────────────────────────┤
-│                  MODEL LAYER                        │
-│  Frontier ZDR: Anthropic Claude, OpenAI             │
-│  Local: Chime Ogbuji Qwen 3 (terminology)           │
-│  Routing: by task type, cost, sensitivity           │
-├─────────────────────────────────────────────────────┤
-│    ARCHIA RUST SANDBOX (execution container)        │
-│  Restricts external actions                         │
-│  Network, filesystem, system call boundaries        │
-└─────────────────────────────────────────────────────┘
-                           │
-┌─────────────────────────────────────────────────────┐
-│              PERSISTENCE LAYER (Neon)               │
-│  patch_records  •  remediation_work_items           │
-│  Full provenance: confidence, approver, timestamp   │
-└─────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────┐     ┌──────────────────────────────────────┐
+│         DETERMINISTIC PIPELINE           │     │       AGENTIC SIDECAR (optional)     │
+│              [always on]                 │     │        [toggle on/off]               │
+│                                          │     │                                      │
+│  UI LAYER                                │     │  ORCHESTRATION LAYER (harness)       │
+│  ┌──────────────────────────────────┐    │     │  Defines agents, rules, workflows    │
+│  │  Deterministic Pipeline UI       │    │     │  Runs inside Endo compartment        │
+│  │  + AI Drawer (connected to       │◄───┼─────┤  (post-POC)                          │
+│  │    sidecar when toggle ON)       │    │     │  POC: Claude API direct              │
+│  └──────────────────────────────────┘    │     ├──────────────────────────────────────┤
+│                                          │     │  ENDO RUNTIME FOUNDATION (post-POC)  │
+│  Tier 1  Raw Input                       │     │  Hardened JS compartments            │
+│  Tier 2  Normalized                      │     │  Capability boundaries enforced      │
+│  Tier 3  Check Results + Patches  ───────┼────►│  (1) suggestPatch reads from here    │
+│  Tier 4  Use-Case Ready           ◄──────┼─────┤  (2) triggerRescore writes here      │
+│                                          │     ├──────────────────────────────────────┤
+│  SQL PRIMARY DATA MODEL (Neon)    ◄──────┼─────┤  MODEL LAYER                         │
+│  patch_records                    ───────┼────►│  Frontier ZDR: Claude, OpenAI        │
+│  remediation_work_items                  │     │  Local: Chime Ogbuji Qwen 3          │
+│  check_results                           │     │  Routing: task type, cost,           │
+│  use_case_readiness                      │     │  sensitivity                         │
+│                                          │     ├──────────────────────────────────────┤
+└──────────────────────────────────────────┘     │  ARCHIA RUST SANDBOX (post-POC)      │
+                                                 │  Restricts external actions          │
+                                                 │  Network, filesystem, syscall        │
+                                                 └──────────────────────────────────────┘
+                                                               │
+                                                 ┌──────────────────────────────────────┐
+                                                 │  NL QUERY OUTPUT                     │
+                                                 │  (3) queryData — clean remediated    │
+                                                 │  data only, never raw Tier 1         │
+                                                 └──────────────────────────────────────┘
 ```
+
+**Constraint from ADR Decision 1:** The agentic infrastructure never receives raw Tier 1 data. It reads only check result records (~200 bytes each) and approved SQL records. Token cost scales with the number of checks, not raw data volume.
 
 ---
 
@@ -130,19 +133,38 @@ This workflow enforces the governance principle before Endo integration — the 
 
 ## Abstraction Interface
 
+Three functions corresponding to the three agentic backend roles defined in ADR Decision 1. The facade is swappable — backend implementation can change without touching callers.
+
 ```javascript
 // Single facade — backend is swappable
 const aiFacade = {
+
+  // Function 1 — Patch suggestion
+  // Reads check result records from Tier 3 (never raw Tier 1 data)
+  // Triggered when: check engine surfaces FAIL with no existing deterministic rule
   suggestPatch: async (checkResult) => {
     // Returns: { patch_value, confidence_score, root_cause, expected_outcome }
     // Routes to: Claude API (POC) | Archia (post-terms) | Qwen (terminology)
   },
-  analyzeNovelIssue: async (checkResults) => {
-    // Returns: { root_cause, suggested_rule_change, affected_patients }
+
+  // Function 2 — Re-scoring trigger (ADR Decision 1)
+  // Reads from and writes to the SQL primary data model
+  // Triggered when: a patch is approved (patch_status = 'approved')
+  // Kicks off re-evaluation of check_results and variable_readiness_scores
+  // for the affected patient(s) and use case(s)
+  triggerRescore: async (approvedPatchId, patientId, sessionId) => {
+    // Returns: { updated_check_results, updated_readiness_scores, use_cases_unlocked }
+    // Writes to: check_results, variable_readiness_scores, use_case_readiness
   },
+
+  // Function 3 — Natural language queries on clean remediated data
+  // Operates on Tier 4 use-case ready data only — never raw Tier 1
+  // Audience: non-technical care team and program coordinator users
   queryData: async (question, schema) => {
-    // Natural language → SQL → formatted clinical answer (Step 5 analytics)
+    // Natural language → SQL → formatted clinical answer (Step 9 — agentic layer)
+    // Returns: { answer, supporting_data, confidence, source_tables }
   }
+
 };
 ```
 
