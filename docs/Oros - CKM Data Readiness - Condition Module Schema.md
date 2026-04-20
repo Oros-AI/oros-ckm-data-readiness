@@ -279,11 +279,15 @@ From the Operational Governance Framework. Use these exact strings:
 - `Network/Payer`
 - `Policy/Regulatory`
 
+**Enforcement pattern.** These seven values are enforced at two layers. (1) The application layer: `scoring/lib/config_loader.js` validates every `responsible_role` value in loaded condition module configs against this exact list and fails at startup if any value does not match. This catches typos early with clear error messages naming the offending use case, check, and received value. (2) The database layer: a CHECK constraint on `remediation_work_items.responsible_role` enforces the same list at INSERT time (V010). This is a backstop that catches any write bypassing the scoring engine (manual SQL, future scripts, debugging sessions). Both layers are required: application validation gives helpful early errors, DB enforcement guarantees the invariant. The same pattern applies to other canonical enumerations: `pathway_result`, `use_case_category`, and any future enumerated value added to the schema.
+
 ---
 
 ## 4. New Condition Module Tables
 
 Three new tables. Two store the loaded config. One stores pathway evaluation results per patient per session.
+
+**Enforcement note.** The V010 migration creating these three tables also adds CHECK constraints on enumerated string fields: `use_case_specifications.use_case_category` (values: `risk_stratification`, `care_coordination_delivery`, `vbc_reporting`), `use_case_pathway_results.pathway_result` (values: `primary_pass`, `fallback_pass`, `no_valid_pathway`), and a retrofit CHECK on `remediation_work_items.responsible_role` (the seven canonical values in §3.2). Application-layer validation in `scoring/lib/config_loader.js` enforces the same constraints at config load time. See §3.2 for the enforcement pattern.
 
 ### 4.1 `condition_modules`
 
