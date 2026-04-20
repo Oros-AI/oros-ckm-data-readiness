@@ -59,8 +59,8 @@ All sub-steps must complete before Step 8 can begin. Commit per sub-step.
 
 | Sub | Task | Depends on |
 |-----|------|------------|
-| 7a  | Migration **V010** — add `condition_modules`, `use_case_specifications`, `use_case_pathway_results` tables | — |
-| 7b  | `scoring/lib/config_loader.js` — reads `conditions/*/*.config.json` into DB at startup | 7a |
+| 7a  | Migration **V010** — add `condition_modules`, `use_case_specifications`, `use_case_pathway_results` tables; add CHECK constraints on `use_case_category`, `pathway_result`, and retrofit CHECK on `remediation_work_items.responsible_role` | — |
+| 7b  | `scoring/lib/config_loader.js` — reads `conditions/*/*.config.json` into DB at startup; validates canonical enumeration values against the same lists enforced at the DB layer | 7a |
 | 7c  | Author `conditions/diabetes/diabetes.config.json` (full) plus three stubs: `hypertension/`, `care_coordination/`, `vbc_reporting/` | 7a |
 | 7d  | `scoring/checks/layer6_denom_riskstrat.js` — eligibility (gates all patients) | 7b, 7c |
 | 7e  | `scoring/checks/device_derived_metric_consistency_cgm.js` — Bug 6 TIR recomputation | 7b, 7c |
@@ -94,7 +94,7 @@ scoring/
 ├── lib/
 │   ├── db.js                                  # pg pool from CKM_DIRECT
 │   ├── writer.js                              # idempotent DELETE + INSERT per check+session
-│   ├── config_loader.js                       # (7b) loads conditions/ into DB
+│   ├── config_loader.js                       # (7b) loads conditions/ into DB + validates enumerations
 │   ├── aggregator.js                          # (7g) variable_readiness_scores writer
 │   ├── pathway_evaluator.js                   # (7h) use_case_pathway_results writer
 │   ├── use_case_writer.js                     # (7i) use_case_readiness writer
@@ -265,7 +265,7 @@ Policy/Regulatory
 
 ## 8. Migration V010 — New Tables for Condition Modules
 
-Three additive tables. No ALTER TABLE on existing schema.
+Three additive tables. No ALTER TABLE on existing schema, except for one retrofit CHECK constraint (see below).
 
 ### `condition_modules`
 One row per loaded condition. PK `condition_id VARCHAR(32)`. Stores `display_name`, `description`, `schema_version`, full `config_json JSONB` snapshot, `loaded_at`.
@@ -273,12 +273,20 @@ One row per loaded condition. PK `condition_id VARCHAR(32)`. Stores `display_nam
 ### `use_case_specifications`
 One row per use case. PK `use_case_name VARCHAR(64)`. FK → `condition_modules.condition_id`. JSONB columns: `population_definition`, `variable_pathways`, `variables`, `computation`, `output_definition`. Plus `use_case_category`, `display_name`, `loaded_at`.
 
+CHECK constraint on `use_case_category` — values: `risk_stratification`, `care_coordination_delivery`, `vbc_reporting`.
+
 ### `use_case_pathway_results` (runtime output)
 PK `pathway_result_id UUID`. Session-aware. Columns: `patient_id`, `use_case_name`, `pathway_result` (`'primary_pass'|'fallback_pass'|'no_valid_pathway'`), `active_pathway_id` (nullable), `organization_id`, `evaluated_at`, `demo_session_id`.
 
 Index: `(patient_id, use_case_name, demo_session_id)` — for the join back to `use_case_readiness`.
 
-**Full DDL** is specified in `docs/Oros - CKM Data Readiness - Condition Module Schema.md` §4. Mirror the session-aware FK and composite PK patterns used in V009.
+CHECK constraint on `pathway_result` — values: `primary_pass`, `fallback_pass`, `no_valid_pathway`.
+
+### Retrofit CHECK on `remediation_work_items.responsible_role`
+
+V010 also adds a CHECK constraint on `remediation_work_items.responsible_role` enforcing the seven canonical values from the Condition Module Schema §3.2. This closes a gap in V006, which declared the column as `VARCHAR(32) NOT NULL` without a value list.
+
+**Full DDL** is specified in `docs/Oros - CKM Data Readiness - Condition Module Schema.md` §4. Mirror the session-aware FK pattern used in V009 (`migrations/V009__foreign_keys.sql`).
 
 ---
 
@@ -298,7 +306,7 @@ Full schema: `docs/Oros - CKM Data Readiness - Data Model.docx`.
 
 ### Session-aware FK pattern
 
-Cross-table FKs reference `(entity_id, demo_session_id)` pairs, not `entity_id` alone. See `migrations/V009__session_aware_fks.sql`.
+Cross-table FKs reference `(entity_id, demo_session_id)` pairs, not `entity_id` alone. See `migrations/V009__foreign_keys.sql`.
 
 **Exception:** `cgm_readings` has no FK to `patients`. Bug 1 requires UUID-format `user_id` values that don't match any patient — the check engine detects this at the application layer via `device_patient_linkage_cgm`.
 
@@ -400,6 +408,7 @@ npm run build
 - **Before writing a check:** read the three existing checks and mirror their shape.
 - **Before writing a writer:** read `scoring/lib/writer.js` and mirror its DELETE+INSERT pattern.
 - **Before altering any doc in `docs/`:** ask first. Those are the canonical contracts.
+- **Dual enforcement for canonical enumerations.** Any field with a fixed value list (e.g., `responsible_role`, `pathway_result`, `use_case_category`, `check_scope`, `check_status`, `priority`) is enforced at two layers: (1) the application layer, via validation in `scoring/lib/config_loader.js` at config load time — fails fast with a clear error naming the offending use case, check, and received value; (2) the database layer, via a CHECK constraint in the migration that creates the column — acts as a backstop for any write bypassing the scoring engine. See Condition Module Schema §3.2 for the canonical statement of this pattern.
 
 ---
 
