@@ -1,8 +1,10 @@
-# Oros - CKM Data Readiness - Build Plan - Apr 2026
+# Oros - CKM Data Readiness - Build Plan - Jun 2026
 
 **Project:** Oros CKM Data Readiness Infrastructure  
-**Status:** Active build — persistence layer complete, condition module schema locked, scoring engine next  
-**Last updated:** 2026-04-18 (updated to reflect Condition Module Schema v0.1 locked; Step 7 expanded with sub-steps; Neon and synthetic dataset status clarified)
+**Status:** Active build — persistence layer complete, condition module schema locked, scoring engine next. Scope governed by the June 25 POC Scope Lock (Diabetes-first, CKM infrastructure visible).  
+**Last updated:** 2026-06-13 (added reference to Oros - Agentic Architecture & Automation Strategy in the Agentic Layer section; added Step 8 demo hygiene note to remove legacy Archia attribution from the agentic drawer. Prior update 2026-06-12: June 25 POC Scope Lock and multi-state strategic reframing — Option A confirmed, Clinical Quality + VBC Reporting display terminology, Implemented / Demonstrated (stub) / Architectural status vocabulary, agentic conditionality, multi-state deployment strategy and bridge infrastructure model. Prior update 2026-04-18: Condition Module Schema v0.1 locked; Step 7 expanded with sub-steps; Neon and synthetic dataset status clarified.)
+
+> **Governing scope document:** `Oros - CKM Data Readiness - June 25 POC Scope Lock`. That document is the operational source of truth for what the June 25 demo delivers. This Build Plan implements it. Where the two appear to differ, the Scope Lock governs scope and this plan governs build sequence.
 
 ---
 
@@ -19,22 +21,37 @@ Remediate → Re-score → Unlock Analytics
 
 ## Strategic Context
 
-### Initial Deployment — Rural Colorado CKM Pilot
-The POC supports a CKM Data Readiness Infrastructure pilot in rural Colorado as part of the CMS rural health initiative. Target deployment partners are ACOs and IDNs with direct clinic feeds (e.g. UCHealth as an IDN model with rural clinic partnerships). HIEs such as Contexture (Colorado) are positioned as supplementary data sources, not primary deployment hosts — HIEs are not operationally positioned to take on data quality remediation work. FQHCs and academic collaborators including the University of Colorado Anschutz School of Medicine are also engaged as implementation and research partners. See Architecture Decision Record (April 8, 2026) Decision 4 for full deployment host rationale.
+### Initial Deployment Strategy — Multi-State Rural Health
+The CKM Data Readiness Infrastructure is being designed as a reusable implementation platform for rural and underserved healthcare organizations. It is built once and deployed opportunistically wherever motivated sites, funding, and implementation partners emerge. Current areas of active exploration include Kansas (active; a possible first deployment) and Colorado (in play, pending release of the state rural health RFA), with further opportunities in Montana, Oregon, and other states pursuing rural health transformation initiatives.
 
-### Designed for Global Reuse
-The infrastructure is architected for reuse across clinical settings, regions, and health systems — nationally and internationally. Rural Colorado is the first deployment context. The same infrastructure is applicable wherever CKM data readiness gaps exist, including other rural health initiatives across the United States and eventually internationally. The goal is trusted open source assets optimized for reuse, with fair value attribution and governance controls.
+Initial deployments are expected to focus on a small number of highly engaged sites to validate:
+
+- risk stratification workflows
+- care coordination and specialist escalation pathways
+- remote monitoring and longitudinal management workflows
+- value-based care and clinical quality reporting
+
+Target deployment hosts are ACOs and IDNs with direct clinic feeds. HIEs are positioned as supplementary data sources, not primary deployment hosts — HIEs are not operationally positioned to take on data quality remediation work. The infrastructure is designed to support direct clinic participation, regional referral networks, specialist centers, and state-level scaling pathways through HIEs or other designated organizations. The objective is a repeatable implementation model that can be adopted across multiple states and deployment contexts. See Architecture Decision Record (April 8, 2026) Decision 4 for full deployment host rationale.
+
+### Designed for Multi-State and Global Reuse
+The infrastructure is architected for reuse across clinical settings, regions, and health systems — nationally and internationally. No single location is the anchor; the same infrastructure is applicable wherever CKM data readiness gaps exist, including rural health initiatives across the United States and eventually internationally.
+
+The infrastructure is intentionally designed as a bridge layer between local clinical operations and long-term state or regional infrastructure hosts. Early deployments may be operated through Oros-managed bridge infrastructure, with eventual transition of selected workflows, modules, and processes to HIEs, research networks, or other designated regional organizations. The goal is trusted open source assets optimized for reuse, with fair value attribution and governance controls.
+
+### Bridge Infrastructure Model
+The current deployment strategy assumes a temporary Oros-operated bridge environment that enables participating organizations to begin implementation without waiting for state HIEs, academic institutions, or regional hosts to establish the necessary infrastructure and governance structures.
+
+The bridge environment:
+
+- ingests clinical and device data
+- performs readiness scoring and remediation
+- supports risk stratification and care coordination workflows
+- enables reporting and analytics
+
+Long-term ownership and hosting decisions remain local. States, HIEs, health systems, and research organizations may choose to adopt selected infrastructure components, workflows, or operational processes following successful validation.
 
 ### Oros IP and Stewardship Model
-Oros develops and maintains the core CKM Data Readiness Infrastructure as shared open infrastructure. The following principles govern all collaborations and deployments:
-
-- **Oros stewardship:** Oros owns and maintains the core infrastructure. No single collaborating institution owns or controls the core assets.
-- **Open licensing:** Core infrastructure is released under MIT license. Reuse is unrestricted.
-- **Attribution:** Contributors receive attribution in proportion to their contribution. See `Oros_ATTRIBUTION.md`.
-- **No exclusivity:** No institution may claim exclusive rights over generalized infrastructure components, regardless of funding contribution.
-- **Boundary clarity:** Local adaptations belong to those institutions. Generalized components developed in the course of those adaptations are contributed back to the core under the same open license.
-
-These conditions apply to all institutional collaborators. Oros will not contribute its IP to arrangements that violate these principles.
+Oros develops and maintains the core CKM Data Readiness Infrastructure as shared open infrastructure. Licensing, stewardship, attribution, exclusivity, and the boundary between core and local adaptations are governed by the **Oros Collaboration Framework**, which is the authoritative source for these terms. In summary: the core is licensed under the Apache License 2.0 and stewarded by Oros; no single collaborating institution owns or controls the core assets; contributors are attributed individually (see `Oros_ATTRIBUTION.md`); and generalized components developed in the course of local adaptations are contributed back to the core. These conditions apply to all institutional collaborators.
 
 ---
 
@@ -108,7 +125,7 @@ Step 7 is the critical path. All sub-steps must complete before Step 8 can begin
 |----------|-------------|-----------|
 | 7a | Neon migration — add 3 condition module tables (condition_modules, use_case_specifications, use_case_pathway_results) | Nothing |
 | 7b | Config file loader — reads diabetes.config.json, loads into DB tables at startup | 7a |
-| 7c | Author diabetes.config.json from locked Condition Module Schema. Then author three stub condition modules: hypertension_risk_stratification (layer1_notnull_fields_smoking, population: ICD-10 I10), care_coordination (layer3_mapped_values + layer2_value_standards, population: active DM or HTN diagnosis), vbc_reporting (layer5_date_concordance, population: qualifying encounters). Stubs use simple boolean aggregation — any check FAIL = NOT_READY, no pathway logic. Each stub validates the config loader works generically, not just for diabetes. | 7a |
+| 7c | Author diabetes.config.json from locked Condition Module Schema. Then author three stub condition modules: hypertension_risk_stratification (layer1_notnull_fields_smoking, population: ICD-10 I10), care_coordination (layer3_mapped_values + layer2_value_standards, population: active DM or HTN diagnosis), vbc_reporting (layer5_date_concordance, population: qualifying encounters). Stubs use simple boolean aggregation — any check FAIL = NOT_READY, no pathway logic. Each stub validates the config loader works generically, not just for diabetes. **Status per Scope Lock: these three are Demonstrated (stub) — real checks, bugs, and routing, but limited execution logic. They are retained (Option A) to carry Bugs 3/4/5 and prove extensibility. Do not invest in full use-case logic for them; that is out of June 25 scope.** | 7a |
 | 7d | Build layer6_denom_riskstrat.js — eligibility evaluation, writes to check_results, generates work items on FAIL | 7b, 7c |
 | 7e | Build device_derived_metric_consistency_cgm.js — TIR recomputation vs stored value | 7b, 7c |
 | 7f | Build layer1_notnull_fields_a1c.js, layer2_ranges_numeric_a1c.js, layer5_date_concordance_a1c.js (diabetes A1C pathway checks) and layer3_mapped_values.js, layer2_value_standards.js, layer5_date_concordance.js (EHR-level checks for Bugs 4 and 5, required by care_coordination and vbc_reporting stubs) | 7b, 7c |
@@ -120,10 +137,10 @@ Step 7 is the critical path. All sub-steps must complete before Step 8 can begin
 | 7l | Run scoring engine against Dataset C, verify use cases unlock correctly and pathway results update | 7k |
 
 **Step 8: UI/UX Revamp**  
-Preserve drawer pattern, remap to CKM architecture. Inputs: completed scoring output tables (Step 7 complete), locked demo narrative. Handle in UI Claude project.
+Preserve drawer pattern, remap to CKM architecture. Inputs: completed scoring output tables (Step 7 complete), locked demo narrative. Handle in UI Claude project. **Demo hygiene: remove the legacy "powered by Archia" attribution from the agentic drawer (grep the legacy frontend for "Archia" and "powered by" — may appear as label, tooltip, alt text, or comment). Archia is no longer a leading partner; do not show vendor attribution in the demo. Replace with a function-based label (e.g. "agentic recommendation") or nothing.**
 
 **Step 9: Agentic Layer**  
-Claude API POC, pluggable harness interface. Optional — deterministic pipeline must pass Step 7 end-to-end test first. Strong demo candidates: Bug 1 (identity crosswalk proposal), Bug 4 (code correction), Bug 5 (date correction). See Agentic Layer Architecture document.
+Claude API POC, pluggable harness interface. **Conditional per Scope Lock: agentic recommendation is Demonstrated only if the deterministic pathway (Step 7) completes end-to-end first. It is not a guaranteed June 25 deliverable, and if the deterministic path is not complete it is not shown — this does not count as a missed deliverable.** Optional — deterministic pipeline must pass Step 7 end-to-end test first. Strong demo candidates: Bug 1 (identity crosswalk proposal), Bug 4 (code correction), Bug 5 (date correction). See Agentic Layer Architecture document.
 
 **Step 10: Vercel Deployment**
 
@@ -185,6 +202,8 @@ conditions/
 
 ## Demo Narrative — Locked
 
+**Scope: Diabetes-first, CKM infrastructure visible (Option A, per June 25 POC Scope Lock).** The full six-bug narrative is retained. Three bugs block Diabetes Risk Stratification directly (Bugs 1, 2, 6); three exercise the broader infrastructure through stub modules (Bug 3 → Hypertension RS stub, Bug 4 → Care Coordination stub, Bug 5 → Clinical Quality + VBC Reporting stub). The six-bug arc is retained deliberately: the multi-stakeholder routing it produces is what makes this a data readiness *infrastructure* demo rather than a diabetes-only data-quality tool. Diabetes Risk Stratification is the live, narrated use case; the stubs make CKM extensibility visible.
+
 The POC demo shows this arc end-to-end across three dataset states.
 
 **Dataset B → Score → Surface → Dataset C → Re-score → Unlock**
@@ -195,10 +214,14 @@ The POC demo shows this arc end-to-end across three dataset states.
 | 2 — CGM temporal density below threshold | device_temporal_density_cgm_14d | Diabetes Risk Stratification | Device Temporal Density Gap | Primary Care Site (adherence) / Technology Vendor (transmission gap) |
 | 3 — Missing smoking status | layer1_notnull_fields_smoking | Hypertension Risk Stratification | Missing Required Variable | Primary Care Site |
 | 4 — Invalid terminology codes | layer3_mapped_values / layer2_value_standards | Care Coordination | Invalid Terminology Code | Technology Vendor (source fix) |
-| 5 — Date format errors in encounters | layer5_date_concordance | VBC Reporting | Date Format Non-Conformance | Technology Vendor (HL7 config) |
+| 5 — Date format errors in encounters | layer5_date_concordance | Clinical Quality + VBC Reporting | Date Format Non-Conformance | Technology Vendor (HL7 config) |
 | 6 — TIR derived metric mismatch | device_derived_metric_consistency_cgm | Diabetes Risk Stratification | Derived Metric Concordance Failure | Policy/Regulatory (governance escalation) |
 
 For each bug the demo shows: what failed, which use case is blocked, who is responsible, what action is required, and what capability unlocks after remediation.
+
+> **Display label vs. frozen enum.** "Clinical Quality + VBC Reporting" is a presentation-layer label only. The underlying `vbc_reporting` enum value, the `vbc_reporting.config.json` filename, and the `use_case_name` string are frozen and must not change. The rename applies to display names, descriptions, document prose, and demo screens — never to schema, config, loader, database, or check names. See June 25 POC Scope Lock §10 (Frozen Strings).
+
+> **Implementation status vocabulary.** This plan uses the three-state model defined in the June 25 POC Scope Lock §7: **Implemented** (full use-case execution logic exists and runs — Diabetes RS), **Demonstrated (stub)** (real checks, bugs, routing, and outputs run, but limited execution logic — the three stub modules above), and **Architectural** (architecture and data exist, no executing use case — Hypertension and Heart Failure as conditions). The full status table is maintained in the Scope Lock and is not duplicated here, to avoid drift.
 
 ---
 
@@ -211,7 +234,7 @@ For each bug the demo shows: what failed, which use case is blocked, who is resp
 
 ## Agentic Layer
 
-Optional — deterministic pipeline works without it. Step 9 is deferred until Step 7 is complete. See `Oros - CKM Data Readiness - Agentic Layer Architecture.md`.
+Optional — deterministic pipeline works without it. Step 9 is deferred until Step 7 is complete. See `Oros - CKM Data Readiness - Agentic Layer Architecture.md` for the technical specification (sidecar placement, the three agentic functions, activation model, POC phasing). The optional agentic capabilities follow the maturity progression and operating philosophy described in `Oros - Agentic Architecture & Automation Strategy` (Oros-wide strategy document); that document is horizon-setting and does not change June 25 scope.
 
 ---
 
@@ -231,10 +254,17 @@ Optional — deterministic pipeline works without it. Step 9 is deferred until S
 |--------|-------------|------|
 | Dominique Pahud | Oros | Lead architect, product, fundraising |
 | Hanieh Razzaghi | CHOP / UPenn | Clinical domain expert, scoring validation |
-| Michelle Knopp | Primary Care / Clinical Informatics | Clinical workflow (in discussion) |
 | Lisa Schilling | University of Colorado Anschutz | Population health, regional implementation (in discussion) |
-| Kris Kowal | Endo / Agoric | Safe AI execution, governance (in discussion) |
-| Chime Ogbuji | Independent | Local LLM — Qwen 3 terminology-trained (in discussion) |
-| Gharib Gharibi / Andrew Rademacher | Archia | Agentic orchestration (terms TBD) |
+| Dan Connolly | Independent | Governance and capability enforcement / trusted open-source software; connection to Endo (capability-enforcement layer) (in discussion) |
+| Sngular | Sngular | Secure infrastructure and DevOps partner (in discussion) |
+
+### Potential Implementation Partners (in discussion)
+
+Implementation partnerships are emerging and not yet confirmed. They are described here by capability and geography rather than by name, reflecting their current pre-commitment status. Named partners will be added as relationships are confirmed.
+
+- **Data aggregation** — CGM and device data aggregation partner (candidates under evaluation; could be a dedicated aggregation platform or a device manufacturer relationship). Not yet selected.
+- **Rural clinic engagement and care model design** — academic and clinical partners in candidate states, contingent on state program pathways (e.g., a Colorado partner pending release of the state rural health RFA and rural-clinic introductions).
+- **State rural health stakeholders** — implementation and validation partners in active or candidate states (Kansas active; Colorado, Montana, Oregon as opportunities develop).
+- Additional state-specific partners as identified.
 
 See `Oros_ATTRIBUTION.md` for the living attribution record.

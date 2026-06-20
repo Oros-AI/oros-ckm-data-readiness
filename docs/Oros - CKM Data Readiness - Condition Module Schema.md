@@ -287,7 +287,7 @@ From the Operational Governance Framework. Use these exact strings:
 
 Three new tables. Two store the loaded config. One stores pathway evaluation results per patient per session.
 
-**Enforcement note.** The V010 migration creating these three tables also adds CHECK constraints on enumerated string fields: `use_case_specifications.use_case_category` (values: `risk_stratification`, `care_coordination_delivery`, `vbc_reporting`), `use_case_pathway_results.pathway_result` (values: `primary_pass`, `fallback_pass`, `no_valid_pathway`), and a retrofit CHECK on `remediation_work_items.responsible_role` (the seven canonical values in §3.2). Application-layer validation in `scoring/lib/config_loader.js` enforces the same constraints at config load time. See §3.2 for the enforcement pattern.
+**Enforcement note.** The V010 migration creating these three tables also adds CHECK constraints on enumerated string fields: `use_case_specifications.use_case_category` (values: `risk_stratification`, `care_coordination_delivery`, `vbc_reporting`), `use_case_pathway_results.pathway_result` (values: `primary_pass`, `fallback_pass`, `no_valid_pathway`), and a retrofit CHECK on `remediation_work_items.responsible_role` (the seven canonical values in §3.2). V010 also adds a structural invariant CHECK, `ck_use_case_pathway_results_active_pathway_null`, enforcing the §4.3 rule that `active_pathway_id` is NULL if and only if `pathway_result = 'no_valid_pathway'`. Application-layer validation in `scoring/lib/config_loader.js` enforces the same constraints at config load time. See §3.2 for the enforcement pattern.
 
 ### 4.1 `condition_modules`
 
