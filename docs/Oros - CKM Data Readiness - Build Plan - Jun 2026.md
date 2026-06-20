@@ -53,6 +53,9 @@ Long-term ownership and hosting decisions remain local. States, HIEs, health sys
 ### Oros IP and Stewardship Model
 Oros develops and maintains the core CKM Data Readiness Infrastructure as shared open infrastructure. Licensing, stewardship, attribution, exclusivity, and the boundary between core and local adaptations are governed by the **Oros Collaboration Framework**, which is the authoritative source for these terms. In summary: the core is licensed under the Apache License 2.0 and stewarded by Oros; no single collaborating institution owns or controls the core assets; contributors are attributed individually (see `Oros_ATTRIBUTION.md`); and generalized components developed in the course of local adaptations are contributed back to the core. These conditions apply to all institutional collaborators.
 
+### Methodology Operating Principle
+The platform makes two data paths fit for purpose: the device path powers stratification that sites can act on now, and EHR remediation unblocks the downstream care coordination and clinical quality + VBC reporting that make the care model complete. A human is in the loop at every moment; in the weekly review the platform orders and surfaces an instrumented population for clinical decision, it does not enroll, identify, or act. Full automation is roadmap-only. What counts as fit-for-purpose is workflow-defined and configured by the local team: foundational criteria anchored to national standards, the rest customizable as guidelines evolve. See the Methodology Architecture (Section 6) for the canonical statement.
+
 ---
 
 ## State of Each Layer — What Needs Updating and What Does Not

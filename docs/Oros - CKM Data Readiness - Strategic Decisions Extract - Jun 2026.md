@@ -102,6 +102,15 @@ fine, provided CKM stays independent in fact and framing.
 - Iterations are the product: biweekly co-design with local teams (technical + clinical workflows
   together); small passes compound; friction comes down over time. Care model belongs to the
   local team; Oros owns the data-readiness + data-flow requirements.
+- **Methodology operating principle.** The platform makes two data paths fit for purpose: the
+  device path powers stratification that sites can act on now, and EHR remediation unblocks the
+  downstream care coordination and clinical quality + VBC reporting that make the care model
+  complete. A human is in the loop at every moment; in the weekly review the platform orders and
+  surfaces an instrumented population for clinical decision, it does not enroll, identify, or act.
+  Full automation is roadmap-only. What counts as fit-for-purpose is workflow-defined and
+  configured by the local team: foundational criteria anchored to national standards, the rest
+  customizable as guidelines evolve. See Methodology Architecture (Section 6) for the canonical
+  statement.
 
 ## 7. KUMC engagement facts (for accuracy; not for the deck)
 
@@ -123,6 +132,8 @@ fine, provided CKM stays independent in fact and framing.
 | KUMC engagement scope / IP exclusion | KUMC SOW | (contract) |
 | Demo design (screens, narrative, UX) | CKM Demo UX Decisions Log | Demo project |
 | Requirements / gap to production | Demo-to-Production Bridge | Core CKM project (feeds budget project) |
+| Methodology framing (two data paths, three-moment care model, ordered pathway) | Methodology Architecture | Core CKM project |
+| Fit-for-purpose definition (workflow-defined, foundational-vs-customizable criteria, config-driven) | Methodology Architecture | Core CKM project |
 
 **Collaboration Framework placement:** move to the **Governance folder above CKM** — its
 licensing/attribution/stewardship/anti-capture principles are cross-project commons governance;
