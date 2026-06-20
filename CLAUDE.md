@@ -1,27 +1,60 @@
 # CLAUDE.md
 
 Project: **oros-ckm-data-readiness** — CKM Data Readiness Infrastructure POC.
-Current phase: **Step 7 — Scoring Engine and Condition Module (active).**
 
 This file is the Claude Code working guide. When this file conflicts with a doc in `docs/`, the doc wins. When something is unclear, ask before guessing.
 
 ---
 
+## 0. Current Work and How to Read This File
+
+This repo serves two jobs. Read the one that matches your task.
+
+- **Backend scoring build (Step 7 — scoring engine and condition module).** Sections 2–15 below are the working reference for this. Active backend build.
+- **Demo design / UI-UX (Step 8 territory).** The demo-facing design work is governed by the June 2026 canonical docs listed in Section 1.5 and Section 14. When building or specifying anything a demo audience sees, follow the **Durable Demo Rules (Section 1.6)** and the June docs, not the April-era framing that may still live in the backend sections below.
+
+If a backend section and a June demo doc appear to disagree about demo-facing behavior or framing, the June demo doc wins. The backend sections remain correct for engine mechanics.
+
+---
+
 ## 1. Project Overview
 
-CKM Data Readiness — a data quality infrastructure for Cardio-Kidney-Metabolic conditions, first deployed in a rural Colorado CMS pilot. The POC demonstrates the arc:
+CKM Data Readiness — a data quality infrastructure for Cardio-Kidney-Metabolic conditions. Oros is the **neutral steward of shared open infrastructure**, serving all parties (rural health programs, HIEs, payers, health systems) and competing with none. Deployment is **multi-state and opportunistic** — deployed wherever motivated sites, funding, and partners emerge. The first implementation state is TBD (Kansas more likely; Colorado is one candidate context, not "the pilot"). This supersedes the earlier Colorado-first framing.
+
+The POC demonstrates the arc:
 
 ```
 Load → Normalize → Score → Surface Blockers → Remediate → Re-score → Unlock Analytics
 ```
 
 Repo layout:
-- `src/` — React/Vite/TypeScript wizard UI (Step 8 scope; not active)
-- `scoring/` — Node ESM scoring engine (**Step 7 scope — active**)
+- `src/` — React/Vite/TypeScript wizard UI (Step 8 scope)
+- `scoring/` — Node ESM scoring engine (Step 7 scope)
 - `scripts/` — Data loading and session reset (complete)
 - `conditions/` — Condition module config files (new in Step 7)
 - `migrations/` — Neon schema migrations (V001–V009 applied; V010 pending)
 - `docs/` — Canonical design docs (authoritative)
+
+### 1.5. License, IP, and Positioning (authoritative pointers)
+
+- **License: Apache License 2.0.** The **Collaboration Framework** (Governance folder, cross-project) owns license, IP, attribution, stewardship, and anti-capture principles. This repo and all docs **reference** the Framework; they do not restate it. Do not introduce MIT or any other license framing.
+- **Independent origin.** CKM infrastructure was developed independently prior to any funded institutional engagement. Funding a consulting engagement or pilot does not transfer ownership.
+- **Positioning is owned by the Strategic Decisions Extract** (`docs/Oros - CKM Data Readiness - Strategic Decisions Extract - Jun 2026.md`). It is authoritative for identity, deployment strategy, license framing, and partner treatment. Consult it before writing anything a stakeholder sees.
+
+### 1.6. Durable Demo Rules (apply to everything a demo audience sees)
+
+These hold across every demo-facing session.
+
+- **This is a demo, not a product.** A clickable, reliable, scripted walkthrough that runs the same way every time. The job is to make the audience see the operational unlock, not the plumbing.
+- **Deterministic pipeline is the source of truth.** The agentic layer is conditional (shown only if the deterministic path completes end-to-end) and is the first thing cut if time is short. Build scripted-first; live mode is added last behind a flag with automatic fallback to scripted (see the Agentic Drawer Spec Decision).
+- **Three-state vocabulary on screen:** Implemented / Demonstrated-stub / Architectural. Label what is real honestly so no viewer over-reads scope. Endo and any capability-enforcement runtime are **Architectural** (candidate, not running) in the POC.
+- **Reset re-points; it does not recompute.** Results are pre-computed and served from persistence (Neon). Reset re-points to a clean session / reloads a dataset state. On-screen copy must not imply live computation is happening on stage ("watch it score").
+- **Methodology framing — A1C vs CGM (read carefully).** In clinical practice A1C is the default measure of glycemic control, but it is often **missing or not recent enough** to reflect current control. CGM is the practical way to establish and monitor glycemic control: GMI as an A1C proxy, plus TIR and the temporal trajectory a single lab value cannot show. The readiness pipeline therefore checks the **CGM pathway first** (because that is where current, sufficient data usually exists) and falls back to A1C when CGM is unavailable.
+  - The engine's pathway names `cgm_primary` / `a1c_fallback` are **mechanical** (evaluation order in code), not a clinical ranking. Keep these names in code and config.
+  - **User-facing copy must never say "CGM primary, A1C fallback"** — to a clinician that reads as a backwards clinical claim. User-facing copy uses the reconciled narrative above. Do not reconcile this by renaming engine variables or by shipping the mechanical phrasing on screen.
+- **Capabilities are condition-agnostic functions shown for diabetes** ("risk stratification, shown here for diabetes"), never collapsed into fixed diabetes-only products. CKM is multi-condition; diabetes is the beachhead.
+- **Trust ordering (verbatim, locked):** deterministic pipeline = source of truth; AI = accelerant on top; human approves every change; capability enforcement is a requirement (Endo = leading candidate, shown as architectural not running).
+- **Partner treatment.** Archia, Kris Kowal, and Chime Ogbuji are **not current collaborators** and must not appear in demo-facing copy as such (per Strategic Decisions Extract §9). RTA / KUMC stay off the funding-facing demo entirely. Current collaborators include Dan Connolly (governance + capability enforcement) and Sngular (secure infrastructure / DevOps).
 
 ---
 
@@ -36,7 +69,7 @@ Repo layout:
 
 ---
 
-## 3. Current Build State (April 2026)
+## 3. Current Build State
 
 ### Completed
 - 18-table schema (V001–V009), 34 FK constraints, all indexes
@@ -198,7 +231,7 @@ The three stubs validate that the config loader and engine work generically — 
 
 ### Diabetes Risk Stratification — key parameters
 
-- **Pathways:** `cgm_primary` (CGM Glucose) → `a1c_fallback` (A1C). Evaluated in order.
+- **Pathways (mechanical names):** `cgm_primary` (CGM Glucose) → `a1c_fallback` (A1C). Evaluated in order. **See Section 1.6 for the user-facing framing — these names are evaluation order, NOT a clinical ranking.**
 - **CGM check weights:** `device_patient_linkage_cgm` 0.40, `device_temporal_density_cgm_14d` 0.40, `device_derived_metric_consistency_cgm` 0.20
 - **A1C check weights:** `layer1_notnull_fields_a1c` 0.50, `layer2_ranges_numeric_a1c` 0.30, `layer5_date_concordance_a1c` 0.20
 - **Threshold bands:** READY ≥ 0.85, PARTIALLY_READY ≥ 0.50, NOT_READY < 0.50
@@ -379,7 +412,7 @@ done
 psql "$CKM_DIRECT" -c "\dt"   # verify table count (should be 21 after V010)
 ```
 
-### Frontend (`src/` — Step 8, not active)
+### Frontend (`src/` — Step 8)
 ```bash
 npm install
 npm run dev      # localhost:5173
@@ -416,13 +449,23 @@ npm run build
 
 All docs live at the top level of `docs/`. The `docs/archive/` folder contains superseded versions — do not read from there.
 
+### Operative for demo design and positioning (June 2026)
+
+Consult these for anything a demo audience sees, and for identity / license / partner framing. Where these and the backend docs disagree about demo-facing behavior or framing, **these win.**
+
+| Filename | Purpose |
+|----------|---------|
+| `Oros - CKM Data Readiness - June 25 POC Scope Lock.md` | Operational source of truth for June 25 demo scope: Diabetes-first, CKM infrastructure visible, six-bug arc, three-state vocabulary, frozen strings |
+| `Oros - CKM Data Readiness - Agentic Drawer Spec Decision.md` | Operative for demo drawer behavior: switchable source, scripted-first, auto-fallback, recommendation data shape |
+| `Oros - CKM Data Readiness - Strategic Decisions Extract - Jun 2026.md` | Authoritative for identity, multi-state deployment, license (Apache 2.0 / Framework), and partner treatment |
+| `Oros - CKM Data Readiness - Build Plan - Jun 2026.md` | Step ordering, sub-step dependencies, demo narrative; carries the June 25 scope reframing (Option A, three-state vocabulary, agentic conditionality, Archia attribution removal) |
+
 ### Primary — Step 7 critical path
 
 Reference these frequently while building Step 7.
 
 | Filename | Purpose |
 |----------|---------|
-| `Oros - CKM Data Readiness - Build Plan - Apr 2026.md` | Step ordering, sub-step dependencies, demo narrative |
 | `Oros - CKM Data Readiness - Condition Module Schema.md` | Config contract, new table DDL, engine behavior contract |
 | `Oros - CKM Data Readiness - Architecture Specification.docx` | Canonical object model (Variable, Condition Module, Use Case Specification). Supersedes Baseline Methodology. |
 | `Oros - CKM Data Readiness - Data Model.docx` | Full schema for all 18 existing tables + 3 new |
@@ -433,7 +476,7 @@ Reference these frequently while building Step 7.
 
 ### Supplementary — deeper reference and context
 
-Read when Primary docs point to them or when deeper domain/governance context is needed.
+Read when other docs point to them or when deeper domain/governance context is needed.
 
 | Filename | Purpose |
 |----------|---------|
@@ -443,8 +486,8 @@ Read when Primary docs point to them or when deeper domain/governance context is
 | `Oros - CKM Data Readiness - Operational Governance Framework.docx` | Seven functional roles, upstream source for Remediation Roles |
 | `Oros - CKM Data Readiness - Operational Care Model.docx` | Clinical workflow and care-team context |
 | `Oros - CKM Data Readiness - Signal and Data Elements Table.docx` | Clinical signals the clean dataset should produce |
-| `Oros - CKM Data Readiness - Agentic Layer Architecture.md` | Step 9 scope — not active |
-| `Oros - CKM Data Readiness - Agentic Security Explainer.md` | Step 9 security model (runtime, sandboxing, prompt injection) — not active |
+| `Oros - CKM Data Readiness - Agentic Layer Architecture.md` | Step 9 / horizon — broader agentic vision and vendor exploration. **Context only, not current state.** Names Archia/Kowal/Ogbuji as candidates; per Strategic Decisions Extract §9 these are not current collaborators. The Agentic Drawer Spec Decision is operative for the demo drawer. |
+| `Oros - CKM Data Readiness - Agentic Security Explainer.md` | Plain-language security model (runtime, sandboxing, prompt injection) — horizon context only |
 | `Oros - Dev Environment - Studio Setup - Apr 2026.md` | tmux, SSH, Neon connection, migration run-book |
 
 When any doc conflicts with this file, the doc wins. When in doubt, ask.
@@ -455,5 +498,9 @@ When any doc conflicts with this file, the doc wins. When in doubt, ask.
 
 - Terminologies: ICD-10 (diagnoses), RxNorm (medications), LOINC (labs + CGM metrics), SNOMED-CT (procedures)
 - Use cases in scope: Diabetes Risk Stratification (primary demo), Hypertension Risk Strat, Care Coordination, VBC Reporting, HEDIS CDC
-- Stakeholders: Hanieh Razzaghi (CHOP — clinical validation of thresholds/weights), Chime Ogbuji (terminology LLM — future), Kris Kowal (Endo runtime — post-POC)
-- Deployment host: Regional node (ACO/IDN), not directly at clinical sites. POC targets UCHealth and supplementary feeds from Contexture (Colorado HIE).
+- Stakeholders / collaborators:
+  - **Hanieh Razzaghi** (CHOP) — clinical methodology, validation of thresholds/weights. Primary near-term demo stakeholder.
+  - **Dan Connolly** — governance + capability enforcement (the Endo connection).
+  - **Sngular** — secure infrastructure and DevOps partner.
+  - Kris Kowal (Endo runtime) and Chime Ogbuji (terminology LLM) are **future / post-POC, not current collaborators** — do not surface in demo-facing copy (per Strategic Decisions Extract §9).
+- Deployment host: Regional node (ACO/IDN), not directly at clinical sites. Multi-state and opportunistic (Kansas more likely than Colorado as first); supersedes the earlier Colorado-first framing.
