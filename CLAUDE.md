@@ -452,7 +452,7 @@ npm run build
 ## 12. Environment Variables
 
 - Scoring engine: reads `CKM_DIRECT` from environment (set in `~/.zshrc` on Studio)
-- Scripts: `scripts/.env` (see `.env.backend.example`)
+- Scripts: `scripts/.env` (see `scripts/.env.example`) — uses `CKM_DIRECT` → `ckm_readiness`
 - Frontend: `.env.local` — `VITE_`-prefixed vars (see `.env.example`)
 - `VITE_AI_ENABLED=true` enables the agentic drawer (Step 9 scope; off by default)
 
