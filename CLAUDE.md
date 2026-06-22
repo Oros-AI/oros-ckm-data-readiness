@@ -351,7 +351,7 @@ V010 also adds a CHECK constraint on `remediation_work_items.responsible_role` e
 
 ## 9. Data Model Reference
 
-Full schema: `docs/Oros - CKM Data Readiness - Data Model.docx`.
+Full schema: `docs/Oros - CKM Data Readiness - Data Model.md` (markdown-canonical in-repo; converted from the former `.docx`, now the source of truth).
 
 ### Tables Step 7 writes to
 
@@ -497,7 +497,7 @@ Reference these frequently while building Step 7.
 |----------|---------|
 | `Oros - CKM Data Readiness - Condition Module Schema.md` | Config contract, new table DDL, engine behavior contract |
 | `Oros - CKM Data Readiness - Architecture Specification.docx` | Canonical object model (Variable, Condition Module, Use Case Specification). Supersedes Baseline Methodology. |
-| `Oros - CKM Data Readiness - Data Model.docx` | Full schema for all 18 existing tables + 3 new |
+| `Oros - CKM Data Readiness - Data Model.md` | Full schema for all 21 tables (markdown-canonical in-repo; converted from `.docx`) |
 | `Oros - CKM Data Readiness - Technical Specification.docx` | Check registry, scoring formulas, priority weights |
 | `Oros - CKM Data Readiness - Architecture Decision Record - Apr 2026.docx` | Decisions 1–4 (sidecar, config+DB, representation sequence, deployment host) |
 | `Oros - CKM Data Readiness - Dataset B Bug Reconciliation.md` | Exact bug targets, remediation outcomes, acceptance test |
