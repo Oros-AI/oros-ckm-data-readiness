@@ -84,18 +84,31 @@ These hold across every demo-facing session.
 
 ## 3. Current Build State
 
-### Completed
-- 18-table schema (V001–V009), 34 FK constraints, all indexes
-- All three demo datasets loaded and verified (A/B/C)
-- Three check implementations in `scoring/checks/`:
-  - `device_patient_linkage_cgm.js`
-  - `device_temporal_density_cgm_14d.js`
-  - `layer1_notnull_fields_smoking.js`
-- Condition Module Schema v0.1 locked
-- Architecture Specification v1.2 and ADR (Apr 2026) locked
+### Verified baseline — as of 2026-06-22 (judged from code + DB, not from checkboxes)
 
-### Not started
-- Step 8 (UI revamp), Step 9 (agentic layer), Step 10 (Vercel deploy)
+This section reflects what is actually on disk and in Neon. An earlier version of this section claimed Step 7 work was complete; that was inaccurate and is corrected below. **Do not trust Build Plan checkboxes over this baseline.**
+
+#### What is real
+- **18-table schema (V001–V009): live.** In Neon database `ckm_readiness` (project `ckm-readiness` / `morning-dew-32497310`, default branch `production`). 34 FK constraints, all indexes. **Note: the data is in the `ckm_readiness` database, not the default `neondb`.**
+- **All three demo datasets loaded as raw Tier-1 data:** 3 `demo_sessions`, 150 patients, ~248k `cgm_readings`. Session IDs match Section 5.
+- **`scripts/` (data loading + session reset): complete.**
+- **Docs locked:** Condition Module Schema v0.1, Architecture Specification, ADR (Apr 2026), and the June demo set (incl. the locked Demo UI/UX Specification and the V010 Migration Spec).
+
+#### Step 7 — NOT started (no engine code exists)
+- **`scoring/` does not exist** — not on disk and not tracked in any git branch. The three checks previously listed here as "done" — `device_patient_linkage_cgm`, `device_temporal_density_cgm_14d`, `layer1_notnull_fields_smoking` — are **not implemented.** No check, no `lib/`, no `index.js`.
+- **`conditions/` does not exist.** Neither `diabetes/diabetes.config.json` nor the three stubs are authored.
+- **V010 NOT applied.** No `migrations/V010__*.sql` file exists (migrations stop at V009), and the three V010 tables (`condition_modules`, `use_case_specifications`, `use_case_pathway_results`) are absent in Neon. The `remediation_work_items.responsible_role` CHECK retrofit is not applied. Only `docs/Oros - CKM Data Readiness - V010 Migration Spec.md` exists.
+- **No scoring output exists.** `check_results`, `variable_readiness_scores`, `use_case_readiness`, and `remediation_work_items` are all empty (0 rows). The engine has never run.
+- **All Step 7 sub-steps 7a–7l are incomplete.**
+
+#### Not started (downstream)
+- Step 8 (UI revamp), Step 9 (agentic layer), Step 10 (Vercel deploy).
+
+#### Open design point — fixture-export layer (UI/UX spec dependency)
+The locked Demo UI/UX Specification (§8.3, §10) requires a fixture-export step that serializes engine output to `src/data/fixtures/session-{a,b,c}.json`. Two of its required outputs are **not natively emitted by the engine schema** as currently specified and must be derived at export time — flagged here as an unresolved design point, not a settled mechanism:
+- **`recommendationType`** (`ai_suggested_fix` | `route_to_stakeholder`, per spec §10.1) — no column for this exists in `remediation_work_items` or any engine output table.
+- **The four-facts plain-language strings** (`whatFailed`, `whatUnlocks`, etc., per spec §6.3/§7) — composed from `remediation_work_items.action_required` + the Dataset B Bug Reconciliation, not stored by the engine.
+The export step (or a config/schema addition) must own this derivation. Resolve at or before the Step 7 → fixture-export handoff.
 
 ---
 
@@ -146,9 +159,9 @@ scoring/
 │   ├── use_case_writer.js                     # (7i) use_case_readiness writer
 │   └── work_item_generator.js                 # (7j) remediation_work_items generator
 └── checks/
-    ├── device_patient_linkage_cgm.js          (done)
-    ├── device_temporal_density_cgm_14d.js     (done)
-    ├── layer1_notnull_fields_smoking.js       (done)
+    ├── device_patient_linkage_cgm.js          (not started — was mislabeled "done")
+    ├── device_temporal_density_cgm_14d.js     (not started — was mislabeled "done")
+    ├── layer1_notnull_fields_smoking.js       (not started — was mislabeled "done")
     ├── layer6_denom_riskstrat.js              (7d)
     ├── device_derived_metric_consistency_cgm.js (7e)
     ├── layer1_notnull_fields_a1c.js           (7f)
@@ -182,7 +195,7 @@ export async function runCheck(client, sessionId) {
 }
 ```
 
-Before writing a new check, read the three existing checks and mirror their shape. The check module returns rows; `scoring/lib/writer.js` handles the idempotent upsert. Never write `check_results` directly from a check module.
+Before writing a new check, mirror the Check module pattern above. **No checks exist yet** — `scoring/checks/` is unbuilt as of 2026-06-22 (see Section 3); the first check you write establishes the shape the rest mirror. The check module returns rows; `scoring/lib/writer.js` (also unbuilt) will handle the idempotent upsert. Never write `check_results` directly from a check module.
 
 Add new checks to the `CHECKS` registry in `scoring/index.js`.
 
@@ -419,10 +432,12 @@ npm run reset:all
 ### Database Migrations
 ```bash
 cd migrations/
+# As of 2026-06-22 only V001–V009 exist and are applied (18 tables, in DB `ckm_readiness`).
+# V010 is NOT yet authored (Step 7a) — the loop below includes it for when it exists.
 for f in V001 V002 V003 V004 V005 V006 V007 V008 V009 V010; do
   psql "$CKM_DIRECT" -f ${f}__*.sql
 done
-psql "$CKM_DIRECT" -c "\dt"   # verify table count (should be 21 after V010)
+psql "$CKM_DIRECT" -c "\dt"   # 18 tables today; should be 21 after V010 is authored + applied
 ```
 
 ### Frontend (`src/` — Step 8)
@@ -451,8 +466,8 @@ npm run build
 - **Full check names everywhere in the DB.** Short names live only in the config file as `check_name` references; they resolve to full names at load time via the variable tag.
 - **Commit per sub-step.** 7a commit, 7b commit, etc.
 - **Work on the `ckm-poc-build` branch.** Merge to `main` only at milestones.
-- **Before writing a check:** read the three existing checks and mirror their shape.
-- **Before writing a writer:** read `scoring/lib/writer.js` and mirror its DELETE+INSERT pattern.
+- **Before writing a check:** follow the Check module pattern in Section 6. No checks exist yet (Section 3) — the first one you write sets the shape the rest mirror.
+- **Before writing a writer:** `scoring/lib/writer.js` is not built yet (Section 3). Build it first to the DELETE+INSERT idempotency contract in Section 6, then mirror it for the other writers.
 - **Before altering any doc in `docs/`:** ask first. Those are the canonical contracts.
 - **Dual enforcement for canonical enumerations.** Any field with a fixed value list (e.g., `responsible_role`, `pathway_result`, `use_case_category`, `check_scope`, `check_status`, `priority`) is enforced at two layers: (1) the application layer, via validation in `scoring/lib/config_loader.js` at config load time — fails fast with a clear error naming the offending use case, check, and received value; (2) the database layer, via a CHECK constraint in the migration that creates the column — acts as a backstop for any write bypassing the scoring engine. See Condition Module Schema §3.2 for the canonical statement of this pattern.
 
