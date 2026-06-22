@@ -472,6 +472,7 @@ Consult these for anything a demo audience sees, and for identity / license / pa
 | `Oros - CKM Data Readiness - Agentic Drawer Spec Decision.md` | Operative for demo drawer behavior: switchable source, scripted-first, auto-fallback, recommendation data shape |
 | `Oros - CKM Data Readiness - Strategic Decisions Extract - Jun 2026.md` | Authoritative for identity, multi-state deployment, license (Apache 2.0 / Framework), and partner treatment |
 | `Oros - CKM Data Readiness - Build Plan - Jun 2026.md` | Step ordering, sub-step dependencies, demo narrative; carries the June 25 scope reframing (Option A, three-state vocabulary, agentic conditionality, Archia attribution removal) |
+| `Oros - CKM Data Readiness - Demo UI-UX Specification.md` | **Locked.** Governing contract for the Step 8 UI/UX revamp. Owns: the two views (use-case front door / pipeline under-the-hood toggle, curated readiness arc) and audience lead-view toggle; the data-driven rendering contract (§7); the `getReadinessData`/`DATA_SOURCE` provider abstraction and fixture-export step; the `getRecommendation`/`AGENT_MODE` drawer with the net-new recommendation shape (incl. `recommendationType`); Foundational vs Fit-for-purpose framing; semantic/functional design tokens; and the foundations-first build increments (§17). |
 
 ### Primary — Step 7 critical path
 

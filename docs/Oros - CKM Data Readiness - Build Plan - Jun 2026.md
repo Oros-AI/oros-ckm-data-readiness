@@ -17,6 +17,8 @@ Load Data → Normalize → Score → Surface Blockers →
 Remediate → Re-score → Unlock Analytics
 ```
 
+This is the assess → report → respond pipeline. The two-phase readiness model (Foundational readiness, then Fit-for-purpose readiness) and the step definitions are canonical in Methodology Architecture, Section 6.
+
 ---
 
 ## Strategic Context
@@ -225,6 +227,45 @@ For each bug the demo shows: what failed, which use case is blocked, who is resp
 > **Display label vs. frozen enum.** "Clinical Quality + VBC Reporting" is a presentation-layer label only. The underlying `vbc_reporting` enum value, the `vbc_reporting.config.json` filename, and the `use_case_name` string are frozen and must not change. The rename applies to display names, descriptions, document prose, and demo screens — never to schema, config, loader, database, or check names. See June 25 POC Scope Lock §10 (Frozen Strings).
 
 > **Implementation status vocabulary.** This plan uses the three-state model defined in the June 25 POC Scope Lock §7: **Implemented** (full use-case execution logic exists and runs — Diabetes RS), **Demonstrated (stub)** (real checks, bugs, routing, and outputs run, but limited execution logic — the three stub modules above), and **Architectural** (architecture and data exist, no executing use case — Hypertension and Heart Failure as conditions). The full status table is maintained in the Scope Lock and is not duplicated here, to avoid drift.
+
+---
+
+## Planned Bug-Set Expansion (build work, not yet built)
+
+> **Status: planned build work, not yet built.** This section describes future dataset and engine work. It is intentionally *not* reflected in the canonical `Oros - CKM Data Readiness - Synthetic Dataset Specification`, which correctly continues to describe the six bugs that currently exist. These additions move into the Dataset Spec only after they are actually built. Build Plan says "planned"; Dataset Spec says "exists."
+
+**Purpose.** The current six seeded bugs are device-heavy and content-skewed (device: Bugs 1, 2, 6; EHR: Bug 3 missing field, Bug 4 invalid codes, Bug 5 date format). They under-represent Foundational-readiness (structural) failures and Fit-for-purpose-readiness (recency/availability) failures that dominate real EHR data and that make the two-phase readiness model visible in the demo rather than only narrated. The additions trace the diabetes operational arc: risk monitoring of the diabetic population, then care delivery, then value-based-care reporting.
+
+### Three committed additions (to be built)
+
+**Add-1. Structural / conformance failure — Foundational readiness (structural).** A non-conformant HL7v2 feed (USCDI v3 non-conformance, malformed segments, unparseable structure). Detected at the Parse step; routed to the source feed owner ("reconfigure the feed at the source EHR"); detected earliest, most automatable notification. High value: real-world HL7v2 parse-failure rates are ~5-10% of messages (founder discovery experience). The cleanest Foundational-readiness structural demonstration; the current set has none (Bug 4 only partially carries it as the bridge case). Founder-owned (interoperability/data-engineering; outside Hanieh Razzaghi's clinical-content domain).
+
+**Add-2. Lab availability + recency — Fit-for-purpose readiness.** A1c absent, or present but stale (e.g. three years old) for a use case requiring a current value (HEDIS measurement-year requirement). Combines availability and recency. Detected at the Score step, per use case, against its recency requirement; routed as a fit-for-purpose gap (clinic collection or device path for current glycemic data). The cleanest Fit-for-purpose illustration and diabetes-central; underpins the device-first methodology. Founder-intent; Hanieh Razzaghi refines specification (realistic recency thresholds, phenotyping).
+
+**Add-3. Value plausibility — Foundational readiness (content).** A value present and valid-format but clinically implausible (e.g. HbA1c = 81.3%, a unit error). Wrong regardless of use case. Detected at the Score step (value-range/plausibility); routed to clinical reviewer/source for unit correction or source fix. Rounds out the content-defect space. Founder-intent; Hanieh Razzaghi refines plausibility ranges. Optional/cheap.
+
+### One addition under refinement (not yet committed)
+
+**Add-4. Encounter/event integrity — direction under refinement.** Originally scoped as encounter completeness (detecting missing DKA hospitalizations / ED visits). On reflection this has two distinct, inverse forms, and the right one to demonstrate is not yet decided:
+
+- **Encounter completeness (absence detection):** "events happened that we don't have." Hard to demonstrate honestly: you cannot directly detect events you have no record of; only inferable via internal referential gaps, expected-pattern deviation, or cross-source reconciliation. Straddles record-level and coverage-level readiness.
+- **Event validation (presence verification):** "an event is coded as DKA, but is it a true DKA?": verify a recorded event against corroborating clinical markers (glucose, ketones, pH/bicarbonate, etc.). Cleanly detectable (internal consistency, present-vs-present), leans Foundational readiness, and reflects real practice (Children's Mercy, Kansas City, validates coded DKA events against lab markers).
+
+Current lean: event validation is likely the stronger demo bug (cleanly detectable, crisp Foundational phenotype, grounded in real practice). Encounter completeness is better carried as voiceover/roadmap (it connects to coverage-level readiness, claims complementarity, and cross-source pooling). To be resolved with Hanieh Razzaghi (which clinical markers corroborate a true DKA, the validation logic, phenotyping). **Do not build until resolved.**
+
+### Explicitly dropped (decided out for now)
+
+**Expected-feed-not-arrived** (scheduled delivery late/absent/deviated volume). Requires an "expected" reference (schedule/volume baseline) to detect against, more build machinery, and carries the least narrative punch. Worst effort-to-impact ratio. May revisit; not in the committed set.
+
+### Phase-coverage check (why these)
+
+Foundational readiness becomes genuinely represented via Add-1 (structural) and Add-3 (plausibility), plus Bug 4 as the bridge case, and potentially Add-4 if it lands as event validation. Fit-for-purpose readiness gains recency (Add-2), alongside existing Bugs 2/3. The two-phase model becomes demonstrable, not just narrated.
+
+### Build notes
+
+Each addition touches the synthetic dataset (seeded defect), the scoring engine (detection check), the fixture export, and the demo narrative (surfacing/routing). Build the committed set in one pass through these layers (more efficient than piecemeal). Do not add to the canonical Synthetic Dataset Spec until built; update that spec after they are real. Inform Hanieh Razzaghi of the clinical-content additions (Add-2, Add-3, and the Add-4 direction) for refinement; she sharpens specification, she does not gate inclusion.
+
+Priority order if time-constrained: Add-1 (structural) and Add-2 (recency) highest value (each makes a phase visible with a clean story); Add-3 (plausibility) cheapest round-out; Add-4 pending resolution.
 
 ---
 
