@@ -173,6 +173,7 @@ tmux new -s ckm-load
 | V007 | Tier 4 use_case_readiness, fhir_bundles |
 | V008 | All indexes |
 | V009 | Session-aware FK constraints |
+| V010 | Condition module tables (condition_modules, use_case_specifications, use_case_pathway_results) + retrofit CHECK on remediation_work_items.responsible_role |
 
 **To run migrations (full reset):**
 ```bash
@@ -181,13 +182,13 @@ NEONDB='...' psql "$NEONDB" -c "DROP DATABASE ckm_readiness;"
 NEONDB='...' psql "$NEONDB" -c "CREATE DATABASE ckm_readiness;"
 
 # 2. Run migrations
-for f in V001 V002 V003 V004 V005 V006 V007 V008 V009; do
+for f in V001 V002 V003 V004 V005 V006 V007 V008 V009 V010; do
   psql "$CKM_DIRECT" -f /Volumes/OrosFast/workspace/projects/ckm-readiness/migrations/${f}__*.sql
   echo "✓ $f done"
 done
 
 # 3. Verify
-psql "$CKM_DIRECT" -c "\dt"   # Should show 18 tables
+psql "$CKM_DIRECT" -c "\dt"   # Should show 21 tables (18 base + 3 from V010)
 ```
 
 ---

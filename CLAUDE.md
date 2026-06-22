@@ -89,17 +89,17 @@ These hold across every demo-facing session.
 This section reflects what is actually on disk and in Neon. An earlier version of this section claimed Step 7 work was complete; that was inaccurate and is corrected below. **Do not trust Build Plan checkboxes over this baseline.**
 
 #### What is real
-- **18-table schema (V001–V009): live.** In Neon database `ckm_readiness` (project `ckm-readiness` / `morning-dew-32497310`, default branch `production`). 34 FK constraints, all indexes. **Note: the data is in the `ckm_readiness` database, not the default `neondb`.**
+- **21-table schema (V001–V010): live.** In Neon database `ckm_readiness` (project `ckm-readiness` / `morning-dew-32497310`, default branch `production`). All FK constraints and indexes. **Note: the data is in the `ckm_readiness` database, not the default `neondb`.**
 - **All three demo datasets loaded as raw Tier-1 data:** 3 `demo_sessions`, 150 patients, ~248k `cgm_readings`. Session IDs match Section 5.
 - **`scripts/` (data loading + session reset): complete.**
 - **Docs locked:** Condition Module Schema v0.1, Architecture Specification, ADR (Apr 2026), and the June demo set (incl. the locked Demo UI/UX Specification and the V010 Migration Spec).
 
-#### Step 7 — NOT started (no engine code exists)
+#### Step 7 — schema landed (7a done); engine NOT started
+- **V010 applied (2026-06-22).** `migrations/V010__condition_modules.sql` is authored and applied to `ckm_readiness`; the schema is now **21 tables**. The three condition-module tables (`condition_modules`, `use_case_specifications`, `use_case_pathway_results`) exist, and the retrofit CHECK on `remediation_work_items.responsible_role` is in place. Verified via spec §5 (all checks passed). **This is the schema only — no engine code yet.**
 - **`scoring/` does not exist** — not on disk and not tracked in any git branch. The three checks previously listed here as "done" — `device_patient_linkage_cgm`, `device_temporal_density_cgm_14d`, `layer1_notnull_fields_smoking` — are **not implemented.** No check, no `lib/`, no `index.js`.
 - **`conditions/` does not exist.** Neither `diabetes/diabetes.config.json` nor the three stubs are authored.
-- **V010 NOT applied.** No `migrations/V010__*.sql` file exists (migrations stop at V009), and the three V010 tables (`condition_modules`, `use_case_specifications`, `use_case_pathway_results`) are absent in Neon. The `remediation_work_items.responsible_role` CHECK retrofit is not applied. Only `docs/Oros - CKM Data Readiness - V010 Migration Spec.md` exists.
 - **No scoring output exists.** `check_results`, `variable_readiness_scores`, `use_case_readiness`, and `remediation_work_items` are all empty (0 rows). The engine has never run.
-- **All Step 7 sub-steps 7a–7l are incomplete.**
+- **Sub-step 7a (V010 migration) is complete and verified; 7b–7l are not started.**
 
 #### Not started (downstream)
 - Step 8 (UI revamp), Step 9 (agentic layer), Step 10 (Vercel deploy).

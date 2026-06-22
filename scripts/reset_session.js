@@ -47,6 +47,7 @@ async function resetSession(client, sessionId) {
     ['use_case_readiness',        `DELETE FROM use_case_readiness WHERE demo_session_id = $1`],
     ['fhir_bundles',              `DELETE FROM fhir_bundles WHERE demo_session_id = $1`],
     // Tier 3
+    ['use_case_pathway_results',  `DELETE FROM use_case_pathway_results WHERE demo_session_id = $1`],
     ['remediation_work_items',    `DELETE FROM remediation_work_items WHERE demo_session_id = $1`],
     ['patch_records',             `DELETE FROM patch_records WHERE demo_session_id = $1`],
     ['variable_readiness_scores', `DELETE FROM variable_readiness_scores WHERE demo_session_id = $1`],
