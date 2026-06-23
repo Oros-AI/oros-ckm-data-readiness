@@ -94,12 +94,13 @@ This section reflects what is actually on disk and in Neon. An earlier version o
 - **`scripts/` (data loading + session reset): complete.**
 - **Docs locked:** Condition Module Schema v0.1, Architecture Specification, ADR (Apr 2026), and the June demo set (incl. the locked Demo UI/UX Specification and the V010 Migration Spec).
 
-#### Step 7 — schema landed (7a done); engine NOT started
-- **V010 applied (2026-06-22).** `migrations/V010__condition_modules.sql` is authored and applied to `ckm_readiness`; the schema is now **21 tables**. The three condition-module tables (`condition_modules`, `use_case_specifications`, `use_case_pathway_results`) exist, and the retrofit CHECK on `remediation_work_items.responsible_role` is in place. Verified via spec §5 (all checks passed). **This is the schema only — no engine code yet.**
-- **`scoring/` does not exist** — not on disk and not tracked in any git branch. The three checks previously listed here as "done" — `device_patient_linkage_cgm`, `device_temporal_density_cgm_14d`, `layer1_notnull_fields_smoking` — are **not implemented.** No check, no `lib/`, no `index.js`.
-- **`conditions/` does not exist.** Neither `diabetes/diabetes.config.json` nor the three stubs are authored.
-- **No scoring output exists.** `check_results`, `variable_readiness_scores`, `use_case_readiness`, and `remediation_work_items` are all empty (0 rows). The engine has never run.
-- **Sub-step 7a (V010 migration) is complete and verified; 7b–7l are not started.**
+#### Step 7 — schema + config loader landed (7a, 7b done; 7c partial); checks NOT started
+- **7a — V010 applied (2026-06-22).** `migrations/V010__condition_modules.sql` applied to `ckm_readiness`; the schema is now **21 tables**. The three condition-module tables (`condition_modules`, `use_case_specifications`, `use_case_pathway_results`) exist, and the retrofit CHECK on `remediation_work_items.responsible_role` is in place. Verified via spec §5 (all checks passed).
+- **7b — config loader + db scaffolding complete.** `scoring/lib/db.js` (pg pool from `CKM_DIRECT` + `withTransaction`) and `scoring/lib/config_loader.js` exist and are verified against `ckm_readiness` (clean load, located-error rollback, idempotent reload; exit codes 0/0/1). The config tables now hold the loaded diabetes module — these are config-tier, **not** scoring output.
+- **7c — partially complete.** `conditions/diabetes/diabetes.config.json` (the full `diabetes_risk_stratification` use case) landed in the 7b commit as the loader's verification fixture. The three stub configs (`hypertension_risk_stratification`, `care_coordination`, `vbc_reporting`) remain to be authored.
+- **Checks not built.** `scoring/checks/` is empty — none of the check implementations exist yet (`device_patient_linkage_cgm`, `device_temporal_density_cgm_14d`, `layer1_notnull_fields_smoking`, and the rest). The config loader emits a warning for every referenced check (all unbuilt until 7d–7f).
+- **No scoring has run against patient data.** `check_results`, `variable_readiness_scores`, `use_case_readiness`, and `remediation_work_items` are all empty (0 rows). The scoring orchestrator (`scoring/index.js`), aggregator, pathway evaluator, and writers do not exist yet.
+- **7d–7l are not started.**
 
 #### Not started (downstream)
 - Step 8 (UI revamp), Step 9 (agentic layer), Step 10 (Vercel deploy).
