@@ -78,3 +78,43 @@ given disproportionate synthetic-data complexity (multi-table, time-aligned
 diagnosis-to-labs join) vs. marginal demo value for a breadth-focused audience.
 
 **Owner:** Dominique. **Status:** decided (deferred); spec exists, ready if pulled.
+
+---
+
+## 5. Module scoping and the CKM scaling trajectory
+
+**The observation (class mismatch):** The top-level config object is currently
+modeled as a *condition* (diabetes, hypertension) that *has* use cases. But two
+of the 7c stubs are not conditions — `care_coordination` and `vbc_reporting` are
+*use cases* (purposes), not clinical conditions, and they span conditions ("DM
+or HTN"). The one-file-one-condition build decision forces them into the
+condition slot, so their `condition_id` equals their `use_case_name`. This is
+acceptable for the demo (the stubs exist to prove loader genericity, not to model
+clinical reality), but it hides a real modeling question: is the unit of the
+system a *condition* (with use cases), a *(condition, use case) pair*, or a
+*use-case module* that can exist independent of any single condition?
+
+**The scaling dimension:** Today the platform evaluates one condition (diabetes)
+for one use case. The trajectory is the full CKM scope — cardio-kidney-metabolic
+— where fit-for-purpose evaluation "packages" grow from (1 condition × 1 use
+case) toward (N conditions × M use cases), evaluated *together* and *across* use
+cases. As that happens, the number of required inputs increases and the
+combinatorial complexity rises. The data model will need to express
+multi-condition packages and cross-condition use cases explicitly, rather than
+collapsing everything into a single `condition_id`.
+
+**The countervailing principle (a design value, not just a note):** As internal
+sophistication and input complexity increase with CKM scope, we deliberately
+push *against* that complexity. The purpose of the platform is to inform the
+"now what" — the actionable next step in the workflow — for the people actually
+doing the work. Sophistication and perfection must not get in the way of action
+and the realities on the ground. A more expressive data model, a more refined
+weighting scheme, a more complete check set are each worth pursuing only when
+they make the next action clearer or more correct for someone on the ground —
+not for their own sake. When precision and action conflict, action on the
+realities on the ground wins; sophistication is deferred to a roadmap, not
+allowed to block the workflow. This principle governs the modeling question
+above and the methodology questions throughout this document.
+
+**Owner:** Hanieh + Dominique. **Status:** open — revisit during the methodology-
+triage pass and as CKM scope expands beyond single-condition diabetes.
