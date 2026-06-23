@@ -1,0 +1,209 @@
+{
+  "schema_version": "0.1",
+  "condition": {
+    "condition_id": "diabetes",
+    "display_name": "Diabetes",
+    "description": "Type 1 and Type 2 Diabetes Mellitus. Covers patients with active ICD-10 E10.x or E11.x diagnosis.",
+    "value_sets": {
+      "diagnosis": {
+        "code_system": "icd10",
+        "codes": ["E10.*", "E11.*"]
+      }
+    }
+  },
+  "use_cases": [
+    {
+      "use_case_name": "diabetes_risk_stratification",
+      "use_case_category": "risk_stratification",
+      "display_name": "Diabetes Risk Stratification",
+
+      "population_definition": {
+        "eligibility_criteria": [
+          {
+            "criterion_id": "active_dm_diagnosis",
+            "description": "Active diabetes diagnosis (ICD-10 E10.x or E11.x).",
+            "source_table": "conditions",
+            "code_system": "icd10",
+            "code_patterns": ["E10.*", "E11.*"],
+            "status_requirement": "active"
+          },
+          {
+            "criterion_id": "qualifying_encounters",
+            "description": "At least two qualifying encounters within the past 24 months.",
+            "source_table": "encounters",
+            "minimum_count": 2,
+            "lookback_months": 24,
+            "qualifying_classes": ["ambulatory", "outpatient"]
+          },
+          {
+            "criterion_id": "active_enrollment",
+            "description": "Patient is enrolled in a participating organization at time of evaluation.",
+            "source_table": "patients",
+            "requires_active_organization": true
+          }
+        ],
+        "denominator_rule": "all_eligibility_criteria_pass"
+      },
+
+      "eligibility_checks": [
+        {
+          "check_name": "layer6_denom_riskstrat",
+          "threshold": 1.0,
+          "priority": "High",
+          "remediation_defaults": {
+            "phenotype": "Denominator Eligibility Failure",
+            "responsible_role": "Primary Care Site",
+            "action_required": "Confirm patient meets denominator eligibility: active diabetes diagnosis, minimum two qualifying encounters in past 24 months, active enrollment in participating organization."
+          }
+        }
+      ],
+
+      "variable_pathways": {
+        "pathways": [
+          {
+            "pathway_id": "cgm_primary",
+            "pathway_role": "primary",
+            "variables": ["CGM Glucose"],
+            "pass_criterion": "all_variables_ready"
+          },
+          {
+            "pathway_id": "a1c_fallback",
+            "pathway_role": "fallback",
+            "variables": ["A1C"],
+            "pass_criterion": "all_variables_ready"
+          }
+        ],
+        "evaluation_order": ["cgm_primary", "a1c_fallback"],
+        "result_values": ["primary_pass", "fallback_pass", "no_valid_pathway"],
+        "derivation_rule": "Walk evaluation_order. Return primary_pass if cgm_primary satisfies pass_criterion. Else return fallback_pass if a1c_fallback satisfies pass_criterion. Else return no_valid_pathway."
+      },
+
+      "variables": [
+        {
+          "variable_name": "CGM Glucose",
+          "pathway_membership": ["cgm_primary"],
+          "source_tables": ["cgm_readings", "cgm_window_metadata"],
+          "recency": {
+            "mode": "window",
+            "window_days": 14,
+            "reference_anchor": "cgm_window_metadata.reference_date"
+          },
+          "checks": [
+            {
+              "check_name": "device_patient_linkage_cgm",
+              "threshold": 1.0,
+              "priority": "High",
+              "weight": 0.40,
+              "remediation_defaults": {
+                "phenotype": "Identity Linkage Failure",
+                "responsible_role": "Technology Vendor",
+                "action_required": "Standardize patient ID handling in the device ingestion pipeline. Implement a crosswalk between device UUID and site patient ID. Program Coordinator triages; Technology Vendor owns the fix."
+              }
+            },
+            {
+              "check_name": "device_temporal_density_cgm_14d",
+              "threshold": 0.70,
+              "priority": "High",
+              "weight": 0.40,
+              "remediation_defaults": {
+                "phenotype": "Device Temporal Density Gap",
+                "responsible_role": "Primary Care Site",
+                "action_required": "Address CGM device adherence. Flag patients with coverage below 70% over the 14-day window for outreach.",
+                "note": "Dual root cause: (a) adherence gap — Primary Care Site outreach, as defined in action_required; (b) transmission gap — if raw readings exist in clusters with unexplained gaps, root cause is a Technology Vendor pipeline configuration issue. In transmission gap cases, responsible_role escalates to Technology Vendor with action: Review device data transmission pipeline for gaps between device and platform."
+              }
+            },
+            {
+              "check_name": "device_derived_metric_consistency_cgm",
+              "threshold": 0.02,
+              "priority": "Medium",
+              "weight": 0.20,
+              "remediation_defaults": {
+                "phenotype": "Derived Metric Concordance Failure",
+                "responsible_role": "Policy/Regulatory",
+                "action_required": "Confirm which TIR computation method is acceptable for VBC reporting and align with emerging CGM data dictionary standards before submitting platform-recomputed values. Flag for governance review — this is a policy decision, not a data fix."
+              }
+            }
+          ]
+        },
+        {
+          "variable_name": "A1C",
+          "pathway_membership": ["a1c_fallback"],
+          "source_tables": ["observations"],
+          "code_references": {
+            "loinc": ["4548-4"]
+          },
+          "recency": {
+            "mode": "lookback",
+            "lookback_months": 6,
+            "reference_anchor": "evaluation_date"
+          },
+          "checks": [
+            {
+              "check_name": "layer1_notnull_fields_a1c",
+              "threshold": 1.0,
+              "priority": "High",
+              "weight": 0.50,
+              "remediation_defaults": {
+                "phenotype": "Missing Required Field",
+                "responsible_role": "Primary Care Site",
+                "action_required": "Populate required A1C fields at the source. Confirm lab result capture in the EHR."
+              }
+            },
+            {
+              "check_name": "layer2_ranges_numeric_a1c",
+              "threshold": 0.98,
+              "priority": "High",
+              "weight": 0.30,
+              "remediation_defaults": {
+                "phenotype": "Provider Input Error",
+                "responsible_role": "Primary Care Site",
+                "action_required": "Verify A1C values fall within plausible clinical range (2.0%–20.0%). Investigate unit errors."
+              }
+            },
+            {
+              "check_name": "layer5_date_concordance_a1c",
+              "threshold": 0.97,
+              "priority": "Medium",
+              "weight": 0.20,
+              "remediation_defaults": {
+                "phenotype": "Date Format Error",
+                "responsible_role": "Technology Vendor",
+                "action_required": "Reconcile A1C result date with the associated encounter date. Correct date concordance at the interface layer."
+              }
+            }
+          ]
+        }
+      ],
+
+      "computation": {
+        "continuous_score": {
+          "method": "pathway_weighted_average",
+          "description": "Weighted average of variable_readiness_scores.readiness_score for variables in the first passing pathway. If no pathway passes, computed over variables in the last evaluated pathway so the score still reflects remediation progress.",
+          "input_source": "variable_readiness_scores.readiness_score",
+          "weights_source": "variables[].checks[].weight, aggregated per variable",
+          "range": [0.0, 1.0],
+          "written_to": "use_case_readiness.fitness_score"
+        },
+        "status_label": {
+          "method": "threshold_bands",
+          "description": "Discrete label derived from the continuous score using condition-specific threshold bands.",
+          "thresholds": [
+            { "status": "READY",           "min_score": 0.85, "max_score": 1.00 },
+            { "status": "PARTIALLY_READY", "min_score": 0.50, "max_score": 0.85 },
+            { "status": "NOT_READY",       "min_score": 0.00, "max_score": 0.50 }
+          ],
+          "written_to": "use_case_readiness.overall_status"
+        }
+      },
+
+      "output_definition": {
+        "primary_output": "Risk stratification eligibility flag per patient.",
+        "supporting_outputs": ["pathway_result", "fitness_score", "overall_status", "blocking_variables"],
+        "output_tables": {
+          "use_case_readiness": "overall_status, fitness_score, required_variables, blocking_variables, partial_variables",
+          "use_case_pathway_results": "pathway_result, active_pathway_id"
+        }
+      }
+    }
+  ]
+}
