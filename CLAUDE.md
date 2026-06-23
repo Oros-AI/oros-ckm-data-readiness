@@ -111,6 +111,9 @@ The locked Demo UI/UX Specification (§8.3, §10) requires a fixture-export step
 - **The four-facts plain-language strings** (`whatFailed`, `whatUnlocks`, etc., per spec §6.3/§7) — composed from `remediation_work_items.action_required` + the Dataset B Bug Reconciliation, not stored by the engine.
 The export step (or a config/schema addition) must own this derivation. Resolve at or before the Step 7 → fixture-export handoff.
 
+#### Open methodology questions (separate from the build)
+Open methodology questions (weight basis, device-linkage classification, terminology, Add-4) are tracked in `docs/methodology-open-questions.md` — revisited in a dedicated methodology-triage pass with Hanieh, separate from the build.
+
 ---
 
 ## 4. Step 7 Plan — Sub-steps and Dependencies
