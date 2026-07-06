@@ -75,7 +75,7 @@ These hold across every demo-facing session.
 
 - **Raw data is NEVER modified.** Tier 1 tables are append-only after load. All scoring, normalization, and remediation writes go to Tier 2–4.
 - **Full check names in the DB.** `check_results.check_name` must be the full form (e.g., `device_temporal_density_cgm_14d`, `layer1_notnull_fields_a1c`). Short names exist only as registry references in the Tech Spec.
-- **Session-awareness.** Every scoring/remediation write carries `demo_session_id`. Writers are idempotent: `DELETE + INSERT` on the tuple the writer owns.
+- **Session-awareness.** Every scoring/remediation write carries `demo_session_id`. Writers are idempotent: `INSERT ... ON CONFLICT DO UPDATE` (upsert) on the tuple the writer owns — never `DELETE + INSERT`.
 - **CKM_DIRECT** is exported in `~/.zshrc` on Studio. Never hardcode credentials.
 - **No raw data in the agentic layer.** The agentic sidecar (Step 9) reads check result records only (~200 bytes each), never Tier 1 rows. The Step 7 scoring engine is fully deterministic and runs without any AI.
 - **Condition-specific logic does not live in the engine.** All thresholds, weights, variables, pathways, and remediation defaults come from condition module configs. Adding a condition must not require engine code changes.
@@ -169,7 +169,7 @@ scoring/
 ├── index.js                                   # entry: node scoring/index.js <session_id>
 ├── lib/
 │   ├── db.js                                  # pg pool from CKM_DIRECT
-│   ├── writer.js                              # idempotent DELETE + INSERT per check+session
+│   ├── writer.js                              # idempotent upsert (ON CONFLICT DO UPDATE) per check+session
 │   ├── config_loader.js                       # (7b) loads conditions/ into DB + validates enumerations
 │   ├── aggregator.js                          # (7g) variable_readiness_scores writer
 │   ├── pathway_evaluator.js                   # (7h) use_case_pathway_results writer
@@ -228,13 +228,15 @@ The three stubs validate that the config loader and engine work generically — 
 
 ### Idempotency — tuples each writer owns
 
-| Writer | Delete + insert on |
+| Writer | Upsert conflict key (`INSERT ... ON CONFLICT DO UPDATE`) |
 |--------|--------------------|
 | check writer (`scoring/lib/writer.js`) | `(check_name, patient_id, demo_session_id)` |
 | aggregator | `(variable_name, patient_id, demo_session_id)` |
 | pathway evaluator | `(patient_id, use_case_name, demo_session_id)` |
 | use_case writer | `(patient_id, use_case_name, demo_session_id)` |
 | work item generator | `(check_result_id)` — one work item per FAIL |
+
+DELETE+INSERT is superseded (2026-06-22 finding, during 7b): deleting rows collides with V010's `ON DELETE RESTRICT` FK. All writers upsert on the tuple above; the config loader already implements this pattern.
 
 ---
 
@@ -479,12 +481,12 @@ npm run build
 
 - **ESM, not CommonJS.** Scoring engine uses `import`/`export`.
 - **node-pg** for DB access via pool in `scoring/lib/db.js`. No ORM. Hand-written SQL, kept close to the check module.
-- **Idempotent writers.** Every writer deletes its tuple before inserting (see Section 7).
+- **Idempotent writers.** Every writer upserts via `INSERT ... ON CONFLICT DO UPDATE` on the tuple it owns (see Section 7) — never DELETE+INSERT.
 - **Full check names everywhere in the DB.** Short names live only in the config file as `check_name` references; they resolve to full names at load time via the variable tag.
 - **Commit per sub-step.** 7a commit, 7b commit, etc.
 - **Work on the `ckm-poc-build` branch.** Merge to `main` only at milestones.
 - **Before writing a check:** follow the Check module pattern in Section 7. No checks exist yet (Section 3) — the first one you write sets the shape the rest mirror.
-- **Before writing a writer:** `scoring/lib/writer.js` is not built yet (Section 3). Build it first to the DELETE+INSERT idempotency contract in Section 7, then mirror it for the other writers.
+- **Before writing a writer:** `scoring/lib/writer.js` is not built yet (Section 3). Build it first to the upsert idempotency contract (`INSERT ... ON CONFLICT DO UPDATE`) in Section 7, then mirror it for the other writers.
 - **Before altering any doc in `docs/`:** ask first. Those are the canonical contracts.
 - **Dual enforcement for canonical enumerations.** Any field with a fixed value list (e.g., `responsible_role`, `pathway_result`, `use_case_category`, `check_scope`, `check_status`, `priority`) is enforced at two layers: (1) the application layer, via validation in `scoring/lib/config_loader.js` at config load time — fails fast with a clear error naming the offending use case, check, and received value; (2) the database layer, via a CHECK constraint in the migration that creates the column — acts as a backstop for any write bypassing the scoring engine. See Condition Module Schema §3.2 for the canonical statement of this pattern.
 
