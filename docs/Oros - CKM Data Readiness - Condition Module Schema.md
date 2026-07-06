@@ -317,7 +317,7 @@ One row per use case. Condition modules may have multiple use cases; for Diabete
 | population_definition | JSONB                | N     | Eligibility criteria and denominator rule. |
 | variable_pathways     | JSONB                | N     | Pathway definitions, evaluation order, result derivation rule. |
 | variables             | JSONB                | N     | Full variables array with per-check config and remediation defaults. |
-| computation           | JSONB                | N     | continuous_score and status_label rules. |
+| computation           | JSONB                | Y     | continuous_score and status_label rules. Optional (V011, 7c finding 2026-07-06): NULL = boolean/pathway-only module — readiness from pathway results alone, no continuous score. |
 | output_definition     | JSONB                | N     | Output specification. |
 | loaded_at             | TIMESTAMPTZ          | N     | Timestamp of load. |
 
