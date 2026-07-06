@@ -32,7 +32,7 @@ Repo layout:
 - `scoring/` — Node ESM scoring engine (Step 7 scope)
 - `scripts/` — Data loading and session reset (complete)
 - `conditions/` — Condition module config files (new in Step 7)
-- `migrations/` — Neon schema migrations (V001–V009 applied; V010 pending)
+- `migrations/` — Neon schema migrations (V001–V011, all applied)
 - `docs/` — Canonical design docs (authoritative)
 
 ### 1.5. License, IP, and Positioning (authoritative pointers)
@@ -84,20 +84,21 @@ These hold across every demo-facing session.
 
 ## 3. Current Build State
 
-### Verified baseline — as of 2026-06-22 (judged from code + DB, not from checkboxes)
+### Verified baseline — as of 2026-07-06 (judged from code + DB, not from checkboxes)
 
 This section reflects what is actually on disk and in Neon. An earlier version of this section claimed Step 7 work was complete; that was inaccurate and is corrected below. **Do not trust Build Plan checkboxes over this baseline.**
 
 #### What is real
-- **21-table schema (V001–V010): live.** In Neon database `ckm_readiness` (project `ckm-readiness` / `morning-dew-32497310`, default branch `production`). All FK constraints and indexes. **Note: the data is in the `ckm_readiness` database, not the default `neondb`.**
+- **21-table schema (V001–V011): live.** In Neon database `ckm_readiness` (project `ckm-readiness` / `morning-dew-32497310`, default branch `production`). All FK constraints and indexes; `use_case_specifications.computation` is nullable since V011. **Note: the data is in the `ckm_readiness` database, not the default `neondb`.**
 - **All three demo datasets loaded as raw Tier-1 data:** 3 `demo_sessions`, 150 patients, ~248k `cgm_readings`. Session IDs match Section 6.
 - **`scripts/` (data loading + session reset): complete.**
 - **Docs locked:** Condition Module Schema v0.1, Architecture Specification, ADR (Apr 2026), and the June demo set (incl. the locked Demo UI/UX Specification and the V010 Migration Spec).
 
-#### Step 7 — schema + config loader landed (7a, 7b done; 7c partial); checks NOT started
+#### Step 7 — 7a, 7b, 7c complete; checks NOT started
 - **7a — V010 applied (2026-06-22).** `migrations/V010__condition_modules.sql` applied to `ckm_readiness`; the schema is now **21 tables**. The three condition-module tables (`condition_modules`, `use_case_specifications`, `use_case_pathway_results`) exist, and the retrofit CHECK on `remediation_work_items.responsible_role` is in place. Verified via spec §5 (all checks passed).
 - **7b — config loader + db scaffolding complete.** `scoring/lib/db.js` (pg pool from `CKM_DIRECT` + `withTransaction`) and `scoring/lib/config_loader.js` exist and are verified against `ckm_readiness` (clean load, located-error rollback, idempotent reload; exit codes 0/0/1). The config tables now hold the loaded diabetes module — these are config-tier, **not** scoring output.
-- **7c — partially complete.** `conditions/diabetes/diabetes.config.json` (the full `diabetes_risk_stratification` use case) landed in the 7b commit as the loader's verification fixture. The three stub configs (`hypertension_risk_stratification`, `care_coordination`, `vbc_reporting`) remain to be authored.
+- **7c — complete (verified 2026-07-06).** All four configs load clean: exit 0, 4 `condition_modules` rows, 4 `use_case_specifications` rows (`diabetes_risk_stratification`, `hypertension_risk_stratification`, `care_coordination`, `vbc_reporting`). The three stubs express boolean aggregation as a degenerate single pathway — no computation block.
+- **7c genericity finding (2026-07-06), resolved at both enforcement layers:** the `computation` block is **optional** — absent = boolean/pathway-only module (readiness from pathway results alone, no continuous score). Loader validation relaxed (`config_loader.js`) and **V011** dropped the NOT NULL on `use_case_specifications.computation`; Condition Module Schema §2/§4.2/§6 updated to match.
 - **Checks not built.** `scoring/checks/` is empty — none of the check implementations exist yet (`device_patient_linkage_cgm`, `device_temporal_density_cgm_14d`, `layer1_notnull_fields_smoking`, and the rest). The config loader emits a warning for every referenced check (all unbuilt until 7d–7f).
 - **No scoring has run against patient data.** `check_results`, `variable_readiness_scores`, `use_case_readiness`, and `remediation_work_items` are all empty (0 rows). The scoring orchestrator (`scoring/index.js`), aggregator, pathway evaluator, and writers do not exist yet.
 - **7d–7l are not started.**
@@ -212,7 +213,7 @@ export async function runCheck(client, sessionId) {
 }
 ```
 
-Before writing a new check, mirror the Check module pattern above. **No checks exist yet** — `scoring/checks/` is unbuilt as of 2026-06-22 (see Section 3); the first check you write establishes the shape the rest mirror. The check module returns rows; `scoring/lib/writer.js` (also unbuilt) will handle the idempotent upsert. Never write `check_results` directly from a check module.
+Before writing a new check, mirror the Check module pattern above. **No checks exist yet** — `scoring/checks/` is unbuilt as of 2026-07-06 (see Section 3); the first check you write establishes the shape the rest mirror. The check module returns rows; `scoring/lib/writer.js` (also unbuilt) will handle the idempotent upsert. Never write `check_results` directly from a check module.
 
 Add new checks to the `CHECKS` registry in `scoring/index.js`.
 
@@ -351,6 +352,8 @@ One row per loaded condition. PK `condition_id VARCHAR(32)`. Stores `display_nam
 ### `use_case_specifications`
 One row per use case. PK `use_case_name VARCHAR(64)`. FK → `condition_modules.condition_id`. JSONB columns: `population_definition`, `variable_pathways`, `variables`, `computation`, `output_definition`. Plus `use_case_category`, `display_name`, `loaded_at`.
 
+**V011 (2026-07-06)** dropped the NOT NULL on `computation`: the block is optional — NULL = boolean/pathway-only module (7c genericity finding; see Condition Module Schema §4.2).
+
 CHECK constraint on `use_case_category` — values: `risk_stratification`, `care_coordination_delivery`, `vbc_reporting`.
 
 ### `use_case_pathway_results` (runtime output)
@@ -451,12 +454,11 @@ npm run reset:all
 ### Database Migrations
 ```bash
 cd migrations/
-# As of 2026-06-22 only V001–V009 exist and are applied (18 tables, in DB `ckm_readiness`).
-# V010 is NOT yet authored (Step 7a) — the loop below includes it for when it exists.
-for f in V001 V002 V003 V004 V005 V006 V007 V008 V009 V010; do
+# As of 2026-07-06 V001–V011 all exist and are applied (21 tables, in DB `ckm_readiness`).
+for f in V001 V002 V003 V004 V005 V006 V007 V008 V009 V010 V011; do
   psql "$CKM_DIRECT" -f ${f}__*.sql
 done
-psql "$CKM_DIRECT" -c "\dt"   # 18 tables today; should be 21 after V010 is authored + applied
+psql "$CKM_DIRECT" -c "\dt"   # 21 tables
 ```
 
 ### Frontend (`src/` — Step 8)
