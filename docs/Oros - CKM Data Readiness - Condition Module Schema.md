@@ -242,6 +242,8 @@ Three principles drive the design:
 }
 ```
 
+**The `computation` block is optional** (7c genericity finding, 2026-07-06). A use case without a `computation` block is a boolean/pathway-only module: readiness derives from pathway results alone, with no continuous score. Downstream contract: the engine skips score computation entirely when the block is absent — no `fitness_score` is written, and `overall_status` derives directly from the pathway result (pathway passes → READY, else NOT_READY). The diabetes use case carries the full block; the 7c stub modules omit it.
+
 ---
 
 ## 3. Mapping to Data Model v2
@@ -378,6 +380,8 @@ Observable behaviors the engine must produce from this config. This is not engin
 5. Compute the continuous score using `pathway_weighted_average` over the variables of the active pathway (or the last-evaluated pathway if no pathway passes). Write to `use_case_readiness.fitness_score`.
 6. Apply threshold bands to the continuous score to derive `overall_status`. Write to `use_case_readiness.overall_status`.
 7. For every FAIL check, generate a `remediation_work_items` row using the `remediation_defaults` from this config as baseline `action_required`, `responsible_role`, and `phenotype` values.
+
+**Boolean/pathway-only modules (no `computation` block):** the `computation` block is optional (7c genericity finding, 2026-07-06). When it is absent, the engine skips score computation — step 5 is not performed and no `fitness_score` is written; in step 6, `overall_status` derives directly from the pathway result (pathway passes → READY, else NOT_READY) instead of threshold bands. All other steps apply unchanged.
 
 **What the engine does not do:**
 

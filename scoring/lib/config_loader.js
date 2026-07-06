@@ -54,11 +54,13 @@ const RESPONSIBLE_ROLE = [
 ];
 const PRIORITY = ['High', 'Medium', 'Low'];
 
+// computation is OPTIONAL: absent computation = boolean/pathway-only module;
+// readiness derives from pathway results alone, no continuous score
+// (7c finding, 2026-07-06).
 const USE_CASE_SECTIONS = [
   'population_definition',
   'variable_pathways',
   'variables',
-  'computation',
   'output_definition',
 ];
 
