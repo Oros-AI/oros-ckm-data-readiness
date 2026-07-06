@@ -19,7 +19,7 @@ If a backend section and a June demo doc appear to disagree about demo-facing be
 
 ## 1. Project Overview
 
-CKM Data Readiness — a data quality infrastructure for Cardio-Kidney-Metabolic conditions. Oros is the **neutral steward of shared open infrastructure**, serving all parties (rural health programs, HIEs, payers, health systems) and competing with none. Deployment is **multi-state and opportunistic** — deployed wherever motivated sites, funding, and partners emerge. The first implementation state is TBD (Kansas more likely; Colorado is one candidate context, not "the pilot"). This supersedes the earlier Colorado-first framing.
+CKM Data Readiness — a data quality infrastructure for Cardio-Kidney-Metabolic conditions. Oros is the **neutral steward of shared open infrastructure**, serving all parties (rural health programs, HIEs, payers, health systems) and competing with none. Deployment is **multi-state and opportunistic** — deployed wherever motivated sites, funding, and partners emerge. The POC targets Kansas, Montana, and Colorado, with Kansas the likely first deployment (the Build Plan's Strategic Context owns this; see it for per-state status).
 
 The POC demonstrates the arc:
 
@@ -551,4 +551,4 @@ When any doc conflicts with this file, the doc wins. When in doubt, ask.
   - **Dan Connolly** — governance + capability enforcement (the Endo connection).
   - **Sngular** — secure infrastructure and DevOps partner.
   - Kris Kowal (Endo runtime) and Chime Ogbuji (terminology LLM) are **future / post-POC, not current collaborators** — do not surface in demo-facing copy (per Strategic Decisions Extract §9).
-- Deployment host: Regional node (ACO/IDN), not directly at clinical sites. Multi-state and opportunistic (Kansas more likely than Colorado as first); supersedes the earlier Colorado-first framing.
+- Deployment host: Regional node (ACO/IDN), not directly at clinical sites. Multi-state and opportunistic — POC targets Kansas, Montana, and Colorado, with Kansas the likely first deployment (see the Build Plan's Strategic Context).
