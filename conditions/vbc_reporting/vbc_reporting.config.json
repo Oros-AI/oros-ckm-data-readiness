@@ -1,0 +1,72 @@
+{
+  "schema_version": "0.1",
+  "condition": {
+    "condition_id": "vbc_reporting",
+    "display_name": "Clinical Quality + VBC Reporting",
+    "description": "Clinical quality and value-based care reporting module. Covers patients with qualifying encounters. Stub module (7c): condition_id is a module name, not a clinical condition; boolean aggregation expressed as a degenerate single-pathway use case."
+  },
+  "use_cases": [
+    {
+      "use_case_name": "vbc_reporting",
+      "use_case_category": "vbc_reporting",
+      "display_name": "Clinical Quality + VBC Reporting",
+
+      "population_definition": {
+        "eligibility_criteria": [
+          {
+            "criterion_id": "qualifying_encounters",
+            "description": "At least two qualifying encounters within the past 24 months.",
+            "source_table": "encounters",
+            "minimum_count": 2,
+            "lookback_months": 24,
+            "qualifying_classes": ["ambulatory", "outpatient"]
+          }
+        ],
+        "denominator_rule": "all_eligibility_criteria_pass"
+      },
+
+      "variable_pathways": {
+        "pathways": [
+          {
+            "pathway_id": "encounter_date_primary",
+            "pathway_role": "primary",
+            "variables": ["Encounter Date"],
+            "pass_criterion": "all_variables_ready"
+          }
+        ],
+        "evaluation_order": ["encounter_date_primary"],
+        "result_values": ["primary_pass", "no_valid_pathway"],
+        "derivation_rule": "Degenerate single-pathway (boolean) case: return primary_pass if encounter_date_primary satisfies pass_criterion, else no_valid_pathway. Any check FAIL fails the only pathway."
+      },
+
+      "variables": [
+        {
+          "variable_name": "Encounter Date",
+          "pathway_membership": ["encounter_date_primary"],
+          "source_tables": ["encounters"],
+          "checks": [
+            {
+              "check_name": "layer5_date_concordance",
+              "threshold": 1.0,
+              "priority": "Medium",
+              "remediation_defaults": {
+                "phenotype": "Date Format Non-Conformance",
+                "responsible_role": "Technology Vendor",
+                "action_required": "Normalize encounter_date values to YYYYMMDD at the interface layer. Auto-normalize unambiguous formats (e.g., MM/DD/YYYY); flag ambiguous transpositions and impossible dates for source-system lookup or clinical confirmation."
+              }
+            }
+          ]
+        }
+      ],
+
+      "output_definition": {
+        "primary_output": "Boolean readiness flag per patient for clinical quality and VBC reporting.",
+        "supporting_outputs": ["pathway_result", "blocking_variables"],
+        "output_tables": {
+          "use_case_readiness": "overall_status, required_variables, blocking_variables",
+          "use_case_pathway_results": "pathway_result, active_pathway_id"
+        }
+      }
+    }
+  ]
+}

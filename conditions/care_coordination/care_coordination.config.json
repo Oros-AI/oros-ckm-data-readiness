@@ -1,0 +1,101 @@
+{
+  "schema_version": "0.1",
+  "condition": {
+    "condition_id": "care_coordination",
+    "display_name": "Care Coordination",
+    "description": "Cross-condition care coordination module. Covers patients with an active diabetes (ICD-10 E10.x/E11.x) or hypertension (I10) diagnosis. Stub module (7c): condition_id is a module name, not a clinical condition; boolean aggregation expressed as a degenerate single-pathway use case.",
+    "value_sets": {
+      "diagnosis": {
+        "code_system": "icd10",
+        "codes": ["E10.*", "E11.*", "I10"]
+      }
+    }
+  },
+  "use_cases": [
+    {
+      "use_case_name": "care_coordination",
+      "use_case_category": "care_coordination_delivery",
+      "display_name": "Care Coordination",
+
+      "population_definition": {
+        "eligibility_criteria": [
+          {
+            "criterion_id": "active_dm_or_htn_diagnosis",
+            "description": "Active diabetes (ICD-10 E10.x/E11.x) or hypertension (I10) diagnosis.",
+            "source_table": "conditions",
+            "code_system": "icd10",
+            "code_patterns": ["E10.*", "E11.*", "I10"],
+            "status_requirement": "active"
+          }
+        ],
+        "denominator_rule": "all_eligibility_criteria_pass"
+      },
+
+      "variable_pathways": {
+        "pathways": [
+          {
+            "pathway_id": "terminology_primary",
+            "pathway_role": "primary",
+            "variables": ["Medication Code", "Condition Code"],
+            "pass_criterion": "all_variables_ready"
+          }
+        ],
+        "evaluation_order": ["terminology_primary"],
+        "result_values": ["primary_pass", "no_valid_pathway"],
+        "derivation_rule": "Degenerate single-pathway (boolean) case: return primary_pass if terminology_primary satisfies pass_criterion, else no_valid_pathway. Either check FAIL fails the only pathway."
+      },
+
+      "variables": [
+        {
+          "variable_name": "Medication Code",
+          "pathway_membership": ["terminology_primary"],
+          "source_tables": ["medications"],
+          "code_references": {
+            "code_system": "rxnorm"
+          },
+          "checks": [
+            {
+              "check_name": "layer3_mapped_values",
+              "threshold": 1.0,
+              "priority": "Medium",
+              "remediation_defaults": {
+                "phenotype": "Invalid Terminology Code",
+                "responsible_role": "Technology Vendor",
+                "action_required": "Map invalid medication codes to valid RxNorm concepts at the interface layer. Deterministic code mapping: correct malformed, placeholder, or non-RxNorm values in medications.code before downstream care coordination use."
+              }
+            }
+          ]
+        },
+        {
+          "variable_name": "Condition Code",
+          "pathway_membership": ["terminology_primary"],
+          "source_tables": ["conditions"],
+          "code_references": {
+            "code_system": "icd10"
+          },
+          "checks": [
+            {
+              "check_name": "layer2_value_standards",
+              "threshold": 1.0,
+              "priority": "Medium",
+              "remediation_defaults": {
+                "phenotype": "Invalid Terminology Code",
+                "responsible_role": "Technology Vendor",
+                "action_required": "Correct non-conformant condition codes to valid ICD-10 at the interface layer. Deterministic code mapping: resolve malformed codes, non-existent codes, and ICD-9 remnants in conditions.code."
+              }
+            }
+          ]
+        }
+      ],
+
+      "output_definition": {
+        "primary_output": "Boolean readiness flag per patient for care coordination.",
+        "supporting_outputs": ["pathway_result", "blocking_variables"],
+        "output_tables": {
+          "use_case_readiness": "overall_status, required_variables, blocking_variables",
+          "use_case_pathway_results": "pathway_result, active_pathway_id"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,81 @@
+{
+  "schema_version": "0.1",
+  "condition": {
+    "condition_id": "hypertension",
+    "display_name": "Hypertension",
+    "description": "Essential hypertension. Covers patients with active ICD-10 I10 diagnosis. Stub module (7c): boolean aggregation expressed as a degenerate single-pathway use case — any check FAIL fails the only pathway.",
+    "value_sets": {
+      "diagnosis": {
+        "code_system": "icd10",
+        "codes": ["I10"]
+      }
+    }
+  },
+  "use_cases": [
+    {
+      "use_case_name": "hypertension_risk_stratification",
+      "use_case_category": "risk_stratification",
+      "display_name": "Hypertension Risk Stratification",
+
+      "population_definition": {
+        "eligibility_criteria": [
+          {
+            "criterion_id": "active_htn_diagnosis",
+            "description": "Active hypertension diagnosis (ICD-10 I10).",
+            "source_table": "conditions",
+            "code_system": "icd10",
+            "code_patterns": ["I10"],
+            "status_requirement": "active"
+          }
+        ],
+        "denominator_rule": "all_eligibility_criteria_pass"
+      },
+
+      "variable_pathways": {
+        "pathways": [
+          {
+            "pathway_id": "smoking_status_primary",
+            "pathway_role": "primary",
+            "variables": ["Smoking Status"],
+            "pass_criterion": "all_variables_ready"
+          }
+        ],
+        "evaluation_order": ["smoking_status_primary"],
+        "result_values": ["primary_pass", "no_valid_pathway"],
+        "derivation_rule": "Degenerate single-pathway (boolean) case: return primary_pass if smoking_status_primary satisfies pass_criterion, else no_valid_pathway. Any check FAIL fails the only pathway."
+      },
+
+      "variables": [
+        {
+          "variable_name": "Smoking Status",
+          "pathway_membership": ["smoking_status_primary"],
+          "source_tables": ["observations"],
+          "code_references": {
+            "loinc": ["72166-2"]
+          },
+          "checks": [
+            {
+              "check_name": "layer1_notnull_fields_smoking",
+              "threshold": 1.0,
+              "priority": "Medium",
+              "remediation_defaults": {
+                "phenotype": "Missing Required Variable",
+                "responsible_role": "Primary Care Site",
+                "action_required": "Capture smoking status (LOINC 72166-2) at the point of care for hypertension patients via clinician documentation or an EHR intake workflow update. The platform routes the gap as a work item but cannot populate clinical data that was never collected."
+              }
+            }
+          ]
+        }
+      ],
+
+      "output_definition": {
+        "primary_output": "Boolean readiness flag per patient for hypertension risk stratification.",
+        "supporting_outputs": ["pathway_result", "blocking_variables"],
+        "output_tables": {
+          "use_case_readiness": "overall_status, required_variables, blocking_variables",
+          "use_case_pathway_results": "pathway_result, active_pathway_id"
+        }
+      }
+    }
+  ]
+}
