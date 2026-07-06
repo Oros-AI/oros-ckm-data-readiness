@@ -94,14 +94,18 @@ This section reflects what is actually on disk and in Neon. An earlier version o
 - **`scripts/` (data loading + session reset): complete.**
 - **Docs locked:** Condition Module Schema v0.1, Architecture Specification, ADR (Apr 2026), and the June demo set (incl. the locked Demo UI/UX Specification and the V010 Migration Spec).
 
-#### Step 7 — 7a, 7b, 7c complete; checks NOT started
+#### Step 7 — 7a–7d complete; engine NOT yet end-to-end runnable
 - **7a — V010 applied (2026-06-22).** `migrations/V010__condition_modules.sql` applied to `ckm_readiness`; the schema is now **21 tables**. The three condition-module tables (`condition_modules`, `use_case_specifications`, `use_case_pathway_results`) exist, and the retrofit CHECK on `remediation_work_items.responsible_role` is in place. Verified via spec §5 (all checks passed).
 - **7b — config loader + db scaffolding complete.** `scoring/lib/db.js` (pg pool from `CKM_DIRECT` + `withTransaction`) and `scoring/lib/config_loader.js` exist and are verified against `ckm_readiness` (clean load, located-error rollback, idempotent reload; exit codes 0/0/1). The config tables now hold the loaded diabetes module — these are config-tier, **not** scoring output.
 - **7c — complete (verified 2026-07-06).** All four configs load clean: exit 0, 4 `condition_modules` rows, 4 `use_case_specifications` rows (`diabetes_risk_stratification`, `hypertension_risk_stratification`, `care_coordination`, `vbc_reporting`). The three stubs express boolean aggregation as a degenerate single pathway — no computation block.
 - **7c genericity finding (2026-07-06), resolved at both enforcement layers:** the `computation` block is **optional** — absent = boolean/pathway-only module (readiness from pathway results alone, no continuous score). Loader validation relaxed (`config_loader.js`) and **V011** dropped the NOT NULL on `use_case_specifications.computation`; Condition Module Schema §2/§4.2/§6 updated to match.
-- **Checks not built.** `scoring/checks/` is empty — none of the check implementations exist yet (`device_patient_linkage_cgm`, `device_temporal_density_cgm_14d`, `layer1_notnull_fields_smoking`, and the rest). The config loader emits a warning for every referenced check (all unbuilt until 7d–7f).
-- **No scoring has run against patient data.** `check_results`, `variable_readiness_scores`, `use_case_readiness`, and `remediation_work_items` are all empty (0 rows). The scoring orchestrator (`scoring/index.js`), aggregator, pathway evaluator, and writers do not exist yet.
-- **7d–7l are not started.**
+- **7d — complete (2026-07-06).** Three pieces, all behaviorally verified against Dataset A:
+  - **V012** added the unique upsert arbiter `uq_check_results_upsert` on `check_results (check_name, patient_id, demo_session_id)`, replacing the non-unique `idx_check_results_patient_check` — the pre-flight found `ON CONFLICT` had no arbiter.
+  - **`scoring/lib/writer.js`** (idempotent batched UNNEST upsert — the only module permitted to write `check_results`) and **`scoring/lib/constants.js`** (`EVALUATION_DATE = '2024-11-14'`; date-anchored checks anchor here, never `NOW()`).
+  - **`scoring/checks/layer6_denom_riskstrat.js`** — the eligibility/denominator check, config-driven (criteria read from `use_case_specifications.population_definition`, nothing hardcoded). First built check; establishes the module shape. Verified: 50 rows (36 PASS / 14 NOT_APPLICABLE / 0 FAIL), idempotent across re-runs.
+- **Remaining checks not built.** 7e (`device_derived_metric_consistency_cgm`) and the six 7f EHR/A1C checks do not exist, nor do the three checks without an assigned sub-step (`device_patient_linkage_cgm`, `device_temporal_density_cgm_14d`, `layer1_notnull_fields_smoking`). The config loader still warns for every unbuilt referenced check.
+- **Engine not end-to-end runnable.** `check_results` HAS been written and verified by the layer6 behavioral gate, then cleaned back to 0 rows for a clean baseline (the check is committed and re-runnable). `variable_readiness_scores`, `use_case_readiness`, and `remediation_work_items` remain empty. The scoring orchestrator (`scoring/index.js`), aggregator, pathway evaluator, use_case writer, and work-item generator do not exist yet.
+- **7e–7l are not started.**
 
 #### Not started (downstream)
 - Step 8 (UI revamp), Step 9 (agentic layer), Step 10 (Vercel deploy).
@@ -173,7 +177,8 @@ scoring/
 ├── index.js                                   # entry: node scoring/index.js <session_id>
 ├── lib/
 │   ├── db.js                                  # pg pool from CKM_DIRECT
-│   ├── writer.js                              # idempotent upsert (ON CONFLICT DO UPDATE) per check+session
+│   ├── constants.js                           # (7d — built) EVALUATION_DATE
+│   ├── writer.js                              # (7d — built) idempotent upsert (ON CONFLICT DO UPDATE) per check+session
 │   ├── config_loader.js                       # (7b) loads conditions/ into DB + validates enumerations
 │   ├── aggregator.js                          # (7g) variable_readiness_scores writer
 │   ├── pathway_evaluator.js                   # (7h) use_case_pathway_results writer
@@ -183,7 +188,7 @@ scoring/
     ├── device_patient_linkage_cgm.js          (not started — was mislabeled "done")
     ├── device_temporal_density_cgm_14d.js     (not started — was mislabeled "done")
     ├── layer1_notnull_fields_smoking.js       (not started — was mislabeled "done")
-    ├── layer6_denom_riskstrat.js              (7d)
+    ├── layer6_denom_riskstrat.js              (7d — built; the template check)
     ├── device_derived_metric_consistency_cgm.js (7e)
     ├── layer1_notnull_fields_a1c.js           (7f)
     ├── layer2_ranges_numeric_a1c.js           (7f)
@@ -216,7 +221,7 @@ export async function runCheck(client, sessionId) {
 }
 ```
 
-Before writing a new check, mirror the Check module pattern above. **No checks exist yet** — `scoring/checks/` is unbuilt as of 2026-07-06 (see Section 3); the first check you write establishes the shape the rest mirror. The check module returns rows; `scoring/lib/writer.js` (also unbuilt) will handle the idempotent upsert. Never write `check_results` directly from a check module.
+Before writing a new check, mirror the Check module pattern above. **`layer6_denom_riskstrat.js` is the first built check (7d)** and establishes the shape the rest mirror — config-driven criteria, single query for all patients, three-way status mapping. The check module returns rows; `scoring/lib/writer.js` (built, 7d) handles the idempotent upsert. Never write `check_results` directly from a check module.
 
 Add new checks to the `CHECKS` registry in `scoring/index.js`.
 
@@ -492,8 +497,8 @@ npm run build
 - **Full check names everywhere in the DB.** Short names live only in the config file as `check_name` references; they resolve to full names at load time via the variable tag.
 - **Commit per sub-step.** 7a commit, 7b commit, etc.
 - **Work on the `ckm-poc-build` branch.** Merge to `main` only at milestones.
-- **Before writing a check:** follow the Check module pattern in Section 7. No checks exist yet (Section 3) — the first one you write sets the shape the rest mirror.
-- **Before writing a writer:** `scoring/lib/writer.js` is not built yet (Section 3). Build it first to the upsert idempotency contract (`INSERT ... ON CONFLICT DO UPDATE`) in Section 7, then mirror it for the other writers.
+- **Before writing a check:** follow the Check module pattern in Section 7 and mirror `scoring/checks/layer6_denom_riskstrat.js` (the built 7d template check).
+- **Before writing a writer:** mirror `scoring/lib/writer.js` (built in 7d to the upsert idempotency contract in Section 7 — `INSERT ... ON CONFLICT DO UPDATE`) for the other writers.
 - **Before altering any doc in `docs/`:** ask first. Those are the canonical contracts.
 - **Dual enforcement for canonical enumerations.** Any field with a fixed value list (e.g., `responsible_role`, `pathway_result`, `use_case_category`, `check_scope`, `check_status`, `priority`) is enforced at two layers: (1) the application layer, via validation in `scoring/lib/config_loader.js` at config load time — fails fast with a clear error naming the offending use case, check, and received value; (2) the database layer, via a CHECK constraint in the migration that creates the column — acts as a backstop for any write bypassing the scoring engine. See Condition Module Schema §3.2 for the canonical statement of this pattern.
 
