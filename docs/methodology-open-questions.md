@@ -6,7 +6,7 @@ concern how the method is framed and defended, not how the engine is coded.
 Tracked here so they survive across work sessions and are revisited in a
 dedicated methodology-triage pass, separate from the POC build.
 
-Last updated: 2026-06-22
+Last updated: 2026-07-06
 
 ---
 
@@ -72,12 +72,32 @@ within 24h: glucose >200 with bicarb <15, or CO2 <15, or pH <7.35; ~10% with
 insufficient labs flagged/excluded, not auto-remediable). Classified Phase 2
 (fit-for-purpose), confirmed by Hanieh.
 
+**Hanieh's input (2026-06-21 email exchange) — direction CONFIRMED:** the check
+is *event validation* — verify a coded DKA event against corroborating clinical
+markers — not encounter completeness.
+
+**Confirmatory markers (per Hanieh):**
+- **Primary:** ketones + pH.
+- **Secondary** (because the primary markers resolve early in DKA treatment):
+  a sharp upward deviation in glucose, insulin drip, and decreased bicarbonate.
+
+**Temporal implication:** validation needs *early-treatment* values — the
+primary markers (ketones, pH) normalize during treatment, so late-window labs
+cannot confirm the event.
+
 **Decision:** NOT built for the June 25 demo. Demoted to a roadmap/voiceover
 credibility beat. Revisit as a built bug only on a real clinical-partner pull,
 given disproportionate synthetic-data complexity (multi-table, time-aligned
 diagnosis-to-labs join) vs. marginal demo value for a breadth-focused audience.
 
-**Owner:** Dominique. **Status:** decided (deferred); spec exists, ready if pulled.
+**Feasibility screen (2026-07-06):** confirms deferral. The marker set requires
+new seeded lab and medication-administration data elements — ketones/pH/
+bicarbonate observation rows, plus an insulin-drip *administration* signal that
+the current prescription-oriented medications table doesn't carry. New machinery,
+out of POC scope.
+
+**Owner:** Dominique. **Status:** decided (deferred to funded phase); Hanieh's
+input captured and ready if pulled post-funding.
 
 ---
 
@@ -118,3 +138,44 @@ above and the methodology questions throughout this document.
 
 **Owner:** Hanieh + Dominique. **Status:** open — revisit during the methodology-
 triage pass and as CKM scope expands beyond single-condition diabetes.
+
+---
+
+## 6. Denominator / study-population validity
+
+*Raised by Hanieh, 2026-06-21.*
+
+**Question:** If a site shows many high-risk patients, is that real or an
+artifact of the wrong base cohort/denominator — and what changes if the base
+cohort is altered?
+
+**Context:** This is a *cohort-definition validity* question, not a seedable
+row-level defect — no synthetic bug can represent it. It is adjacent to
+`layer6_denom_riskstrat` (the denominator eligibility check being built in 7d),
+which enforces a *given* denominator rule but cannot say whether that rule is
+the right one. It also resonates with the module-scoping open question (§5):
+both are unit-of-evaluation questions — what population, defined how, evaluated
+against what.
+
+**Owner:** Hanieh + Dominique. **Status:** open — funded-phase methodology work,
+not a POC bug.
+
+---
+
+## 7. Granular plausibility taxonomy
+
+*Raised by Hanieh, 2026-06-21; flagged by her as "in the weeds," to be developed
+as the system matures.*
+
+**Question:** Should plausibility checking be decomposed into three distinct
+kinds, each with its own evaluation logic?
+
+- **Value plausibility** — the value is implausible regardless of use case.
+  Nuance from Hanieh (transform-vs-evaluate): value plausibility *becomes*
+  fit-for-purpose when evaluated against a use-case-specific range.
+- **Terminology plausibility** — are the specific codes needed to express an
+  event present?
+- **Event plausibility** — could this event have happened to this patient given
+  their history (e.g., DKA in a patient with a normal-A1C history)?
+
+**Owner:** Hanieh + Dominique. **Status:** roadmap-tier, funded-phase.
