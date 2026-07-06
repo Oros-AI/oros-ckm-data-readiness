@@ -32,7 +32,7 @@ Repo layout:
 - `scoring/` — Node ESM scoring engine (Step 7 scope)
 - `scripts/` — Data loading and session reset (complete)
 - `conditions/` — Condition module config files (new in Step 7)
-- `migrations/` — Neon schema migrations (V001–V011, all applied)
+- `migrations/` — Neon schema migrations (V001–V012, all applied)
 - `docs/` — Canonical design docs (authoritative)
 
 ### 1.5. License, IP, and Positioning (authoritative pointers)
@@ -89,7 +89,7 @@ These hold across every demo-facing session.
 This section reflects what is actually on disk and in Neon. An earlier version of this section claimed Step 7 work was complete; that was inaccurate and is corrected below. **Do not trust Build Plan checkboxes over this baseline.**
 
 #### What is real
-- **21-table schema (V001–V011): live.** In Neon database `ckm_readiness` (project `ckm-readiness` / `morning-dew-32497310`, default branch `production`). All FK constraints and indexes; `use_case_specifications.computation` is nullable since V011. **Note: the data is in the `ckm_readiness` database, not the default `neondb`.**
+- **21-table schema (V001–V012): live.** In Neon database `ckm_readiness` (project `ckm-readiness` / `morning-dew-32497310`, default branch `production`). All FK constraints and indexes; `use_case_specifications.computation` is nullable since V011. **Note: the data is in the `ckm_readiness` database, not the default `neondb`.**
 - **All three demo datasets loaded as raw Tier-1 data:** 3 `demo_sessions`, 150 patients, ~248k `cgm_readings`. Session IDs match Section 6.
 - **`scripts/` (data loading + session reset): complete.**
 - **Docs locked:** Condition Module Schema v0.1, Architecture Specification, ADR (Apr 2026), and the June demo set (incl. the locked Demo UI/UX Specification and the V010 Migration Spec).
@@ -370,6 +370,8 @@ CHECK constraint on `pathway_result` — values: `primary_pass`, `fallback_pass`
 
 V010 also adds a CHECK constraint on `remediation_work_items.responsible_role` enforcing the seven canonical values from the Condition Module Schema §3.2. This closes a gap in V006, which declared the column as `VARCHAR(32) NOT NULL` without a value list.
 
+**V012 (2026-07-06)** adds the UNIQUE constraint `uq_check_results_upsert` on `check_results` (`check_name`, `patient_id`, `demo_session_id`) — the ON CONFLICT arbiter the check writer (`scoring/lib/writer.js`, §7) upserts against. It replaces the non-unique `idx_check_results_patient_check` (same three columns); patient-first lookups remain covered by `idx_check_results_patient`. No table added — table count stays 21.
+
 **Full DDL** is specified in `docs/Oros - CKM Data Readiness - Condition Module Schema.md` §4. Mirror the session-aware FK pattern used in V009 (`migrations/V009__foreign_keys.sql`).
 
 ---
@@ -457,8 +459,8 @@ npm run reset:all
 ### Database Migrations
 ```bash
 cd migrations/
-# As of 2026-07-06 V001–V011 all exist and are applied (21 tables, in DB `ckm_readiness`).
-for f in V001 V002 V003 V004 V005 V006 V007 V008 V009 V010 V011; do
+# As of 2026-07-06 V001–V012 all exist and are applied (21 tables, in DB `ckm_readiness`).
+for f in V001 V002 V003 V004 V005 V006 V007 V008 V009 V010 V011 V012; do
   psql "$CKM_DIRECT" -f ${f}__*.sql
 done
 psql "$CKM_DIRECT" -c "\dt"   # 21 tables
