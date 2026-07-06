@@ -112,6 +112,9 @@ The locked Demo UI/UX Specification (§8.3, §10) requires a fixture-export step
 - **The four-facts plain-language strings** (`whatFailed`, `whatUnlocks`, etc., per spec §6.3/§7) — composed from `remediation_work_items.action_required` + the Dataset B Bug Reconciliation, not stored by the engine.
 The export step (or a config/schema addition) must own this derivation. Resolve at or before the Step 7 → fixture-export handoff.
 
+#### Bug-set extension (folds in after 7l, before fixture-export)
+The bug-set extension (Add-1 CSV-structural conformance, Add-2 lab recency, Add-3 value plausibility) folds in **after 7l, before fixture-export** — see the Build Plan's "Planned Bug-Set Expansion" section. Add-4 (DKA event validation) and denominator-validity are funded-phase methodology work (see `docs/methodology-open-questions.md`).
+
 #### Open methodology questions (separate from the build)
 Open methodology questions (weight basis, device-linkage classification, terminology, Add-4) are tracked in `docs/methodology-open-questions.md` — revisited in a dedicated methodology-triage pass with Hanieh, separate from the build.
 
