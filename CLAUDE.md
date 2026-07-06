@@ -10,8 +10,8 @@ This file is the Claude Code working guide. When this file conflicts with a doc 
 
 This repo serves two jobs. Read the one that matches your task.
 
-- **Backend scoring build (Step 7 — scoring engine and condition module).** Sections 2–15 below are the working reference for this. Active backend build.
-- **Demo design / UI-UX (Step 8 territory).** The demo-facing design work is governed by the June 2026 canonical docs listed in Section 1.5 and Section 14. When building or specifying anything a demo audience sees, follow the **Durable Demo Rules (Section 1.6)** and the June docs, not the April-era framing that may still live in the backend sections below.
+- **Backend scoring build (Step 7 — scoring engine and condition module).** Sections 2–16 below are the working reference for this. Active backend build.
+- **Demo design / UI-UX (Step 8 territory).** The demo-facing design work is governed by the June 2026 canonical docs listed in Section 1.5 and Section 15. When building or specifying anything a demo audience sees, follow the **Durable Demo Rules (Section 1.6)** and the June docs, not the April-era framing that may still live in the backend sections below.
 
 If a backend section and a June demo doc appear to disagree about demo-facing behavior or framing, the June demo doc wins. The backend sections remain correct for engine mechanics.
 
@@ -90,7 +90,7 @@ This section reflects what is actually on disk and in Neon. An earlier version o
 
 #### What is real
 - **21-table schema (V001–V010): live.** In Neon database `ckm_readiness` (project `ckm-readiness` / `morning-dew-32497310`, default branch `production`). All FK constraints and indexes. **Note: the data is in the `ckm_readiness` database, not the default `neondb`.**
-- **All three demo datasets loaded as raw Tier-1 data:** 3 `demo_sessions`, 150 patients, ~248k `cgm_readings`. Session IDs match Section 5.
+- **All three demo datasets loaded as raw Tier-1 data:** 3 `demo_sessions`, 150 patients, ~248k `cgm_readings`. Session IDs match Section 6.
 - **`scripts/` (data loading + session reset): complete.**
 - **Docs locked:** Condition Module Schema v0.1, Architecture Specification, ADR (Apr 2026), and the June demo set (incl. the locked Demo UI/UX Specification and the V010 Migration Spec).
 
@@ -116,7 +116,20 @@ Open methodology questions (weight basis, device-linkage classification, termino
 
 ---
 
-## 4. Step 7 Plan — Sub-steps and Dependencies
+## 4. Document Governance (two tracks)
+
+Every doc lives in one of two tracks, decided by one question:
+does it change as part of writing code, or as part of talking to humans?
+
+**Track 1 — Build-coupled → repo-markdown-canonical.** The repo .md is the only truth; Drive is fully out of the loop (any surviving Drive copy is an orphan — archive or delete it). Edit directly in the repo (Claude Code authors), committed with or alongside the related build work. Members: CLAUDE.md (repo-only by rule, never in Drive), Data Model, Build Plan, Condition Module Schema, docs/methodology-open-questions.md, agentic docs, dev-environment docs.
+
+**Track 2 — Stakeholder-facing → Drive-canonical .docx.** Flow: edit in Drive → move the old version to Archive/ with a date suffix → export .docx to repo docs/ → commit. Updated on stakeholder cadence, not build cadence. Members: Technical Specification, Methodology Architecture, Architecture Specification, Operational Governance Framework, Remediation Roles, Operational Care Model, Synthetic Dataset Spec, Signal & Data Elements, Device Data Model, ADR.
+
+**Third surface:** copies in the Claude planning project's context are read snapshots — canonical nowhere. Order of operations: (1) update the doc in its home surface; (2) refresh the Claude project copy if needed.
+
+---
+
+## 5. Step 7 Plan — Sub-steps and Dependencies
 
 All sub-steps must complete before Step 8 can begin. Commit per sub-step.
 
@@ -137,7 +150,7 @@ All sub-steps must complete before Step 8 can begin. Commit per sub-step.
 
 ---
 
-## 5. Active Demo Sessions
+## 6. Active Demo Sessions
 
 | Dataset | Session ID |
 |---------|-----------|
@@ -147,7 +160,7 @@ All sub-steps must complete before Step 8 can begin. Commit per sub-step.
 
 ---
 
-## 6. Scoring Engine — Conventions
+## 7. Scoring Engine — Conventions
 
 ### Target directory structure
 
@@ -225,7 +238,7 @@ The three stubs validate that the config loader and engine work generically — 
 
 ---
 
-## 7. Condition Module Schema (v0.1 — Diabetes only)
+## 8. Condition Module Schema (v0.1 — Diabetes only)
 
 **Canonical doc:** `docs/Oros - CKM Data Readiness - Condition Module Schema.md`. Do not reimplement; reference and follow.
 
@@ -326,7 +339,7 @@ Policy/Regulatory
 
 ---
 
-## 8. Migration V010 — New Tables for Condition Modules
+## 9. Migration V010 — New Tables for Condition Modules
 
 Three additive tables. No ALTER TABLE on existing schema, except for one retrofit CHECK constraint (see below).
 
@@ -353,7 +366,7 @@ V010 also adds a CHECK constraint on `remediation_work_items.responsible_role` e
 
 ---
 
-## 9. Data Model Reference
+## 10. Data Model Reference
 
 Full schema: `docs/Oros - CKM Data Readiness - Data Model.md` (markdown-canonical in-repo; converted from the former `.docx`, now the source of truth).
 
@@ -390,7 +403,7 @@ Full fields in Data Model §4.1. Key ones:
 
 ---
 
-## 10. Demo Narrative — Step 7 Acceptance Test
+## 11. Demo Narrative — Step 7 Acceptance Test
 
 Run the scoring engine against Dataset B. All six bugs must produce the correct `check_results` FAIL, use-case blocking, phenotype, and stakeholder routing:
 
@@ -409,7 +422,7 @@ Dataset C is partial remediation — Bugs 4 and 6 fully resolve, Bug 5 partially
 
 ---
 
-## 11. Commands
+## 12. Commands
 
 ### Scoring Engine
 ```bash
@@ -453,7 +466,7 @@ npm run build
 
 ---
 
-## 12. Environment Variables
+## 13. Environment Variables
 
 - Scoring engine: reads `CKM_DIRECT` from environment (set in `~/.zshrc` on Studio)
 - Scripts: `scripts/.env` (see `scripts/.env.example`) — uses `CKM_DIRECT` → `ckm_readiness`
@@ -462,22 +475,22 @@ npm run build
 
 ---
 
-## 13. Conventions and Style
+## 14. Conventions and Style
 
 - **ESM, not CommonJS.** Scoring engine uses `import`/`export`.
 - **node-pg** for DB access via pool in `scoring/lib/db.js`. No ORM. Hand-written SQL, kept close to the check module.
-- **Idempotent writers.** Every writer deletes its tuple before inserting (see Section 6).
+- **Idempotent writers.** Every writer deletes its tuple before inserting (see Section 7).
 - **Full check names everywhere in the DB.** Short names live only in the config file as `check_name` references; they resolve to full names at load time via the variable tag.
 - **Commit per sub-step.** 7a commit, 7b commit, etc.
 - **Work on the `ckm-poc-build` branch.** Merge to `main` only at milestones.
-- **Before writing a check:** follow the Check module pattern in Section 6. No checks exist yet (Section 3) — the first one you write sets the shape the rest mirror.
-- **Before writing a writer:** `scoring/lib/writer.js` is not built yet (Section 3). Build it first to the DELETE+INSERT idempotency contract in Section 6, then mirror it for the other writers.
+- **Before writing a check:** follow the Check module pattern in Section 7. No checks exist yet (Section 3) — the first one you write sets the shape the rest mirror.
+- **Before writing a writer:** `scoring/lib/writer.js` is not built yet (Section 3). Build it first to the DELETE+INSERT idempotency contract in Section 7, then mirror it for the other writers.
 - **Before altering any doc in `docs/`:** ask first. Those are the canonical contracts.
 - **Dual enforcement for canonical enumerations.** Any field with a fixed value list (e.g., `responsible_role`, `pathway_result`, `use_case_category`, `check_scope`, `check_status`, `priority`) is enforced at two layers: (1) the application layer, via validation in `scoring/lib/config_loader.js` at config load time — fails fast with a clear error naming the offending use case, check, and received value; (2) the database layer, via a CHECK constraint in the migration that creates the column — acts as a backstop for any write bypassing the scoring engine. See Condition Module Schema §3.2 for the canonical statement of this pattern.
 
 ---
 
-## 14. Canonical Documents (`docs/`)
+## 15. Canonical Documents (`docs/`)
 
 All docs live at the top level of `docs/`. The `docs/archive/` folder contains superseded versions — do not read from there.
 
@@ -527,7 +540,7 @@ When any doc conflicts with this file, the doc wins. When in doubt, ask.
 
 ---
 
-## 15. Domain Context
+## 16. Domain Context
 
 - Terminologies: ICD-10 (diagnoses), RxNorm (medications), LOINC (labs + CGM metrics), SNOMED-CT (procedures)
 - Use cases in scope: Diabetes Risk Stratification (primary demo), Hypertension Risk Strat, Care Coordination, VBC Reporting, HEDIS CDC
