@@ -24,7 +24,7 @@ This is the assess → report → respond pipeline. The two-phase readiness mode
 ## Strategic Context
 
 ### Initial Deployment Strategy — Multi-State Rural Health
-The CKM Data Readiness Infrastructure is being designed as a reusable implementation platform for rural and underserved healthcare organizations. It is built once and deployed opportunistically wherever motivated sites, funding, and implementation partners emerge. Current areas of active exploration include Kansas (active; a possible first deployment) and Colorado (in play, pending release of the state rural health RFA), with further opportunities in Montana, Oregon, and other states pursuing rural health transformation initiatives.
+The CKM Data Readiness Infrastructure is being designed as a reusable implementation platform for rural and underserved healthcare organizations. It is built once and deployed opportunistically wherever motivated sites, funding, and implementation partners emerge. The POC targets a multi-state rural health deployment across three states: Kansas (active; the likely first deployment), Montana, and Colorado (pending release of the state rural health RFA). Oregon and other states pursuing rural health transformation initiatives remain future opportunities.
 
 Initial deployments are expected to focus on a small number of highly engaged sites to validate:
 
@@ -308,7 +308,7 @@ Implementation partnerships are emerging and not yet confirmed. They are describ
 
 - **Data aggregation** — CGM and device data aggregation partner (candidates under evaluation; could be a dedicated aggregation platform or a device manufacturer relationship). Not yet selected.
 - **Rural clinic engagement and care model design** — academic and clinical partners in candidate states, contingent on state program pathways (e.g., a Colorado partner pending release of the state rural health RFA and rural-clinic introductions).
-- **State rural health stakeholders** — implementation and validation partners in active or candidate states (Kansas active; Colorado, Montana, Oregon as opportunities develop).
+- **State rural health stakeholders** — implementation and validation partners in the three POC states (Kansas active; Montana; Colorado pending the state rural health RFA), with Oregon and other states as opportunities develop.
 - Additional state-specific partners as identified.
 
 See `Oros_ATTRIBUTION.md` for the living attribution record.
