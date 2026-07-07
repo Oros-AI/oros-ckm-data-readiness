@@ -84,7 +84,7 @@ These hold across every demo-facing session.
 
 ## 3. Current Build State
 
-### Verified baseline — as of 2026-07-07, code HEAD `5716f4a`, doc commits may sit on top (judged from code + DB, not from checkboxes)
+### Verified baseline — as of 2026-07-07, code HEAD `cc5abad`, doc commits may sit on top (judged from code + DB, not from checkboxes)
 
 This section reflects what is actually on disk and in Neon. An earlier version of this section claimed Step 7 work was complete; that was inaccurate and is corrected below. **Do not trust Build Plan checkboxes over this baseline.**
 
@@ -94,7 +94,7 @@ This section reflects what is actually on disk and in Neon. An earlier version o
 - **`scripts/` (data loading + session reset): complete.**
 - **Docs locked:** Condition Module Schema v0.1, Architecture Specification, ADR (Apr 2026), and the June demo set (incl. the locked Demo UI/UX Specification and the V010 Migration Spec).
 
-#### Step 7 — 7a–7e2 complete; engine NOT yet end-to-end runnable
+#### Step 7 — 7a–7e2 complete, 7f in progress; engine NOT yet end-to-end runnable
 - **7a — V010 applied (2026-06-22).** `migrations/V010__condition_modules.sql` applied to `ckm_readiness`; the schema is now **21 tables**. The three condition-module tables (`condition_modules`, `use_case_specifications`, `use_case_pathway_results`) exist, and the retrofit CHECK on `remediation_work_items.responsible_role` is in place. Verified via spec §5 (all checks passed).
 - **7b — config loader + db scaffolding complete.** `scoring/lib/db.js` (pg pool from `CKM_DIRECT` + `withTransaction`) and `scoring/lib/config_loader.js` exist and are verified against `ckm_readiness` (clean load, located-error rollback, idempotent reload; exit codes 0/0/1). The config tables now hold the loaded diabetes module — these are config-tier, **not** scoring output.
 - **7c — complete (verified 2026-07-06).** All four configs load clean: exit 0, 4 `condition_modules` rows, 4 `use_case_specifications` rows (`diabetes_risk_stratification`, `hypertension_risk_stratification`, `care_coordination`, `vbc_reporting`). The three stubs express boolean aggregation as a degenerate single pathway — no computation block.
@@ -108,9 +108,12 @@ This section reflects what is actually on disk and in Neon. An earlier version o
   - **`scoring/checks/device_patient_linkage_cgm.js`** — Bug 1 identity linkage: binary over the 25-patient `cgm_available` cohort, linkage derived LIVE from the join (`cgm_window_metadata.actual_readings` is stale for exactly these patients — healthy counts for unjoinable streams). Gate: A 25 PASS; B and C each 20 PASS / 5 FAIL, FAILs exactly PAT000016–020 (Bug 1 unresolved in C by design). Evidence is per-patient only; orphan device UUIDs deliberately not attributed — building that crosswalk IS the remediation.
   - **`scoring/checks/device_temporal_density_cgm_14d.js`** — Bug 2 temporal density: shares 7e's density definition verbatim (`COUNT(r.*)` joinable in-window / `expected_readings`, `system_time::date BETWEEN` inclusive). Three-way status with a linkage precondition (zero joinable → NOT_APPLICABLE) so Bug 1 patients don't double-surface here. Gate: A 25/0/0; B and C each 12 PASS / 8 FAIL / 5 N_A, byte-identical B→C, FAILs exactly PAT000001–008 (Bug 2 data unchanged in C by design — the platform's detect/flag/route half is what "partially remediated" refers to). No engine-side adherence-vs-transmission logic; the config note is human triage guidance.
   - Known edge (recorded, not acted on): if joinable readings ever exceeded `expected_readings` (duplicate ingestion), density > 1.0 would violate the 0–1 CHECK on `score` and throw. Cannot arise in current datasets (max 0.9700); production-hardening question, not a POC item.
-- **Remaining checks not built.** Only the seven 7f checks remain: the six original EHR/A1C checks plus `layer1_notnull_fields_smoking` (Bug 3). The config loader now warns only for those.
-- **Engine not end-to-end runnable.** `check_results` HAS been written and verified by the layer6, 7e, and 7e2 behavioral gates, then cleaned back to 0 rows for a clean baseline (all four checks are committed and re-runnable). `variable_readiness_scores`, `use_case_readiness`, and `remediation_work_items` remain empty. The scoring orchestrator (`scoring/index.js`), aggregator, pathway evaluator, use_case writer, and work-item generator do not exist yet.
-- **7f–7l are not started.**
+- **7f — in progress (1 of 7 checks; 2026-07-07, commit `cc5abad`).** `scoring/checks/layer1_notnull_fields_a1c.js` — A1C presence + required-field audit, DM-cohort scoped (36 patients). Fully config-driven: LOINC set from the variable's `code_references.loinc`, required fields from a new `params.required_fields` on the check entry (loaded via JSONB passthrough, no loader change, schema still V012), diagnosis cohort from `condition.value_sets.diagnosis.codes`, anchor from `EVALUATION_DATE` as a YYYYMMDD string compare. Presence-ever semantics (recency belongs to other layers); `check_layer='layer1'` per the Data Model enum. Gate: 36 rows/session, **35 PASS / 1 FAIL = PAT000041 in all of A/B/C — identical by design** (no seeded bug targets A1C; the check shapes the a1c_fallback pathway, not the bug arc). Idempotent; `check_results` back to 0 post-gate.
+  - **Carry-forward — PAT000041 A1C gap is a demo-framing question.** Decide by fixture-export; execute (if fixing) in the bug-set-extension reload window; input arrives at 7h.
+  - **Carry-forward — `check_layer` dual-enforcement gap.** The column has a documented enum (`'layer1'`..`'layer5'`) but no DB CHECK constraint — schema-change candidate, not a 7f item.
+- **Remaining checks not built.** Six 7f checks remain: `layer2_ranges_numeric_a1c`, `layer5_date_concordance_a1c`, `layer3_mapped_values`, `layer2_value_standards`, `layer5_date_concordance`, `layer1_notnull_fields_smoking` (Bug 3). The config loader warns only for those.
+- **Engine not end-to-end runnable.** `check_results` HAS been written and verified by the layer6, 7e, 7e2, and 7f-check-1 behavioral gates, then cleaned back to 0 rows for a clean baseline (all five checks are committed and re-runnable). `variable_readiness_scores`, `use_case_readiness`, and `remediation_work_items` remain empty. The scoring orchestrator (`scoring/index.js`), aggregator, pathway evaluator, use_case writer, and work-item generator do not exist yet.
+- **7g–7l are not started.**
 
 #### Not started (downstream)
 - Step 8 (UI revamp), Step 9 (agentic layer), Step 10 (Vercel deploy).
@@ -196,7 +199,7 @@ scoring/
     ├── layer1_notnull_fields_smoking.js       (7f — Bug 3)
     ├── layer6_denom_riskstrat.js              (7d — built; the template check)
     ├── device_derived_metric_consistency_cgm.js (7e — built; Bug 6 TIR concordance)
-    ├── layer1_notnull_fields_a1c.js           (7f)
+    ├── layer1_notnull_fields_a1c.js           (7f — built; A1C presence audit)
     ├── layer2_ranges_numeric_a1c.js           (7f)
     ├── layer5_date_concordance_a1c.js         (7f)
     ├── layer3_mapped_values.js                (7f — Bug 4)
