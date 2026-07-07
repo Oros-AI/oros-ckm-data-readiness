@@ -190,7 +190,7 @@ scoring/
     ├── device_temporal_density_cgm_14d.js     (not started — was mislabeled "done")
     ├── layer1_notnull_fields_smoking.js       (not started — was mislabeled "done")
     ├── layer6_denom_riskstrat.js              (7d — built; the template check)
-    ├── device_derived_metric_consistency_cgm.js (7e)
+    ├── device_derived_metric_consistency_cgm.js (7e — built; Bug 6 TIR concordance)
     ├── layer1_notnull_fields_a1c.js           (7f)
     ├── layer2_ranges_numeric_a1c.js           (7f)
     ├── layer5_date_concordance_a1c.js         (7f)

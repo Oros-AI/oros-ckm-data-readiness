@@ -133,7 +133,7 @@ for all Dataset B and Dataset C generation scripts.
 | **Dataset A value** | PAT000046 = 80.54%, PAT000047 = 98.87%, PAT000048 = 97.92% |
 | **Dataset B value** | Pre-stored TIR overwritten to 65.00% for all three patients. Raw cgm_readings.csv unchanged — recomputing TIR from raw still yields 80–99%. |
 | **Dataset C value** | PAT000046 = 80.54%, PAT000047 = 98.87%, PAT000048 = 97.92% (restored from recomputation) |
-| **Check triggered** | `device_derived_metric_consistency` — Priority: High |
+| **Check triggered** | `device_derived_metric_consistency` — Priority: Medium |
 | **Use case blocked** | Diabetes Risk Stratification — PARTIALLY READY |
 | **Dataset C status** | ✅ FULLY RESOLVED — TIR and GMI recomputed from raw cgm_readings.csv. Raw data untouched (cgm_readings.csv MD5 identical to Dataset B). |
 | **Strategic note** | Bug 6 is the most important bug for NCQA positioning. It enforces the methodology principle that derived metrics (TIR, GMI) are outputs, not inputs. A site reporting TIR directly from device output without recomputation may produce inconsistent values across manufacturers. |
