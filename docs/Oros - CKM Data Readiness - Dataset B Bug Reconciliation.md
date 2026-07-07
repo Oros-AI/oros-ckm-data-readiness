@@ -150,7 +150,7 @@ for all Dataset B and Dataset C generation scripts.
 | 4 | layer3_mapped_values | Medium | READY | PARTIALLY READY | ✅ RESOLVED |
 | 4 | layer2_value_standards | Medium | READY | PARTIALLY READY | ✅ RESOLVED |
 | 5 | layer5_date_concordance | Medium | READY | NOT READY | 🟡 PARTIALLY RESOLVED |
-| 6 | device_derived_metric_consistency | High | READY | NOT READY | ✅ RESOLVED |
+| 6 | device_derived_metric_consistency | Medium | READY | NOT READY | ✅ RESOLVED |
 
 ---
 
