@@ -152,6 +152,7 @@
               "threshold": 1.0,
               "priority": "High",
               "weight": 0.50,
+              "params": { "required_fields": ["value", "effective_date", "value_units"] },
               "remediation_defaults": {
                 "phenotype": "Missing Required Field",
                 "responsible_role": "Primary Care Site",
