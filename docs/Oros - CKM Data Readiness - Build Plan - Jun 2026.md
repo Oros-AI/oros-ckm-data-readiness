@@ -111,14 +111,14 @@ The `conditions/diabetes/diabetes.config.json` file must be created from the loc
 
 ### Completed
 - ✅ GitHub repo: `Oros-AI/oros-ckm-data-readiness`, branch `ckm-poc-build`
-- ✅ Neon database: `ckm_readiness` — 18 tables, 34 FK constraints, all indexes
+- ✅ Neon database: `ckm_readiness` — 21 tables, 38 FK constraints, all indexes
 - ✅ Four-tier schema: Raw → Normalized → Check Results/Patches → Use-Case Ready
 - ✅ Data loading scripts built and verified
 - ✅ All three datasets loaded: A (clean), B (buggy), C (remediated)
 - ✅ Core documentation locked and committed
 - ✅ Condition Module Schema v0.1 locked (`Oros - CKM Data Readiness - Condition Module Schema.md`)
 - ✅ Architecture Specification v1.2 locked
-- ✅ Three check implementations running: device_patient_linkage_cgm, device_temporal_density_cgm_14d, layer1_notnull_fields_smoking
+- ✅ Check implementations built and gate-verified (as of 2026-07-07): layer6_denom_riskstrat (7d), device_derived_metric_consistency_cgm (7e), device_patient_linkage_cgm and device_temporal_density_cgm_14d (7e2). (The earlier "three check implementations running" claim was inaccurate — none existed in April; layer1_notnull_fields_smoking remains unbuilt, Step 7f.)
 
 ### Next Steps
 
@@ -174,18 +174,18 @@ scoring/
 ├── index.js                                   ← entry point: node index.js <session_id>
 ├── lib/
 │   ├── db.js                                  ← pg pool from CKM_DIRECT env var
-│   ├── writer.js                              ← idempotent DELETE+INSERT per check+session
+│   ├── writer.js                              ← idempotent upsert (INSERT ... ON CONFLICT DO UPDATE) per check+session
 │   ├── config_loader.js                       ← loads conditions/*.config.json into DB (Step 7b)
 │   ├── aggregator.js                          ← variable_readiness_scores writer (Step 7g)
 │   ├── pathway_evaluator.js                   ← use_case_pathway_results writer (Step 7h)
 │   ├── use_case_writer.js                     ← use_case_readiness writer (Step 7i)
 │   └── work_item_generator.js                 ← remediation_work_items generator (Step 7j)
 └── checks/
-    ├── device_patient_linkage_cgm.js          ✅ implemented
-    ├── device_temporal_density_cgm_14d.js     ✅ implemented
-    ├── layer1_notnull_fields_smoking.js       ✅ implemented
-    ├── layer6_denom_riskstrat.js              ⬜ Step 7d
-    ├── device_derived_metric_consistency_cgm.js ⬜ Step 7e
+    ├── device_patient_linkage_cgm.js          ✅ implemented (Step 7e2 — Bug 1)
+    ├── device_temporal_density_cgm_14d.js     ✅ implemented (Step 7e2 — Bug 2)
+    ├── layer1_notnull_fields_smoking.js       ⬜ Step 7f (Bug 3 — Hypertension RS)
+    ├── layer6_denom_riskstrat.js              ✅ implemented (Step 7d)
+    ├── device_derived_metric_consistency_cgm.js ✅ implemented (Step 7e)
     ├── layer1_notnull_fields_a1c.js           ⬜ Step 7f
     ├── layer2_ranges_numeric_a1c.js           ⬜ Step 7f
     ├── layer5_date_concordance_a1c.js         ⬜ Step 7f
@@ -195,13 +195,13 @@ scoring/
 
 conditions/
 └── diabetes/
-│   └── diabetes.config.json                   ⬜ Step 7c (full schema)
+│   └── diabetes.config.json                   ✅ implemented (Step 7c — full schema)
 └── hypertension/
-│   └── hypertension.config.json               ⬜ Step 7c (stub — HTN RS, Bug 3)
+│   └── hypertension.config.json               ✅ implemented (Step 7c — stub, HTN RS, Bug 3)
 └── care_coordination/
-│   └── care_coordination.config.json          ⬜ Step 7c (stub — Care Coord., Bug 4)
+│   └── care_coordination.config.json          ✅ implemented (Step 7c — stub, Care Coord., Bug 4)
 └── vbc_reporting/
-    └── vbc_reporting.config.json              ⬜ Step 7c (stub — VBC Reporting, Bug 5)
+    └── vbc_reporting.config.json              ✅ implemented (Step 7c — stub, VBC Reporting, Bug 5)
 ```
 
 ---

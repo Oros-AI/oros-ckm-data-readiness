@@ -68,7 +68,7 @@ for all Dataset B and Dataset C generation scripts.
 | **Effect** | Temporal density check fails for 8 patients. TIR cannot be validly computed. CGM variable readiness = FAIL on device_temporal_density. |
 | **Check triggered** | `device_temporal_density` — Priority: High |
 | **Use case blocked** | Diabetes Risk Stratification — NOT READY |
-| **Dataset C status** | 🟡 PARTIALLY REMEDIATED — density computed, gaps flagged, readiness state correctly characterized as insufficient. Root cause requires clinic-level action on device adherence. System cannot create missing readings. |
+| **Dataset C status** | 🟡 PARTIALLY REMEDIATED — density computed, gaps flagged, readiness state correctly characterized as insufficient. Root cause requires clinic-level action on device adherence. System cannot create missing readings. ("Partially remediated" refers to the platform's half — detection, flagging, and routing are complete; the underlying readings are unchanged in C, so the density check correctly produces identical results for B and C.) |
 
 ---
 
