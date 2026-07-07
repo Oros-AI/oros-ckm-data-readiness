@@ -117,6 +117,15 @@
               "threshold": 0.02,
               "priority": "Medium",
               "weight": 0.20,
+              "params": {
+                "metric": "TIR",
+                "loinc_code": "97506-0",
+                "range_low": 70,
+                "range_high": 180,
+                "inclusive": true,
+                "value_scale": "percent",
+                "min_temporal_density": 0.70
+              },
               "remediation_defaults": {
                 "phenotype": "Derived Metric Concordance Failure",
                 "responsible_role": "Policy/Regulatory",
