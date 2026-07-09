@@ -58,6 +58,11 @@
               "check_name": "layer3_mapped_values",
               "threshold": 1.0,
               "priority": "Medium",
+              "params": {
+                "valid_codes": ["1545653","197361","2200040","311026","313988",
+                                "314076","617310","845488","847191","861007",
+                                "866514","979492"]
+              },
               "remediation_defaults": {
                 "phenotype": "Invalid Terminology Code",
                 "responsible_role": "Technology Vendor",
