@@ -248,3 +248,20 @@ Host studio
 5. ⬜ UI/UX revamp (Step 8)
 6. ⬜ Agentic layer — Claude API abstraction (Step 9)
 7. ⬜ Vercel deployment (Step 10)
+
+---
+
+## 12. Environment Hardening — lessons from 2026-07-09
+
+- **The Claude Code native installer can clobber `~/.zshrc`.** A reinstall on 2026-07-09 reduced it to the installer's own PATH line, silently dropping both the libpq PATH line and the `CKM_DIRECT` export. Back up `~/.zshrc` before any Claude Code reinstall. `~/.zshrc` must always carry both lines:
+  ```bash
+  export PATH="/opt/homebrew/opt/libpq/bin:$PATH"
+  export CKM_DIRECT="postgresql://..."   # from Neon console / 1Password — never from an old .env
+  ```
+  (libpq is keg-only, so Homebrew never symlinks psql into the default PATH — losing this line means "command not found: psql" even though the package is installed.)
+- **Post-disruption smoke test** — run in a FRESH shell after any installer run, credential rotation, or machine reboot:
+  ```bash
+  which psql && psql "$CKM_DIRECT" -c "SELECT 1;"
+  ```
+  Expect `/opt/homebrew/opt/libpq/bin/psql` and one row. A password-authentication failure after a rotation means the string in hand is the dead pre-rotation credential — restore from the Neon console, not from a stale `.env` (scripts/.env is not updated at rotation and may hold dead strings).
+- **Claude Code sandboxes `/tmp`.** Files a Claude Code session writes under `/tmp` (or `/private/tmp`) land in a sandboxed view — invisible to the real filesystem (scp, Finder, other shells), even though they list normally from inside the session. Write session evidence/gate files into the repo working directory (untracked, deleted after verification), never `/tmp`.

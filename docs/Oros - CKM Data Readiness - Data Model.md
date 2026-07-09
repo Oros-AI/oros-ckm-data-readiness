@@ -635,8 +635,8 @@ Aggregated from check results. One row per patient per variable.
 | score_id | UUID | N | Primary key. | 3 |
 | patient_id | VARCHAR(32) | N | Foreign key → patients. | 3 |
 | variable_name | VARCHAR(64) | N | Variable being scored. | 3 |
-| technical_score | DOUBLE PRECISION | N | Weighted average of layer1–layer3 check results. Range 0–1. | 3 |
-| readiness_score | DOUBLE PRECISION | N | Weighted average of layer4–layer5 and device check results. Range 0–1. | 3 |
+| technical_score | DOUBLE PRECISION | N | Weighted average over the layer1–layer3 subset of this variable's checks, weights renormalized within the subset; equals readiness_score when the subset is empty (degenerate copy). Status-indicator basis (PASS = 1.0, FAIL = 0.0; NOT_APPLICABLE excluded, weights renormalized). Range 0–1. Redefined per the ratified 7g Decision 1 (2026-07-09), superseding the earlier layer-bucket split. | 3 |
+| readiness_score | DOUBLE PRECISION | N | Weighted average over ALL of this variable's checks — the operative, consumed number (computation.input_source). Status-indicator basis (PASS = 1.0, FAIL = 0.0; NOT_APPLICABLE excluded, weights renormalized). Range 0–1. Redefined per the ratified 7g Decision 1 (2026-07-09), superseding the earlier layer-bucket split. | 3 |
 | overall_status | VARCHAR(16) | N | 'READY', 'PARTIALLY_READY', 'NOT_READY'. | 3 |
 | blocking_checks | TEXT\[\] | Y | Array of check_names that are currently FAIL for this variable. | 3 |
 | organization_id | VARCHAR(16) | N | ORG001–ORG003. Carried directly for UI grouping and multi-site filtering. | 3 |

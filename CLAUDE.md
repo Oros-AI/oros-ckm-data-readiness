@@ -32,7 +32,7 @@ Repo layout:
 - `scoring/` — Node ESM scoring engine (Step 7 scope)
 - `scripts/` — Data loading and session reset (complete)
 - `conditions/` — Condition module config files (new in Step 7)
-- `migrations/` — Neon schema migrations (V001–V012, all applied)
+- `migrations/` — Neon schema migrations (V001–V013, all applied)
 - `docs/` — Canonical design docs (authoritative)
 
 ### 1.5. License, IP, and Positioning (authoritative pointers)
@@ -84,17 +84,17 @@ These hold across every demo-facing session.
 
 ## 3. Current Build State
 
-### Verified baseline — as of 2026-07-09, code HEAD `d4ac4dc`, doc commits may sit on top (judged from code + DB, not from checkboxes)
+### Verified baseline — as of 2026-07-09, code HEAD `0ba0c68`, doc commits may sit on top (judged from code + DB, not from checkboxes)
 
 This section reflects what is actually on disk and in Neon. An earlier version of this section claimed Step 7 work was complete; that was inaccurate and is corrected below. **Do not trust Build Plan checkboxes over this baseline.**
 
 #### What is real
-- **21-table schema (V001–V012): live.** In Neon database `ckm_readiness` (project `ckm-readiness` / `morning-dew-32497310`, default branch `production`). All FK constraints and indexes; `use_case_specifications.computation` is nullable since V011. **Note: the data is in the `ckm_readiness` database, not the default `neondb`.**
+- **21-table schema (V001–V013): live.** In Neon database `ckm_readiness` (project `ckm-readiness` / `morning-dew-32497310`, default branch `production`). All FK constraints and indexes; `use_case_specifications.computation` is nullable since V011. **Note: the data is in the `ckm_readiness` database, not the default `neondb`.**
 - **All three demo datasets loaded as raw Tier-1 data:** 3 `demo_sessions`, 150 patients, ~248k `cgm_readings`. Session IDs match Section 6.
 - **`scripts/` (data loading + session reset): complete.**
 - **Docs locked:** Condition Module Schema v0.1, Architecture Specification, ADR (Apr 2026), and the June demo set (incl. the locked Demo UI/UX Specification and the V010 Migration Spec).
 
-#### Step 7 — 7a–7f + 7g Part A (A0 + A1) complete; checks stage runs end-to-end, aggregation onward (7g B0–7l) remains
+#### Step 7 — 7a–7g complete; engine runs checks + aggregation end-to-end, pathway evaluation onward (7h–7l) remains
 - **7a — V010 applied (2026-06-22).** `migrations/V010__condition_modules.sql` applied to `ckm_readiness`; the schema is now **21 tables**. The three condition-module tables (`condition_modules`, `use_case_specifications`, `use_case_pathway_results`) exist, and the retrofit CHECK on `remediation_work_items.responsible_role` is in place. Verified via spec §5 (all checks passed).
 - **7b — config loader + db scaffolding complete.** `scoring/lib/db.js` (pg pool from `CKM_DIRECT` + `withTransaction`) and `scoring/lib/config_loader.js` exist and are verified against `ckm_readiness` (clean load, located-error rollback, idempotent reload; exit codes 0/0/1). The config tables now hold the loaded diabetes module — these are config-tier, **not** scoring output.
 - **7c — complete (verified 2026-07-06).** All four configs load clean: exit 0, 4 `condition_modules` rows, 4 `use_case_specifications` rows (`diabetes_risk_stratification`, `hypertension_risk_stratification`, `care_coordination`, `vbc_reporting`). The three stubs express boolean aggregation as a degenerate single pathway — no computation block.
@@ -134,8 +134,14 @@ This section reflects what is actually on disk and in Neon. An earlier version o
     3. **threshold semantics resolved:** `check_results.threshold` is provenance metadata (what the check's own status logic referenced); the aggregator never reads it. Thresholds are not even directionally uniform (1.0 strict-coincident, 0.97 loose, 0.02 inverted tolerance).
     4. **VBC PARTIALLY READY ownership:** the aggregator stays per-patient and boolean-strict for stubs; the site-level rollup (46/49) that produces the demo's PARTIALLY READY reading belongs to the 7i use_case writer / fixture-export layer. Rollup mechanics decided in 7i.
   - **assertConfigAgreement — two legitimate shapes (ratified):** standalone with its own config lookup (`device_patient_linkage_cgm.js` — config agreement is the module's only config interaction) vs assert-on-loaded-entry (`device_derived_metric_consistency_cgm.js` — a params load already exists; the function takes the loaded entry and asserts only). Both greppable by name; no third variant.
-- **Engine runs end-to-end through the checks stage; aggregation onward does not exist yet.** `node scoring/index.js --session all` executes all eleven checks against all three sessions (verified above). `check_results` holds the 1,245-row Part A close. `variable_readiness_scores`, `use_case_pathway_results`, `use_case_readiness`, and `remediation_work_items` remain empty. The aggregator, pathway evaluator, use_case writer, and work-item generator do not exist yet.
-- **Next: 7g B0 — V013 downstream upsert arbiters** (7g pre-check §2 finding: no unique constraint on `variable_readiness_scores (variable_name, patient_id, demo_session_id)` nor on `use_case_pathway_results (patient_id, use_case_name, demo_session_id)`; V012 precedent), **then B1 — aggregator** (Data Model §4.2 two-score correction lands in the B1 doc commit per Decision 1). 7h–7l not started.
+- **7g Part B — complete (2026-07-09, commits `672e518` B0 + `0ba0c68` B1).**
+  - **B0 (`672e518`)** — `migrations/V013__downstream_upsert_arbiters.sql` applied to `ckm_readiness` against empty tables: unique upsert arbiters for the downstream writers — `uq_variable_readiness_scores_upsert` on `variable_readiness_scores (variable_name, patient_id, demo_session_id)`; `uq_use_case_pathway_results_upsert` on `use_case_pathway_results (patient_id, use_case_name, demo_session_id)`, replacing the non-unique V010 index on the same tuple (7g pre-check §2 finding, V012 precedent). **Schema is now V013**; table count stays 21.
+  - **B1 (`0ba0c68`)** — `scoring/lib/aggregator.js` + aggregation stage wired into `scoring/index.js` (own transaction per session, after the checks stage; per-variable READY/PARTIALLY_READY/NOT_READY summary). Implements ratified Decisions 1–4: `readiness_score` = status-indicator weighted average over ALL of a variable's checks (PASS → 1.0, FAIL → 0.0, config weights; N_A excluded with renormalization; all-N_A → no row written); `technical_score` = layer1–3 subset renormalized, degenerate copy when the subset is empty; `overall_status` from `computation.status_label` bands when computation present, boolean (1.0 → READY, else NOT_READY) when computation IS NULL; single-check variables may omit weight (degenerate 1.0), multi-check variables with any weight absent throw; PARTIAL status and organization_id disagreement throw loudly; no hardcoded variable/check names, weights, or bands. Ratified design choices: (1) `writeVariableScores` lives in aggregator.js — writer.js stays check_results-only — following its batched-UNNEST upsert pattern on the V013 arbiter, `scored_at = NOW()` explicit; (2) integer-scaled weights (×1e6) inside the weighted average so config-weight ratios land exactly on their decimal values (0.8, never 0.7999… float dust — scores are demo-facing and fingerprinted); (3) `blocking_checks` TEXT[] travels as one jsonb value per row (UNNEST cannot carry rows-of-arrays), unpacked order-preservingly server-side; (4) Decision 2 is structural — the aggregator's SELECT reads `status` only, never `score`/`threshold`.
+  - **B1 gate (verified by planning thread, 2026-07-09):** 729 rows (243/session: CGM Glucose 25, A1C 36, Smoking Status 35, Medication Code 49, Condition Code 49, Encounter Date 49); all 18 variable×session status cells and every named-patient list exact vs the locked prediction; readiness scores only {0.0, 0.5, 0.8, 1.0}; divergence rows (technical ≠ readiness) exactly the A1C Bug 5 signature — B: PAT000016/018/021/027, C: PAT000021/027, each technical 1.0 / readiness 0.8 (PAT000041 is 0.0/0.0, correctly not a divergence); `blocking_checks` exact — every non-READY row carries exactly its FAILing check name(s), every READY row NULL; run-twice idempotent by content fingerprint.
+  - **Standing fingerprints (whole-table content, both now regression gates):** `check_results` 1,245 rows @ `cdce162c94c7e7306e131805935c27b0` (the A1 query, verbatim — stable across B1's two full runs); `variable_readiness_scores` 729 rows @ `26894c67849f67bddea63a299b125069` (same construction pattern: all columns except score_id/scored_at, '∅' NULL sentinel, '|' concat, ';' agg, ORDER BY variable_name, demo_session_id, patient_id).
+  - **Carry-forwards out of 7g:** eligibility checks (`layer6_denom_riskstrat`) are never aggregated — not a config variable; their FAIL → work-item path lands in **7j** via the config `eligibility_checks` location. The stubs' degenerate named pathways are the **7h** pathway-evaluator input surface. Bug 5 dings the a1c_fallback pathway in B/C through check 4's 0.20 weight (**7h** must see this — 7f carry-forward). VBC site-level rollup (46/49 → PARTIALLY READY) belongs to **7i** per Decision 4. Dataset reload ledger (below) gates **7k**. FAIL-evidence convention convergence parked for **fixture-export**. `scripts/.env` holds dead pre-rotation `CKM_DIRECT`/`CKM_POOLER` strings — refresh or strip by Dominique's hand at the next environment touch.
+- **Engine runs end-to-end through the aggregation stage; pathway evaluation onward does not exist yet.** `node scoring/index.js --session all` executes all eleven checks plus the aggregation stage against all three sessions (B1 gate above). `check_results` holds 1,245 rows and `variable_readiness_scores` 729 rows — the 7h input surface, both fingerprinted above. `use_case_pathway_results`, `use_case_readiness`, and `remediation_work_items` remain empty. The pathway evaluator, use_case writer, and work-item generator do not exist yet.
+- **Next: 7h — pathway evaluator** (`scoring/lib/pathway_evaluator.js` → `use_case_pathway_results`; walks `evaluation_order`, first pathway satisfying `pass_criterion` → `primary_pass`/`fallback_pass`, else `no_valid_pathway`). Inputs flagged above: the stubs' degenerate named pathways, and Bug 5's a1c_fallback ding in B/C. 7i–7l not started.
 
 #### Not started (downstream)
 - Step 8 (UI revamp), Step 9 (agentic layer), Step 10 (Vercel deploy).
@@ -216,7 +222,7 @@ scoring/
 │   ├── constants.js                           # (7d — built) EVALUATION_DATE
 │   ├── writer.js                              # (7d — built) idempotent upsert (ON CONFLICT DO UPDATE) per check+session
 │   ├── config_loader.js                       # (7b) loads conditions/ into DB + validates enumerations
-│   ├── aggregator.js                          # (7g) variable_readiness_scores writer
+│   ├── aggregator.js                          # (7g B1 — built) variable_readiness_scores aggregation + writer
 │   ├── pathway_evaluator.js                   # (7h) use_case_pathway_results writer
 │   ├── use_case_writer.js                     # (7i) use_case_readiness writer
 │   └── work_item_generator.js                 # (7j) remediation_work_items generator
@@ -417,6 +423,8 @@ V010 also adds a CHECK constraint on `remediation_work_items.responsible_role` e
 
 **V012 (2026-07-06)** adds the UNIQUE constraint `uq_check_results_upsert` on `check_results` (`check_name`, `patient_id`, `demo_session_id`) — the ON CONFLICT arbiter the check writer (`scoring/lib/writer.js`, §7) upserts against. It replaces the non-unique `idx_check_results_patient_check` (same three columns); patient-first lookups remain covered by `idx_check_results_patient`. No table added — table count stays 21.
 
+**V013 (2026-07-09)** adds the downstream writers' ON CONFLICT arbiters (V012 precedent): UNIQUE `uq_variable_readiness_scores_upsert` on `variable_readiness_scores` (`variable_name`, `patient_id`, `demo_session_id`) and UNIQUE `uq_use_case_pathway_results_upsert` on `use_case_pathway_results` (`patient_id`, `use_case_name`, `demo_session_id`) — the latter replacing the non-unique V010 index on the same tuple. No table added — table count stays 21.
+
 **Full DDL** is specified in `docs/Oros - CKM Data Readiness - Condition Module Schema.md` §4. Mirror the session-aware FK pattern used in V009 (`migrations/V009__foreign_keys.sql`).
 
 ---
@@ -506,8 +514,8 @@ npm run reset:all
 ### Database Migrations
 ```bash
 cd migrations/
-# As of 2026-07-06 V001–V012 all exist and are applied (21 tables, in DB `ckm_readiness`).
-for f in V001 V002 V003 V004 V005 V006 V007 V008 V009 V010 V011 V012; do
+# As of 2026-07-09 V001–V013 all exist and are applied (21 tables, in DB `ckm_readiness`).
+for f in V001 V002 V003 V004 V005 V006 V007 V008 V009 V010 V011 V012 V013; do
   psql "$CKM_DIRECT" -f ${f}__*.sql
 done
 psql "$CKM_DIRECT" -c "\dt"   # 21 tables
