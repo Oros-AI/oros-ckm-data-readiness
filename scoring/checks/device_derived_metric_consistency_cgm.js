@@ -33,11 +33,8 @@ export const VARIABLE_NAME = 'CGM Glucose';
 export const CHECK_SCOPE = 'device';
 export const CHECK_LAYER = null;
 
-// PRIORITY and THRESHOLD are config-driven (unlike layer6's literals) — they
-// are live bindings populated from the loaded use_case_specifications row the
-// first time runCheck loads the check entry. Do not hardcode values here.
-export let PRIORITY = null;
-export let THRESHOLD = null;
+export const PRIORITY = 'Medium';
+export const THRESHOLD = 0.02;
 
 const USE_CASE_NAME = 'diabetes_risk_stratification';
 
@@ -50,6 +47,25 @@ const PARAM_KEYS = [
   'value_scale',
   'min_temporal_density',
 ];
+
+// Const exports give the orchestrator safe registration-time reads (layer6
+// pattern); this assertion keeps the loaded config as the source of truth —
+// if the config entry drifts from the exports, fail fast rather than write
+// rows stamped with stale values (7e2 pattern, superseding the original 7e
+// mutable-let bindings). Takes the already-loaded check entry — assertions
+// only, no config lookup (loadCheckEntry owns the single lookup).
+function assertConfigAgreement(checkEntry) {
+  if (checkEntry.priority !== PRIORITY) {
+    throw new Error(
+      `${CHECK_NAME}: config priority ${JSON.stringify(checkEntry.priority)} does not match module PRIORITY '${PRIORITY}' — reconcile config and module`,
+    );
+  }
+  if (checkEntry.threshold !== THRESHOLD) {
+    throw new Error(
+      `${CHECK_NAME}: config threshold ${JSON.stringify(checkEntry.threshold)} does not match module THRESHOLD ${THRESHOLD} — reconcile config and module`,
+    );
+  }
+}
 
 // Load this check's entry (threshold, priority, params) from the loaded
 // config — same source layer6 reads, located inside the CGM Glucose variable
@@ -79,10 +95,6 @@ async function loadCheckEntry(client) {
       `${CHECK_NAME}: check entry not found under variable '${VARIABLE_NAME}' in loaded config`,
     );
   }
-  if (typeof entry.threshold !== 'number' || !entry.priority) {
-    throw new Error(`${CHECK_NAME}: check entry is missing threshold or priority`);
-  }
-
   const params = entry.params;
   if (!params || typeof params !== 'object') {
     throw new Error(`${CHECK_NAME}: check entry has no params object — reload the config`);
@@ -98,8 +110,6 @@ async function loadCheckEntry(client) {
     );
   }
 
-  PRIORITY = entry.priority;
-  THRESHOLD = entry.threshold;
   return entry;
 }
 
@@ -175,6 +185,7 @@ const CONCORDANCE_SQL = `
  */
 export async function runCheck(client, sessionId) {
   const entry = await loadCheckEntry(client);
+  assertConfigAgreement(entry);
   const { params } = entry;
 
   const result = await client.query(CONCORDANCE_SQL, [
