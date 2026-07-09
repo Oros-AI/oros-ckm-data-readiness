@@ -49,6 +49,9 @@
               "check_name": "layer5_date_concordance",
               "threshold": 1.0,
               "priority": "Medium",
+              "params": {
+                "max_delta_days": 0
+              },
               "remediation_defaults": {
                 "phenotype": "Date Format Non-Conformance",
                 "responsible_role": "Technology Vendor",
