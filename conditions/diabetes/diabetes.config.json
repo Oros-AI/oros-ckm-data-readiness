@@ -176,6 +176,7 @@
               "threshold": 0.97,
               "priority": "Medium",
               "weight": 0.20,
+              "params": { "max_delta_days": 0 },
               "remediation_defaults": {
                 "phenotype": "Date Format Error",
                 "responsible_role": "Technology Vendor",
