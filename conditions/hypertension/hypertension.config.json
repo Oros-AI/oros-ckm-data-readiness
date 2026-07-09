@@ -58,6 +58,7 @@
               "check_name": "layer1_notnull_fields_smoking",
               "threshold": 1.0,
               "priority": "Medium",
+              "params": { "required_fields": ["value", "effective_date"] },
               "remediation_defaults": {
                 "phenotype": "Missing Required Variable",
                 "responsible_role": "Primary Care Site",
