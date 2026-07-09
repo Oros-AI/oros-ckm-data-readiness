@@ -84,7 +84,7 @@ These hold across every demo-facing session.
 
 ## 3. Current Build State
 
-### Verified baseline — as of 2026-07-08, code HEAD `5503e7e`, doc commits may sit on top (judged from code + DB, not from checkboxes)
+### Verified baseline — as of 2026-07-09, code HEAD `840deed`, doc commits may sit on top (judged from code + DB, not from checkboxes)
 
 This section reflects what is actually on disk and in Neon. An earlier version of this section claimed Step 7 work was complete; that was inaccurate and is corrected below. **Do not trust Build Plan checkboxes over this baseline.**
 
@@ -94,7 +94,7 @@ This section reflects what is actually on disk and in Neon. An earlier version o
 - **`scripts/` (data loading + session reset): complete.**
 - **Docs locked:** Condition Module Schema v0.1, Architecture Specification, ADR (Apr 2026), and the June demo set (incl. the locked Demo UI/UX Specification and the V010 Migration Spec).
 
-#### Step 7 — 7a–7e2 complete, 7f in progress; engine NOT yet end-to-end runnable
+#### Step 7 — 7a–7f complete; engine NOT yet end-to-end runnable (7g–7l remain)
 - **7a — V010 applied (2026-06-22).** `migrations/V010__condition_modules.sql` applied to `ckm_readiness`; the schema is now **21 tables**. The three condition-module tables (`condition_modules`, `use_case_specifications`, `use_case_pathway_results`) exist, and the retrofit CHECK on `remediation_work_items.responsible_role` is in place. Verified via spec §5 (all checks passed).
 - **7b — config loader + db scaffolding complete.** `scoring/lib/db.js` (pg pool from `CKM_DIRECT` + `withTransaction`) and `scoring/lib/config_loader.js` exist and are verified against `ckm_readiness` (clean load, located-error rollback, idempotent reload; exit codes 0/0/1). The config tables now hold the loaded diabetes module — these are config-tier, **not** scoring output.
 - **7c — complete (verified 2026-07-06).** All four configs load clean: exit 0, 4 `condition_modules` rows, 4 `use_case_specifications` rows (`diabetes_risk_stratification`, `hypertension_risk_stratification`, `care_coordination`, `vbc_reporting`). The three stubs express boolean aggregation as a degenerate single pathway — no computation block.
