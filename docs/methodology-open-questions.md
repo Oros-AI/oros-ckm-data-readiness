@@ -201,3 +201,21 @@ with an explicit NULL policy.
 
 **Owner:** Hanieh + Dominique. **Status:** open — for the methodology triage
 pass.
+
+---
+
+## 9. A1C date-concordance tolerance (lab turnaround lag)
+
+*Raised during 7f check 4 (`layer5_date_concordance_a1c`), 2026-07-08.*
+
+**Question:** What obs-vs-encounter date tolerance should A1C date
+concordance allow in production? Real-world A1C result dates can
+legitimately lag the linked encounter date by days (drawn at visit,
+resulted later). The POC synthetic data has zero lag (Dataset A: 258/258
+pairs at delta 0), so the check runs with `params.max_delta_days = 0`
+(exact string match). The production tolerance is a clinical parameter,
+not an engineering one — the check already supports it via config
+(`max_delta_days > 0` switches to a guarded parse-and-delta path).
+
+**Owner:** Hanieh + Dominique. **Status:** open — for the methodology
+triage pass.

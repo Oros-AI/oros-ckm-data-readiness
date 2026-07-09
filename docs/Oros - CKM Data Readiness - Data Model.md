@@ -64,7 +64,7 @@ These tables store the original ingested data unchanged. Each table corresponds 
 
 | **Field** | **Type** | **Null?** | **Description / Notes** | **Tier** |
 |----|----|----|----|----|
-| encounter_id | VARCHAR(32) | N | Primary key. Format: ENC000001. | 1 |
+| encounter_id | VARCHAR(32) | N | Primary key component — the PK is composite: (encounter_id, demo_session_id). Verified live via \d encounters, 2026-07-08. Format: ENC000001. | 1 |
 | patient_id | VARCHAR(32) | N | Foreign key → patients.patient_id. | 1 |
 | organization_id | VARCHAR(16) | N | ORG001–ORG003. | 1 |
 | encounter_date | VARCHAR(10) | N | Raw date as ingested. May be malformed in Dataset B (Bug 5). | 1 |
@@ -76,7 +76,9 @@ These tables store the original ingested data unchanged. Each table corresponds 
 | provider_id_type | VARCHAR(8) | N | Always 'npi'. | 1 |
 | status | VARCHAR(16) | N | finished, cancelled, planned. | 1 |
 | insurance_types | VARCHAR(8) | Y | T1DX insurance code. | 1 |
-| demo_session_id | UUID | N | Session reference. | 1 |
+| demo_session_id | UUID | N | Session reference. PK component (see encounter_id). | 1 |
+
+**Note (2026-07-08):** other Tier-1 table PK entries in this document may need the same composite-key audit against the live schema — several Tier-1 tables carry composite `(entity_id, demo_session_id)` PKs that field descriptions written earlier may state as single-column.
 
 ### 2.4 conditions
 
