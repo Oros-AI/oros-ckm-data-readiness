@@ -83,6 +83,10 @@
               "check_name": "layer2_value_standards",
               "threshold": 1.0,
               "priority": "Medium",
+              "params": {
+                "valid_codes": ["E10.9","E11.40","E11.65","E11.9","E78.5","I10",
+                                "I50.32","I50.9","J44.9","N18.3","N18.4","Z87.891"]
+              },
               "remediation_defaults": {
                 "phenotype": "Invalid Terminology Code",
                 "responsible_role": "Technology Vendor",
