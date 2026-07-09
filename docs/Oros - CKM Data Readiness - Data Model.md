@@ -308,7 +308,7 @@ These tables store the original ingested data unchanged. Each table corresponds 
 | encounter_id | VARCHAR(32) | Y | Foreign key → encounters. | 1 |
 | category | VARCHAR(32) | N | laboratory, vital-signs. | 1 |
 | effective_date | VARCHAR(8) | N | YYYYMMDD as ingested. | 1 |
-| effective_time | VARCHAR(4) | Y | HHMM. May be absent in Dataset B (Bug 3). | 1 |
+| effective_time | VARCHAR(4) | Y | HHMM. Nullable; empty on some observation types in all datasets (e.g., smoking status). Not a Bug 3 artifact — Bug 3 removes whole rows (LOINC 72166-2). | 1 |
 | code | VARCHAR(16) | N | LOINC code. | 1 |
 | code_type | VARCHAR(8) | N | Always 'loinc'. | 1 |
 | value | VARCHAR(32) | N | Numeric or coded value as ingested. | 1 |

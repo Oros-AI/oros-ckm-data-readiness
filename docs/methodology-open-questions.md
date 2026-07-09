@@ -179,3 +179,25 @@ kinds, each with its own evaluation logic?
   their history (e.g., DKA in a patient with a normal-A1C history)?
 
 **Owner:** Hanieh + Dominique. **Status:** roadmap-tier, funded-phase.
+
+---
+
+## 8. NULL clinical_status handling in cohort predicates
+
+*Raised during 7f check 2 (`layer1_notnull_fields_smoking`), 2026-07-08.*
+
+**Question:** How should NULL `conditions.clinical_status` be treated when
+deriving a diagnosis cohort? The two built layer-1 checks currently disagree:
+
+- `layer1_notnull_fields_a1c` admits NULL as active
+  (`clinical_status IS NULL OR clinical_status = 'active'`).
+- `layer1_notnull_fields_smoking` requires strict `clinical_status = 'active'`,
+  per the hypertension config's `status_requirement`.
+
+`clinical_status` is nullable per the Data Model, so the two predicates could
+derive different cohorts for the same clinical question. Needs a single
+canonical rule — candidate: config-declared `status_requirement` everywhere,
+with an explicit NULL policy.
+
+**Owner:** Hanieh + Dominique. **Status:** open — for the methodology triage
+pass.
