@@ -164,6 +164,7 @@
               "threshold": 0.98,
               "priority": "High",
               "weight": 0.30,
+              "params": { "min_value": 2.0, "max_value": 20.0, "expected_units": "%" },
               "remediation_defaults": {
                 "phenotype": "Provider Input Error",
                 "responsible_role": "Primary Care Site",
