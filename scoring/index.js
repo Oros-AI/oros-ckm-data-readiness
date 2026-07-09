@@ -1,8 +1,10 @@
 // scoring/index.js
-// Thin orchestrator for the deterministic scoring engine — checks stage only
-// (7g A1). Sequences the eleven check modules per session; contains NO scoring
-// logic, NO condition logic, NO status mapping. Aggregation (7g B), pathway
-// evaluation (7h), use-case readiness (7i), and work items (7j) come later.
+// Thin orchestrator for the deterministic scoring engine — checks stage
+// (7g A1) followed by the aggregation stage (7g B1). Sequences the eleven
+// check modules per session, then rolls check_results up into
+// variable_readiness_scores via lib/aggregator.js; contains NO scoring
+// logic, NO condition logic, NO status mapping. Pathway evaluation (7h),
+// use-case readiness (7i), and work items (7j) come later.
 //
 // Usage:  node scoring/index.js --session <A|B|C|all|session-uuid>
 //   Letters resolve via demo_sessions.dataset_state; a raw session UUID is
@@ -19,12 +21,16 @@
 // transaction (withTransaction): runCheck → writer.js upsert. Upserts are
 // idempotent on (check_name, patient_id, demo_session_id), so a partial run
 // is safe to rerun. The first check failure aborts the run with exit 1 after
-// naming the check and session. Exit 0 only if all checks on all requested
-// sessions complete.
+// naming the check and session. After the checks stage, the aggregation
+// stage runs in its own transaction per session (aggregateVariables →
+// writeVariableScores upsert on (variable_name, patient_id,
+// demo_session_id)). Exit 0 only if all stages on all requested sessions
+// complete.
 
 import { pool, withTransaction } from './lib/db.js';
 import { loadConfigs } from './lib/config_loader.js';
 import { writeCheckResults } from './lib/writer.js';
+import { aggregateVariables, writeVariableScores } from './lib/aggregator.js';
 
 import * as layer6DenomRiskstrat from './checks/layer6_denom_riskstrat.js';
 import * as devicePatientLinkageCgm from './checks/device_patient_linkage_cgm.js';
@@ -114,15 +120,42 @@ function summaryLine(counts) {
   return `PASS=${counts.PASS} FAIL=${counts.FAIL}${partial} N_A=${counts.NOT_APPLICABLE}`;
 }
 
+// The aggregator is config-driven off the loaded use_case_specifications
+// rows (config-of-record, written by config_loader at startup); fetched once
+// and shared across sessions. ORDER BY makes the per-variable log order
+// deterministic — results are order-independent.
+async function loadUseCaseSpecs() {
+  const result = await pool.query(
+    'SELECT use_case_name, variables, computation FROM use_case_specifications ORDER BY use_case_name',
+  );
+  return result.rows;
+}
+
+// Per-variable READY/PARTIALLY_READY/NOT_READY tally for the stage summary.
+function tallyVariables(rows) {
+  const byVariable = new Map();
+  for (const row of rows) {
+    if (!byVariable.has(row.variable_name)) {
+      byVariable.set(row.variable_name, { rows: 0, READY: 0, PARTIALLY_READY: 0, NOT_READY: 0 });
+    }
+    const t = byVariable.get(row.variable_name);
+    t.rows += 1;
+    t[row.overall_status] += 1;
+  }
+  return byVariable;
+}
+
 async function main() {
   const selector = parseArgs(process.argv);
 
-  console.log('CKM scoring engine — checks stage');
+  console.log('CKM scoring engine — checks + aggregation stages');
   console.log('Loading condition-module configs…');
   await loadConfigs({ verbose: true }); // throws → caught below, exit 1
 
+  const useCaseSpecs = await loadUseCaseSpecs();
   const sessions = await resolveSessions(selector);
   let grandTotal = 0;
+  let grandVariableTotal = 0;
 
   for (const { sessionId, label } of sessions) {
     console.log(`\n=== Session ${label} (${sessionId}) ===`);
@@ -162,9 +195,38 @@ async function main() {
     }
     const sessionTotal = rollup.reduce((sum, r) => sum + r.written, 0);
     console.log(`Session ${label} total rows: ${sessionTotal}`);
+
+    // --- Aggregation stage (7g B1) — own transaction per session ---
+    let aggregated;
+    try {
+      aggregated = await withTransaction(async (client) => {
+        const rows = await aggregateVariables(client, sessionId, useCaseSpecs);
+        const written = await writeVariableScores(client, rows);
+        return { rows, written };
+      });
+    } catch (err) {
+      console.error(
+        `\n❌ Aggregation failed on session ${label} — run aborted (transaction rolled back).`,
+      );
+      console.error(`   ${err.message}`);
+      throw err;
+    }
+
+    console.log(`\n--- Session ${label} aggregation (variable_readiness_scores) ---`);
+    console.log(`${'variable_name'.padEnd(20)} | rows | READY | PARTIALLY_READY | NOT_READY`);
+    for (const [variableName, t] of tallyVariables(aggregated.rows)) {
+      console.log(
+        `${variableName.padEnd(20)} | ${String(t.rows).padStart(4)} | ${String(t.READY).padStart(5)} | ${String(t.PARTIALLY_READY).padStart(15)} | ${String(t.NOT_READY).padStart(9)}`,
+      );
+    }
+    console.log(`Session ${label} variable rows written: ${aggregated.written}`);
+    grandVariableTotal += aggregated.written;
   }
 
-  console.log(`\nAll requested sessions complete. Total rows written: ${grandTotal}`);
+  console.log(
+    `\nAll requested sessions complete. Total check rows written: ${grandTotal}; ` +
+      `total variable rows written: ${grandVariableTotal}`,
+  );
 }
 
 main()
