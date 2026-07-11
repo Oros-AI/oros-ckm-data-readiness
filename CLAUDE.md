@@ -138,7 +138,52 @@ This section reflects what is actually on disk and in Neon. An earlier version o
   - **B0 (`672e518`)** — `migrations/V013__downstream_upsert_arbiters.sql` applied to `ckm_readiness` against empty tables: unique upsert arbiters for the downstream writers — `uq_variable_readiness_scores_upsert` on `variable_readiness_scores (variable_name, patient_id, demo_session_id)`; `uq_use_case_pathway_results_upsert` on `use_case_pathway_results (patient_id, use_case_name, demo_session_id)`, replacing the non-unique V010 index on the same tuple (7g pre-check §2 finding, V012 precedent). **Schema is now V013**; table count stays 21.
   - **B1 (`0ba0c68`)** — `scoring/lib/aggregator.js` + aggregation stage wired into `scoring/index.js` (own transaction per session, after the checks stage; per-variable READY/PARTIALLY_READY/NOT_READY summary). Implements ratified Decisions 1–4: `readiness_score` = status-indicator weighted average over ALL of a variable's checks (PASS → 1.0, FAIL → 0.0, config weights; N_A excluded with renormalization; all-N_A → no row written); `technical_score` = layer1–3 subset renormalized, degenerate copy when the subset is empty; `overall_status` from `computation.status_label` bands when computation present, boolean (1.0 → READY, else NOT_READY) when computation IS NULL; single-check variables may omit weight (degenerate 1.0), multi-check variables with any weight absent throw; PARTIAL status and organization_id disagreement throw loudly; no hardcoded variable/check names, weights, or bands. Ratified design choices: (1) `writeVariableScores` lives in aggregator.js — writer.js stays check_results-only — following its batched-UNNEST upsert pattern on the V013 arbiter, `scored_at = NOW()` explicit; (2) integer-scaled weights (×1e6) inside the weighted average so config-weight ratios land exactly on their decimal values (0.8, never 0.7999… float dust — scores are demo-facing and fingerprinted); (3) `blocking_checks` TEXT[] travels as one jsonb value per row (UNNEST cannot carry rows-of-arrays), unpacked order-preservingly server-side; (4) Decision 2 is structural — the aggregator's SELECT reads `status` only, never `score`/`threshold`.
   - **B1 gate (verified by planning thread, 2026-07-09):** 729 rows (243/session: CGM Glucose 25, A1C 36, Smoking Status 35, Medication Code 49, Condition Code 49, Encounter Date 49); all 18 variable×session status cells and every named-patient list exact vs the locked prediction; readiness scores only {0.0, 0.5, 0.8, 1.0}; divergence rows (technical ≠ readiness) exactly the A1C Bug 5 signature — B: PAT000016/018/021/027, C: PAT000021/027, each technical 1.0 / readiness 0.8 (PAT000041 is 0.0/0.0, correctly not a divergence); `blocking_checks` exact — every non-READY row carries exactly its FAILing check name(s), every READY row NULL; run-twice idempotent by content fingerprint.
-  - **Standing fingerprints (whole-table content, both now regression gates):** `check_results` 1,245 rows @ `cdce162c94c7e7306e131805935c27b0` (the A1 query, verbatim — stable across B1's two full runs); `variable_readiness_scores` 729 rows @ `26894c67849f67bddea63a299b125069` (same construction pattern: all columns except score_id/scored_at, '∅' NULL sentinel, '|' concat, ';' agg, ORDER BY variable_name, demo_session_id, patient_id).
+  - **Standing fingerprints (whole-table content, both regression gates).** Standing rule (2026-07-11): **every standing fingerprint must record its query text verbatim, never prose-only.**
+    - `check_results` — 1,245 rows @ `3a9427a85cf8ed5be8a4c4cfae2c120b`, canonical query recorded verbatim below. Supersedes `cdce162c94c7e7306e131805935c27b0` (7h gate disambiguation, 2026-07-11): the prior digest came from an A1-era query whose text was never recorded; ten plausible reconstructions did not reproduce it, with the data proven unchanged construction-independently (1,245 rows exact; all 33 check×session cells exact vs recorded gates; candidate digest byte-stable across the full 7h sequence including two complete engine runs, 2026-07-11). The defect was the unrecorded query text, not the data.
+
+      ```sql
+      SELECT count(*) AS rows,
+             md5(string_agg(row_text, ';' ORDER BY check_name, demo_session_id, patient_id)) AS fingerprint
+      FROM (
+        SELECT check_name, demo_session_id, patient_id,
+               concat_ws('|',
+                 coalesce(patient_id::text,      '∅'),
+                 coalesce(organization_id::text, '∅'),
+                 coalesce(check_name::text,      '∅'),
+                 coalesce(variable_name::text,   '∅'),
+                 coalesce(check_scope::text,     '∅'),
+                 coalesce(check_layer::text,     '∅'),
+                 coalesce(priority::text,        '∅'),
+                 coalesce(status::text,          '∅'),
+                 coalesce(score::text,           '∅'),
+                 coalesce(threshold::text,       '∅'),
+                 coalesce(observed_value::text,  '∅'),
+                 coalesce(window_days::text,     '∅'),
+                 coalesce(demo_session_id::text, '∅')
+               ) AS row_text
+        FROM check_results
+      ) t;
+      ```
+    - `variable_readiness_scores` — 729 rows @ `e03468102a23dc19322f00ffa466a45f`, canonical query recorded verbatim below. Supersedes `26894c67849f67bddea63a299b125069` (7h pre-check disambiguation, 2026-07-11): the prior digest came from a B1-era query whose text was never recorded; the pre-check reproduced the construction from prose and got a different digest with the data proven unchanged by four construction-independent surfaces (729 rows exact; all 34 variable×session×status cells exact vs recorded gates; named divergence-row signature exact; all 18 count cells exact). The defect was the unrecorded query text, not the data.
+
+      ```sql
+      SELECT count(*) AS rows,
+             md5(string_agg(row_text, ';' ORDER BY variable_name, demo_session_id, patient_id)) AS fingerprint
+      FROM (
+        SELECT variable_name, demo_session_id, patient_id,
+               concat_ws('|',
+                 coalesce(patient_id::text,      '∅'),
+                 coalesce(variable_name::text,   '∅'),
+                 coalesce(technical_score::text, '∅'),
+                 coalesce(readiness_score::text, '∅'),
+                 coalesce(overall_status::text,  '∅'),
+                 coalesce(blocking_checks::text, '∅'),
+                 coalesce(organization_id::text, '∅'),
+                 coalesce(demo_session_id::text, '∅')
+               ) AS row_text
+        FROM variable_readiness_scores
+      ) t;
+      ```
   - **Carry-forwards out of 7g:** eligibility checks (`layer6_denom_riskstrat`) are never aggregated — not a config variable; their FAIL → work-item path lands in **7j** via the config `eligibility_checks` location. The stubs' degenerate named pathways are the **7h** pathway-evaluator input surface. Bug 5 dings the a1c_fallback pathway in B/C through check 4's 0.20 weight (**7h** must see this — 7f carry-forward). VBC site-level rollup (46/49 → PARTIALLY READY) belongs to **7i** per Decision 4. Dataset reload ledger (below) gates **7k**. FAIL-evidence convention convergence parked for **fixture-export**. `scripts/.env` holds dead pre-rotation `CKM_DIRECT`/`CKM_POOLER` strings — refresh or strip by Dominique's hand at the next environment touch.
 - **Engine runs end-to-end through the aggregation stage; pathway evaluation onward does not exist yet.** `node scoring/index.js --session all` executes all eleven checks plus the aggregation stage against all three sessions (B1 gate above). `check_results` holds 1,245 rows and `variable_readiness_scores` 729 rows — the 7h input surface, both fingerprinted above. `use_case_pathway_results`, `use_case_readiness`, and `remediation_work_items` remain empty. The pathway evaluator, use_case writer, and work-item generator do not exist yet.
 - **Next: 7h — pathway evaluator** (`scoring/lib/pathway_evaluator.js` → `use_case_pathway_results`; walks `evaluation_order`, first pathway satisfying `pass_criterion` → `primary_pass`/`fallback_pass`, else `no_valid_pathway`). Inputs flagged above: the stubs' degenerate named pathways, and Bug 5's a1c_fallback ding in B/C. 7i–7l not started.
