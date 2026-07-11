@@ -300,7 +300,7 @@ Consolidated dataset fixes to apply at the bug-set-extension reload, each tagged
 - **FRAMING (decide by fixture-export) — PAT000041 A1C gap** (carried forward from 7f check 1): no qualifying A1C observation in any session, so `layer1_notnull_fields_a1c` reports 35 PASS / 1 FAIL identically in A/B/C. Demo-framing question; execute (if fixing) in this reload window; input arrives at 7h.
 
 #### Bug-set extension (folds in after 7l, before fixture-export)
-The bug-set extension (Add-1 CSV-structural conformance, Add-2 lab recency, Add-3 value plausibility) folds in **after 7l, before fixture-export** — see the Build Plan's "Planned Bug-Set Expansion" section. Add-4 (DKA event validation) and denominator-validity are funded-phase methodology work (see `docs/methodology-open-questions.md`).
+The bug-set extension (Add-1 CSV-structural conformance, Add-2 lab recency, Add-3 value plausibility) folds in **after 7l, before fixture-export** — see the Build Plan's "Planned Bug-Set Expansion" section. Add-4 (DKA event validation) and denominator-validity are funded-phase methodology work (see `docs/methodology-open-questions.md`). Ratified (planning thread, 2026-07-11): the extension carries its OWN dataset reload and full five-fingerprint re-baseline, separate from the 7k ledger reload — two reloads total, never combined; each fingerprint supersession must trace to exactly one reload.
 
 #### Open methodology questions (separate from the build)
 Open methodology questions (weight basis, device-linkage classification, terminology, Add-4) are tracked in `docs/methodology-open-questions.md` — revisited in a dedicated methodology-triage pass with Hanieh, separate from the build.
