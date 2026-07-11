@@ -1,12 +1,13 @@
 // scoring/index.js
 // Thin orchestrator for the deterministic scoring engine — checks stage
-// (7g A1), aggregation stage (7g B1), then pathway evaluation (7h).
-// Sequences the eleven check modules per session, rolls check_results up
-// into variable_readiness_scores via lib/aggregator.js, then walks the
-// config pathways into use_case_pathway_results via
-// lib/pathway_evaluator.js; contains NO scoring logic, NO condition logic,
-// NO status mapping. Use-case readiness (7i) and work items (7j) come
-// later.
+// (7g A1), aggregation stage (7g B1), pathway evaluation (7h), then
+// use-case readiness (7i). Sequences the eleven check modules per session,
+// rolls check_results up into variable_readiness_scores via
+// lib/aggregator.js, walks the config pathways into
+// use_case_pathway_results via lib/pathway_evaluator.js, then joins
+// pathway verdicts to the variable surface into use_case_readiness via
+// lib/use_case_writer.js; contains NO scoring logic, NO condition logic,
+// NO status mapping. Work items (7j) come later.
 //
 // Usage:  node scoring/index.js --session <A|B|C|all|session-uuid>
 //   Letters resolve via demo_sessions.dataset_state; a raw session UUID is
@@ -28,14 +29,17 @@
 // writeVariableScores upsert on (variable_name, patient_id,
 // demo_session_id)), then the pathway stage in its own transaction per
 // session (evaluatePathways → writePathwayResults upsert on (patient_id,
-// use_case_name, demo_session_id)). Exit 0 only if all stages on all
-// requested sessions complete.
+// use_case_name, demo_session_id)), then the use-case readiness stage in
+// its own transaction per session (computeUseCaseReadiness →
+// writeUseCaseReadiness upsert on the same tuple, V014 arbiter). Exit 0
+// only if all stages on all requested sessions complete.
 
 import { pool, withTransaction } from './lib/db.js';
 import { loadConfigs } from './lib/config_loader.js';
 import { writeCheckResults } from './lib/writer.js';
 import { aggregateVariables, writeVariableScores } from './lib/aggregator.js';
 import { evaluatePathways, writePathwayResults } from './lib/pathway_evaluator.js';
+import { computeUseCaseReadiness, writeUseCaseReadiness } from './lib/use_case_writer.js';
 
 import * as layer6DenomRiskstrat from './checks/layer6_denom_riskstrat.js';
 import * as devicePatientLinkageCgm from './checks/device_patient_linkage_cgm.js';
@@ -156,6 +160,21 @@ function tallyPathways(rows) {
   return byUseCase;
 }
 
+// Per-use-case READY/PARTIALLY_READY/NOT_READY tally for the use-case
+// readiness stage summary.
+function tallyUseCases(rows) {
+  const byUseCase = new Map();
+  for (const row of rows) {
+    if (!byUseCase.has(row.use_case_name)) {
+      byUseCase.set(row.use_case_name, { rows: 0, READY: 0, PARTIALLY_READY: 0, NOT_READY: 0 });
+    }
+    const t = byUseCase.get(row.use_case_name);
+    t.rows += 1;
+    t[row.overall_status] += 1;
+  }
+  return byUseCase;
+}
+
 // Per-variable READY/PARTIALLY_READY/NOT_READY tally for the stage summary.
 function tallyVariables(rows) {
   const byVariable = new Map();
@@ -182,6 +201,7 @@ async function main() {
   let grandTotal = 0;
   let grandVariableTotal = 0;
   let grandPathwayTotal = 0;
+  let grandReadinessTotal = 0;
 
   for (const { sessionId, label } of sessions) {
     console.log(`\n=== Session ${label} (${sessionId}) ===`);
@@ -275,12 +295,41 @@ async function main() {
     }
     console.log(`Session ${label} pathway rows written: ${pathways.written}`);
     grandPathwayTotal += pathways.written;
+
+    // --- Use-case readiness stage (7i) — own transaction per session ---
+    let readiness;
+    try {
+      readiness = await withTransaction(async (client) => {
+        const rows = await computeUseCaseReadiness(client, sessionId, useCaseSpecs);
+        const written = await writeUseCaseReadiness(client, rows);
+        return { rows, written };
+      });
+    } catch (err) {
+      console.error(
+        `\n❌ Use-case readiness failed on session ${label} — run aborted (transaction rolled back).`,
+      );
+      console.error(`   ${err.message}`);
+      throw err;
+    }
+
+    console.log(`\n--- Session ${label} use-case readiness (use_case_readiness) ---`);
+    console.log(
+      `${'use_case_name'.padEnd(34)} | rows | READY | PARTIALLY_READY | NOT_READY`,
+    );
+    for (const [useCaseName, t] of tallyUseCases(readiness.rows)) {
+      console.log(
+        `${useCaseName.padEnd(34)} | ${String(t.rows).padStart(4)} | ${String(t.READY).padStart(5)} | ${String(t.PARTIALLY_READY).padStart(15)} | ${String(t.NOT_READY).padStart(9)}`,
+      );
+    }
+    console.log(`Session ${label} readiness rows written: ${readiness.written}`);
+    grandReadinessTotal += readiness.written;
   }
 
   console.log(
     `\nAll requested sessions complete. Total check rows written: ${grandTotal}; ` +
       `total variable rows written: ${grandVariableTotal}; ` +
-      `total pathway rows written: ${grandPathwayTotal}`,
+      `total pathway rows written: ${grandPathwayTotal}; ` +
+      `total readiness rows written: ${grandReadinessTotal}`,
   );
 }
 
