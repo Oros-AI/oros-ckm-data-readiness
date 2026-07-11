@@ -567,6 +567,10 @@ V010 also adds a CHECK constraint on `remediation_work_items.responsible_role` e
 
 **V013 (2026-07-09)** adds the downstream writers' ON CONFLICT arbiters (V012 precedent): UNIQUE `uq_variable_readiness_scores_upsert` on `variable_readiness_scores` (`variable_name`, `patient_id`, `demo_session_id`) and UNIQUE `uq_use_case_pathway_results_upsert` on `use_case_pathway_results` (`patient_id`, `use_case_name`, `demo_session_id`) — the latter replacing the non-unique V010 index on the same tuple. No table added — table count stays 21.
 
+**V014 (2026-07-11)** adds the UNIQUE constraint `uq_use_case_readiness_upsert` on `use_case_readiness` (`patient_id`, `use_case_name`, `demo_session_id`) — the ON CONFLICT arbiter for the use-case writer (`use_case_writer.js`, 7i) — replacing the non-unique V001-era index on the same tuple, and drops the NOT NULL on `use_case_readiness.fitness_score` (boolean/pathway-only modules write no fitness_score; V011 precedent). No table added — table count stays 21.
+
+**V015 (2026-07-11)** adds the UNIQUE constraint `uq_remediation_work_items_upsert` on `remediation_work_items` (`check_result_id`) — the ON CONFLICT arbiter for the work-item generator (`work_item_generator.js`, 7j); one work item per FAIL check result, stated as a constraint — replacing the non-unique `idx_remediation_work_items_check_result`. No table added — table count stays 21.
+
 **Full DDL** is specified in `docs/Oros - CKM Data Readiness - Condition Module Schema.md` §4. Mirror the session-aware FK pattern used in V009 (`migrations/V009__foreign_keys.sql`).
 
 ---
