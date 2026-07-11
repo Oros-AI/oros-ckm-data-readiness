@@ -702,7 +702,7 @@ Aggregated from check results. One row per patient per variable.
 | patient_id | VARCHAR(32) | N | Foreign key → patients. | 4 |
 | use_case_name | VARCHAR(64) | N | Use case identifier (e.g., 'diabetes_risk_stratification'). | 4 |
 | overall_status | VARCHAR(16) | N | 'READY', 'PARTIALLY_READY', 'NOT_READY'. | 4 |
-| fitness_score | DOUBLE PRECISION | N | Weighted aggregate score across required variables. Range 0–1. | 4 |
+| fitness_score | DOUBLE PRECISION | Y | Weighted aggregate score across required variables. Range 0–1. V014: nullable — boolean/pathway-only modules write no fitness_score. | 4 |
 | required_variables | TEXT\[\] | N | Array of variable names required for this use case. | 4 |
 | blocking_variables | TEXT\[\] | Y | Required variables currently NOT_READY. NULL if all pass. | 4 |
 | partial_variables | TEXT\[\] | Y | Required variables currently PARTIALLY_READY. | 4 |
@@ -828,7 +828,7 @@ Database: Single Neon project, single database named 'ckm_readiness'. Schema 'pu
 
 UUID generation: Use gen_random_uuid() for all UUID primary keys. Enable the pgcrypto extension.
 
-Indexing: Index all foreign keys and demo_session_id columns. Index check_results on (patient_id, check_name, demo_session_id). Index use_case_readiness on (patient_id, use_case_name, demo_session_id).
+Indexing: Index all foreign keys and demo_session_id columns. Index check_results on (patient_id, check_name, demo_session_id). The use_case_readiness tuple (patient_id, use_case_name, demo_session_id) is the UNIQUE upsert arbiter uq_use_case_readiness_upsert (V014), not a plain index.
 
 JSONB: fhir_bundles uses JSONB. Add a GIN index for full-text search across FHIR bundles if needed.
 

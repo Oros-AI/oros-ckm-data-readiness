@@ -219,3 +219,22 @@ not an engineering one — the check already supports it via config
 
 **Owner:** Hanieh + Dominique. **Status:** open — for the methodology
 triage pass.
+
+---
+
+## 10. Required/blocking variable semantics (Condition Module Schema §7 Q5)
+
+*Raised during 7i (`use_case_writer.js`), 2026-07-11.*
+
+**Question:** Should use_case_readiness's required/blocking/partial arrays
+span all pathway-eligible variables, or only the active/scoring pathway's?
+The POC uses active/scoring-pathway variables only. Consequence: a patient
+failing the primary pathway but passing fallback reads READY with no trace
+of the primary-pathway failure in required/blocking arrays (e.g. Dataset B
+PAT000016: diabetes PARTIALLY_READY, blocking NULL, while CGM Glucose sits
+NOT_READY). The failure stays visible in variable_readiness_scores and
+use_case_pathway_results. Hanieh to validate whether use-case arrays should
+instead span all pathway-eligible variables.
+
+**Owner:** Hanieh + Dominique. **Status:** open — for the methodology triage
+pass.

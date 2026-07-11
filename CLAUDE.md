@@ -94,7 +94,7 @@ This section reflects what is actually on disk and in Neon. An earlier version o
 - **`scripts/` (data loading + session reset): complete.**
 - **Docs locked:** Condition Module Schema v0.1, Architecture Specification, ADR (Apr 2026), and the June demo set (incl. the locked Demo UI/UX Specification and the V010 Migration Spec).
 
-#### Step 7 — 7a–7h complete; engine runs checks + aggregation + pathway evaluation end-to-end, use-case readiness onward (7i–7l) remains
+#### Step 7 — 7a–7i complete; engine runs checks + aggregation + pathway evaluation + use-case readiness end-to-end, work items onward (7j–7l) remains
 - **7a — V010 applied (2026-06-22).** `migrations/V010__condition_modules.sql` applied to `ckm_readiness`; the schema is now **21 tables**. The three condition-module tables (`condition_modules`, `use_case_specifications`, `use_case_pathway_results`) exist, and the retrofit CHECK on `remediation_work_items.responsible_role` is in place. Verified via spec §5 (all checks passed).
 - **7b — config loader + db scaffolding complete.** `scoring/lib/db.js` (pg pool from `CKM_DIRECT` + `withTransaction`) and `scoring/lib/config_loader.js` exist and are verified against `ckm_readiness` (clean load, located-error rollback, idempotent reload; exit codes 0/0/1). The config tables now hold the loaded diabetes module — these are config-tier, **not** scoring output.
 - **7c — complete (verified 2026-07-06).** All four configs load clean: exit 0, 4 `condition_modules` rows, 4 `use_case_specifications` rows (`diabetes_risk_stratification`, `hypertension_risk_stratification`, `care_coordination`, `vbc_reporting`). The three stubs express boolean aggregation as a degenerate single pathway — no computation block.
@@ -211,8 +211,42 @@ This section reflects what is actually on disk and in Neon. An earlier version o
     ) t;
     ```
   - **Carry-forwards consumed/updated at 7h close:** the Bug 5 a1c_fallback flag is **CONSUMED** — landed exactly as predicted (B diabetes `no_valid_pathway` includes PAT000016/018, the Bug 1 × Bug 5 overlap patients). The **PAT000041 framing input has ARRIVED**: no_valid_pathway in all three sessions (the only A-session no_valid_pathway row); the demo-framing decision goes to the dataset reload window per the existing ledger entry. VBC site-level rollup (46/49 → PARTIALLY READY) still owned by **7i** per 7g Decision 4. Environment-touch item (cosmetic, not blocking): pg emits an SSL-mode deprecation warning on engine startup — address alongside the `scripts/.env` cleanup.
-- **Engine runs end-to-end through the pathway stage; use-case readiness onward does not exist yet.** `node scoring/index.js --session all` executes three stages against all three sessions: eleven checks, aggregation, pathway evaluation (7h gate above). `check_results` holds 1,245 rows, `variable_readiness_scores` 729, and `use_case_pathway_results` 507 — the 7i input surface, all three fingerprinted above. `use_case_readiness` and `remediation_work_items` remain empty. The use_case writer and work-item generator do not exist yet.
-- **Next: 7i — use_case writer** (`scoring/lib/use_case_writer.js` → `use_case_readiness`; fitness_score via `pathway_weighted_average` over the active pathway's variables — or the last-evaluated pathway when none passes — threshold bands → overall_status, pathway-aware required/blocking variables). Inputs flagged above: the VBC site-level rollup (46/49 → PARTIALLY READY) per 7g Decision 4. 7j–7l not started.
+- **7i — complete (2026-07-11, commits `6a918d9` V014 + `3ede92a` code).** `scoring/lib/use_case_writer.js` + use-case readiness stage wired into `scoring/index.js` (fourth stage, own transaction per session, after pathway evaluation; per-use-case READY/PARTIALLY_READY/NOT_READY summary).
+  - **V014 (`migrations/V014__use_case_readiness_arbiter_nullability.sql`):** `uq_use_case_readiness_upsert` UNIQUE constraint on `use_case_readiness (patient_id, use_case_name, demo_session_id)` replacing the non-unique V001-era index (V012/V013 precedent, constraint form — an initial index-form apply was corrected before commit); `fitness_score` NOT NULL dropped (boolean-module contract, V011 precedent). **Schema is now V014**; table count stays 21.
+  - **Ratified 7i decisions (planning thread, 2026-07-11):**
+    - **D1 — scoring pathway** = active pathway on pass, last of `evaluation_order` on `no_valid_pathway`; zero-variable-row geometry throw, never a silent rescue.
+    - **D2 — band application** = sort thresholds by `min_score` DESC, first band where score >= `min_score`; bands shape-validated (canonical statuses, finite, min < max), never value-matched.
+    - **D3 — `required_variables`** = scoring pathway's variables (config order); blocking = subset NOT_READY (missing row counts as blocking, 7h D3 mirror); partial = subset PARTIALLY_READY; empty subsets written NULL, never empty arrays. Active-pathway semantics = Schema §7 Q5 working choice, parked for Hanieh (`docs/methodology-open-questions.md` §10).
+    - **D4 — computation IS NULL** → `fitness_score` NULL, `overall_status` pass → READY else NOT_READY; partial structurally NULL.
+    - **D5 — Schema §6 step 1 layer6-FAIL → NOT_READY override NOT implemented** — zero layer6 FAILs exist in any session (re-verified in the 7i pre-check); unexercised code is unverifiable at gate. DOCUMENTED GAP owned by the bug-set-extension window.
+    - **D6 — VBC site-level rollup (46/49 → PARTIALLY READY) = fixture-export derivation, NOT engine-written** (per-patient table has no home for a site row; the export layer already owns derived outputs). Consumes 7g Decision 4. The site-level band definition (what count reads as PARTIALLY READY) is decided at fixture-export design.
+  - **v0.1 constraint (documented gap #2):** `pathway_weighted_average` implements only the single-variable degenerate (exact copy of the variable's `readiness_score`); a computation-bearing pathway with >1 variable THROWS. Every scored pathway in v0.1 is single-variable; the only multi-variable pathway (`terminology_primary`) is boolean. Generalize only when a real multi-variable scored pathway exists, with Hanieh-validated weights.
+  - **7i gate (confirmed by planning thread, 2026-07-11):** 507 rows (169/session; diabetes 36, hypertension 35, care_coordination 49, vbc 49); all 12 status cells exact (diabetes 35/0/1, 31/4/1, 33/2/1; hypertension 15/0/20, 9/0/26, 9/0/26; care_coordination 49/0/0, 44/0/5, 49/0/0; vbc 49/0/0, 43/0/6, 46/0/3); the nine diabetes non-READY rows exact (PARTIALLY 0.8 partial {A1C}: B PAT000016/018/021/027, C PAT000021/027; NOT_READY 0.0 blocking {A1C}: PAT000041 ×3); stub coupling anti-join 0; stub blocking exact (hypertension {Smoking Status} ×72; care_coordination B 008/015/032 {Medication Code}, 024/040 {Condition Code}; vbc {Encounter Date} B ×6 / C ×3); fitness distribution NULL ×399 / 0.0 ×3 / 0.8 ×6 / 1.0 ×99; standing fingerprints unchanged; run-twice idempotent.
+  - **Standing fingerprint added (fourth):** `use_case_readiness` — 507 rows @ `f4c517dd2bbb38085e54f064ebd51bcb`, canonical query recorded verbatim below (all columns except readiness_id/evaluated_at, '∅' sentinel, '|' concat_ws, ';' agg, ORDER BY use_case_name, demo_session_id, patient_id).
+
+    ```sql
+    SELECT count(*) AS rows,
+           md5(string_agg(row_text, ';' ORDER BY use_case_name, demo_session_id, patient_id)) AS fingerprint
+    FROM (
+      SELECT use_case_name, demo_session_id, patient_id,
+             concat_ws('|',
+               coalesce(patient_id::text,            '∅'),
+               coalesce(use_case_name::text,         '∅'),
+               coalesce(overall_status::text,        '∅'),
+               coalesce(fitness_score::text,         '∅'),
+               coalesce(required_variables::text,    '∅'),
+               coalesce(blocking_variables::text,    '∅'),
+               coalesce(partial_variables::text,     '∅'),
+               coalesce(organization_id::text,       '∅'),
+               coalesce(derived_from_patch_id::text, '∅'),
+               coalesce(demo_session_id::text,       '∅')
+             ) AS row_text
+      FROM use_case_readiness
+    ) t;
+    ```
+  - **Parking lot (one environment-touch sitting):** the stale startup banner (`scoring/index.js` still logs "checks + aggregation stages"), the pg SSL-mode deprecation warning, and the `scripts/.env` dead-credential cleanup.
+- **Engine runs end-to-end through the use-case readiness stage; work items do not exist yet.** `node scoring/index.js --session all` executes four stages against all three sessions: eleven checks, aggregation, pathway evaluation, use-case readiness (7i gate above). `check_results` holds 1,245 rows, `variable_readiness_scores` 729, `use_case_pathway_results` 507, and `use_case_readiness` 507 — all four fingerprinted above. `remediation_work_items` remains empty. The work-item generator does not exist yet.
+- **Next: 7j — work_item_generator** (`scoring/lib/work_item_generator.js` → `remediation_work_items`; one row per FAIL check using `remediation_defaults` from config, upsert on `(check_result_id)`). Inputs flagged above: the eligibility-checks FAIL → work-item path from the 7g carry-forward (config `eligibility_checks` location) lands here. 7k–7l not started.
 
 #### Not started (downstream)
 - Step 8 (UI revamp), Step 9 (agentic layer), Step 10 (Vercel deploy).
@@ -295,7 +329,7 @@ scoring/
 │   ├── config_loader.js                       # (7b) loads conditions/ into DB + validates enumerations
 │   ├── aggregator.js                          # (7g B1 — built) variable_readiness_scores aggregation + writer
 │   ├── pathway_evaluator.js                   # (7h — built) use_case_pathway_results writer
-│   ├── use_case_writer.js                     # (7i) use_case_readiness writer
+│   ├── use_case_writer.js                     # (7i — built) use_case_readiness writer
 │   └── work_item_generator.js                 # (7j) remediation_work_items generator
 └── checks/
     ├── device_patient_linkage_cgm.js          (7e2 — built; Bug 1)
