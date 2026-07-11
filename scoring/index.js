@@ -1,13 +1,14 @@
 // scoring/index.js
 // Thin orchestrator for the deterministic scoring engine — checks stage
-// (7g A1), aggregation stage (7g B1), pathway evaluation (7h), then
-// use-case readiness (7i). Sequences the eleven check modules per session,
-// rolls check_results up into variable_readiness_scores via
+// (7g A1), aggregation stage (7g B1), pathway evaluation (7h), use-case
+// readiness (7i), then work items (7j). Sequences the eleven check modules
+// per session, rolls check_results up into variable_readiness_scores via
 // lib/aggregator.js, walks the config pathways into
-// use_case_pathway_results via lib/pathway_evaluator.js, then joins
-// pathway verdicts to the variable surface into use_case_readiness via
-// lib/use_case_writer.js; contains NO scoring logic, NO condition logic,
-// NO status mapping. Work items (7j) come later.
+// use_case_pathway_results via lib/pathway_evaluator.js, joins pathway
+// verdicts to the variable surface into use_case_readiness via
+// lib/use_case_writer.js, then generates one remediation_work_items row
+// per FAIL via lib/work_item_generator.js; contains NO scoring logic, NO
+// condition logic, NO status mapping.
 //
 // Usage:  node scoring/index.js --session <A|B|C|all|session-uuid>
 //   Letters resolve via demo_sessions.dataset_state; a raw session UUID is
@@ -31,7 +32,9 @@
 // session (evaluatePathways → writePathwayResults upsert on (patient_id,
 // use_case_name, demo_session_id)), then the use-case readiness stage in
 // its own transaction per session (computeUseCaseReadiness →
-// writeUseCaseReadiness upsert on the same tuple, V014 arbiter). Exit 0
+// writeUseCaseReadiness upsert on the same tuple, V014 arbiter), then the
+// work-items stage in its own transaction per session (generateWorkItems →
+// writeWorkItems upsert on (check_result_id), V015 arbiter). Exit 0
 // only if all stages on all requested sessions complete.
 
 import { pool, withTransaction } from './lib/db.js';
@@ -40,6 +43,11 @@ import { writeCheckResults } from './lib/writer.js';
 import { aggregateVariables, writeVariableScores } from './lib/aggregator.js';
 import { evaluatePathways, writePathwayResults } from './lib/pathway_evaluator.js';
 import { computeUseCaseReadiness, writeUseCaseReadiness } from './lib/use_case_writer.js';
+import {
+  buildRemediationLookup,
+  generateWorkItems,
+  writeWorkItems,
+} from './lib/work_item_generator.js';
 
 import * as layer6DenomRiskstrat from './checks/layer6_denom_riskstrat.js';
 import * as devicePatientLinkageCgm from './checks/device_patient_linkage_cgm.js';
@@ -175,6 +183,25 @@ function tallyUseCases(rows) {
   return byUseCase;
 }
 
+// The work-item generator's remediation lookup is built from the loaded
+// condition-module config snapshots (config-of-record, written by
+// config_loader at startup); fetched once and shared across sessions.
+async function loadConditionConfigs() {
+  const result = await pool.query(
+    'SELECT config_json FROM condition_modules ORDER BY condition_id',
+  );
+  return result.rows;
+}
+
+// Per-use-case work-item tally for the work-items stage summary.
+function tallyWorkItems(rows) {
+  const byUseCase = new Map();
+  for (const row of rows) {
+    byUseCase.set(row.use_case_name, (byUseCase.get(row.use_case_name) ?? 0) + 1);
+  }
+  return byUseCase;
+}
+
 // Per-variable READY/PARTIALLY_READY/NOT_READY tally for the stage summary.
 function tallyVariables(rows) {
   const byVariable = new Map();
@@ -197,11 +224,13 @@ async function main() {
   await loadConfigs({ verbose: true }); // throws → caught below, exit 1
 
   const useCaseSpecs = await loadUseCaseSpecs();
+  const remediationLookup = buildRemediationLookup(await loadConditionConfigs());
   const sessions = await resolveSessions(selector);
   let grandTotal = 0;
   let grandVariableTotal = 0;
   let grandPathwayTotal = 0;
   let grandReadinessTotal = 0;
+  let grandWorkItemTotal = 0;
 
   for (const { sessionId, label } of sessions) {
     console.log(`\n=== Session ${label} (${sessionId}) ===`);
@@ -323,13 +352,38 @@ async function main() {
     }
     console.log(`Session ${label} readiness rows written: ${readiness.written}`);
     grandReadinessTotal += readiness.written;
+
+    // --- Work-items stage (7j) — own transaction per session ---
+    let workItems;
+    try {
+      workItems = await withTransaction(async (client) => {
+        const rows = await generateWorkItems(client, sessionId, remediationLookup);
+        const written = await writeWorkItems(client, rows);
+        return { rows, written };
+      });
+    } catch (err) {
+      console.error(
+        `\n❌ Work-item generation failed on session ${label} — run aborted (transaction rolled back).`,
+      );
+      console.error(`   ${err.message}`);
+      throw err;
+    }
+
+    console.log(`\n--- Session ${label} work items (remediation_work_items) ---`);
+    console.log(`${'use_case_name'.padEnd(34)} | items`);
+    for (const [useCaseName, count] of tallyWorkItems(workItems.rows)) {
+      console.log(`${useCaseName.padEnd(34)} | ${String(count).padStart(5)}`);
+    }
+    console.log(`Session ${label} work items written: ${workItems.written}`);
+    grandWorkItemTotal += workItems.written;
   }
 
   console.log(
     `\nAll requested sessions complete. Total check rows written: ${grandTotal}; ` +
       `total variable rows written: ${grandVariableTotal}; ` +
       `total pathway rows written: ${grandPathwayTotal}; ` +
-      `total readiness rows written: ${grandReadinessTotal}`,
+      `total readiness rows written: ${grandReadinessTotal}; ` +
+      `total work items written: ${grandWorkItemTotal}`,
   );
 }
 
