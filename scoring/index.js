@@ -1,10 +1,12 @@
 // scoring/index.js
 // Thin orchestrator for the deterministic scoring engine — checks stage
-// (7g A1) followed by the aggregation stage (7g B1). Sequences the eleven
-// check modules per session, then rolls check_results up into
-// variable_readiness_scores via lib/aggregator.js; contains NO scoring
-// logic, NO condition logic, NO status mapping. Pathway evaluation (7h),
-// use-case readiness (7i), and work items (7j) come later.
+// (7g A1), aggregation stage (7g B1), then pathway evaluation (7h).
+// Sequences the eleven check modules per session, rolls check_results up
+// into variable_readiness_scores via lib/aggregator.js, then walks the
+// config pathways into use_case_pathway_results via
+// lib/pathway_evaluator.js; contains NO scoring logic, NO condition logic,
+// NO status mapping. Use-case readiness (7i) and work items (7j) come
+// later.
 //
 // Usage:  node scoring/index.js --session <A|B|C|all|session-uuid>
 //   Letters resolve via demo_sessions.dataset_state; a raw session UUID is
@@ -24,13 +26,16 @@
 // naming the check and session. After the checks stage, the aggregation
 // stage runs in its own transaction per session (aggregateVariables →
 // writeVariableScores upsert on (variable_name, patient_id,
-// demo_session_id)). Exit 0 only if all stages on all requested sessions
-// complete.
+// demo_session_id)), then the pathway stage in its own transaction per
+// session (evaluatePathways → writePathwayResults upsert on (patient_id,
+// use_case_name, demo_session_id)). Exit 0 only if all stages on all
+// requested sessions complete.
 
 import { pool, withTransaction } from './lib/db.js';
 import { loadConfigs } from './lib/config_loader.js';
 import { writeCheckResults } from './lib/writer.js';
 import { aggregateVariables, writeVariableScores } from './lib/aggregator.js';
+import { evaluatePathways, writePathwayResults } from './lib/pathway_evaluator.js';
 
 import * as layer6DenomRiskstrat from './checks/layer6_denom_riskstrat.js';
 import * as devicePatientLinkageCgm from './checks/device_patient_linkage_cgm.js';
@@ -120,15 +125,35 @@ function summaryLine(counts) {
   return `PASS=${counts.PASS} FAIL=${counts.FAIL}${partial} N_A=${counts.NOT_APPLICABLE}`;
 }
 
-// The aggregator is config-driven off the loaded use_case_specifications
-// rows (config-of-record, written by config_loader at startup); fetched once
-// and shared across sessions. ORDER BY makes the per-variable log order
-// deterministic — results are order-independent.
+// The aggregator and pathway evaluator are config-driven off the loaded
+// use_case_specifications rows (config-of-record, written by config_loader
+// at startup); fetched once and shared across sessions. ORDER BY makes the
+// per-variable log order deterministic — results are order-independent.
 async function loadUseCaseSpecs() {
   const result = await pool.query(
-    'SELECT use_case_name, variables, computation FROM use_case_specifications ORDER BY use_case_name',
+    'SELECT use_case_name, variables, variable_pathways, computation FROM use_case_specifications ORDER BY use_case_name',
   );
   return result.rows;
+}
+
+// Per-use-case primary_pass/fallback_pass/no_valid_pathway tally for the
+// pathway-stage summary.
+function tallyPathways(rows) {
+  const byUseCase = new Map();
+  for (const row of rows) {
+    if (!byUseCase.has(row.use_case_name)) {
+      byUseCase.set(row.use_case_name, {
+        rows: 0,
+        primary_pass: 0,
+        fallback_pass: 0,
+        no_valid_pathway: 0,
+      });
+    }
+    const t = byUseCase.get(row.use_case_name);
+    t.rows += 1;
+    t[row.pathway_result] += 1;
+  }
+  return byUseCase;
 }
 
 // Per-variable READY/PARTIALLY_READY/NOT_READY tally for the stage summary.
@@ -156,6 +181,7 @@ async function main() {
   const sessions = await resolveSessions(selector);
   let grandTotal = 0;
   let grandVariableTotal = 0;
+  let grandPathwayTotal = 0;
 
   for (const { sessionId, label } of sessions) {
     console.log(`\n=== Session ${label} (${sessionId}) ===`);
@@ -221,11 +247,40 @@ async function main() {
     }
     console.log(`Session ${label} variable rows written: ${aggregated.written}`);
     grandVariableTotal += aggregated.written;
+
+    // --- Pathway stage (7h) — own transaction per session ---
+    let pathways;
+    try {
+      pathways = await withTransaction(async (client) => {
+        const rows = await evaluatePathways(client, sessionId, useCaseSpecs);
+        const written = await writePathwayResults(client, rows);
+        return { rows, written };
+      });
+    } catch (err) {
+      console.error(
+        `\n❌ Pathway evaluation failed on session ${label} — run aborted (transaction rolled back).`,
+      );
+      console.error(`   ${err.message}`);
+      throw err;
+    }
+
+    console.log(`\n--- Session ${label} pathways (use_case_pathway_results) ---`);
+    console.log(
+      `${'use_case_name'.padEnd(34)} | rows | primary_pass | fallback_pass | no_valid_pathway`,
+    );
+    for (const [useCaseName, t] of tallyPathways(pathways.rows)) {
+      console.log(
+        `${useCaseName.padEnd(34)} | ${String(t.rows).padStart(4)} | ${String(t.primary_pass).padStart(12)} | ${String(t.fallback_pass).padStart(13)} | ${String(t.no_valid_pathway).padStart(16)}`,
+      );
+    }
+    console.log(`Session ${label} pathway rows written: ${pathways.written}`);
+    grandPathwayTotal += pathways.written;
   }
 
   console.log(
     `\nAll requested sessions complete. Total check rows written: ${grandTotal}; ` +
-      `total variable rows written: ${grandVariableTotal}`,
+      `total variable rows written: ${grandVariableTotal}; ` +
+      `total pathway rows written: ${grandPathwayTotal}`,
   );
 }
 
