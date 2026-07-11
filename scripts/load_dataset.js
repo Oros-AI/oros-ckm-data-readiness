@@ -64,11 +64,35 @@ const args = process.argv.slice(2);
 const datasetIdx = args.indexOf('--dataset');
 
 if (datasetIdx === -1 || !args[datasetIdx + 1]) {
-  console.error('\nUsage: node load_dataset.js --dataset [a|b|c]\n');
+  console.error('\nUsage: node load_dataset.js --dataset [a|b|c] [--session <existing-session-uuid>]\n');
   process.exit(1);
 }
 
 const DATASET = args[datasetIdx + 1].toUpperCase();
+
+// ext: --session <uuid> = re-attach mode. Loads into an EXISTING, EMPTIED
+// session anchor instead of minting a new demo_sessions row. Three guards
+// run before any write (session exists; dataset_state matches; every
+// session-scoped table has zero rows for the session). On this path there
+// is NO write to demo_sessions of any kind. Without --session, behavior is
+// unchanged: a new session row is created.
+const sessionIdx = args.indexOf('--session');
+const SESSION_OVERRIDE = sessionIdx === -1 ? null : args[sessionIdx + 1];
+if (sessionIdx !== -1 && !SESSION_OVERRIDE) {
+  console.error('\nError: --session requires a session UUID.\n');
+  process.exit(1);
+}
+
+// Every session-scoped table (5 runtime + Tier 2 + all Tier 1 + patch/fhir)
+// — same 18-table surface reset_session.js clears. The re-attach guard
+// requires all of them empty for the target session.
+const SESSION_SCOPED_TABLES = [
+  'use_case_readiness', 'fhir_bundles', 'use_case_pathway_results',
+  'remediation_work_items', 'patch_records', 'variable_readiness_scores',
+  'check_results', 'normalized_fields', 'weight_readings', 'bp_readings',
+  'cgm_window_metadata', 'cgm_readings', 'observations', 'medications',
+  'conditions', 'encounters', 'providers', 'patients',
+];
 
 if (!['A', 'B', 'C'].includes(DATASET)) {
   console.error(`\nInvalid dataset: "${DATASET}". Must be a, b, or c.\n`);
@@ -355,18 +379,68 @@ async function main() {
     await client.connect();
     console.log('  ✓ Connected to Neon (ckm_readiness)\n');
 
-    await client.query('BEGIN');
+    let SESSION_ID;
+    if (SESSION_OVERRIDE) {
+      // ext re-attach mode — all three guards verified BEFORE any write.
+      console.log(`  Re-attach mode: verifying session anchor ${SESSION_OVERRIDE}...`);
 
-    // Create demo session
-    console.log('  Creating demo session...');
-    const sessionResult = await client.query(
-      `INSERT INTO demo_sessions (dataset_state, audience_type, created_by, notes, is_active)
-       VALUES ($1, 'Admin', 'load_dataset.js', $2, TRUE)
-       RETURNING session_id`,
-      [DATASET, `Dataset ${DATASET} loaded ${new Date().toISOString()}`]
-    );
-    const SESSION_ID = sessionResult.rows[0].session_id;
-    console.log(`  ✓ Session: ${SESSION_ID}\n`);
+      // Guard 1: session row exists.
+      const sess = await client.query(
+        'SELECT dataset_state FROM demo_sessions WHERE session_id = $1',
+        [SESSION_OVERRIDE]
+      );
+      if (sess.rows.length === 0) {
+        console.error(`\n  ❌ Guard 1 FAILED: session not found: ${SESSION_OVERRIDE}\n`);
+        process.exit(1);
+      }
+      console.log('  ✓ Guard 1: session exists');
+
+      // Guard 2: dataset_state matches the dataset being loaded.
+      if (sess.rows[0].dataset_state !== DATASET) {
+        console.error(
+          `\n  ❌ Guard 2 FAILED: dataset/anchor mismatch — session ${SESSION_OVERRIDE} has ` +
+          `dataset_state '${sess.rows[0].dataset_state}', but --dataset ${DATASET} was requested.\n`
+        );
+        process.exit(1);
+      }
+      console.log(`  ✓ Guard 2: dataset_state matches (${DATASET})`);
+
+      // Guard 3: every session-scoped table is empty for this session —
+      // re-attach only loads into an emptied anchor.
+      const nonEmpty = [];
+      for (const table of SESSION_SCOPED_TABLES) {
+        const r = await client.query(
+          `SELECT COUNT(*)::int AS n FROM ${table} WHERE demo_session_id = $1`,
+          [SESSION_OVERRIDE]
+        );
+        if (r.rows[0].n > 0) nonEmpty.push(`${table}=${r.rows[0].n}`);
+      }
+      if (nonEmpty.length > 0) {
+        console.error(
+          `\n  ❌ Guard 3 FAILED: session-scoped tables not empty for ${SESSION_OVERRIDE}: ` +
+          `${nonEmpty.join(', ')} — reset the session first (reset_session.js --keep-session).\n`
+        );
+        process.exit(1);
+      }
+      console.log('  ✓ Guard 3: all session-scoped tables empty for this session');
+
+      SESSION_ID = SESSION_OVERRIDE;
+      console.log(`  ✓ Session (re-attached, no demo_sessions write): ${SESSION_ID}\n`);
+      await client.query('BEGIN');
+    } else {
+      await client.query('BEGIN');
+
+      // Create demo session
+      console.log('  Creating demo session...');
+      const sessionResult = await client.query(
+        `INSERT INTO demo_sessions (dataset_state, audience_type, created_by, notes, is_active)
+         VALUES ($1, 'Admin', 'load_dataset.js', $2, TRUE)
+         RETURNING session_id`,
+        [DATASET, `Dataset ${DATASET} loaded ${new Date().toISOString()}`]
+      );
+      SESSION_ID = sessionResult.rows[0].session_id;
+      console.log(`  ✓ Session: ${SESSION_ID}\n`);
+    }
 
     // Load each table in FK-safe order
     const tableOrder = [

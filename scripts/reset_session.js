@@ -9,6 +9,12 @@
  *
  * Usage:
  *   node reset_session.js --session <session-uuid>
+ *   node reset_session.js --session <session-uuid> --keep-session
+ *
+ * --keep-session (ext): preserve the demo_sessions row COMPLETELY untouched —
+ * skips the is_active=FALSE deactivation, so the anchor row stays
+ * byte-identical for a fixed-anchor reload (load_dataset.js --session).
+ * The row is never deleted in either mode.
  *
  * To reset ALL sessions (full wipe):
  *   node reset_session.js --all
@@ -22,6 +28,7 @@ const { Client } = require('pg');
 const args = process.argv.slice(2);
 const sessionIdx = args.indexOf('--session');
 const allFlag = args.includes('--all');
+const keepSession = args.includes('--keep-session');
 
 const CONNECTION = process.env.CKM_DIRECT;
 if (!CONNECTION) {
@@ -38,7 +45,7 @@ if (!allFlag && sessionIdx === -1) {
 
 const SESSION_ID = allFlag ? null : args[sessionIdx + 1];
 
-async function resetSession(client, sessionId) {
+async function resetSession(client, sessionId, keep) {
   console.log(`\n  Resetting session: ${sessionId}`);
 
   // Delete in reverse tier order to respect FK constraints
@@ -74,12 +81,18 @@ async function resetSession(client, sessionId) {
     }
   }
 
-  // Deactivate session
-  await client.query(
-    `UPDATE demo_sessions SET is_active = FALSE WHERE session_id = $1`,
-    [sessionId]
-  );
-  console.log(`  ✓  demo_session deactivated`);
+  if (keep) {
+    // ext --keep-session: the demo_sessions row is left completely
+    // untouched (no deactivation) — fixed-anchor reload path.
+    console.log(`  ✓  demo_session row preserved untouched (--keep-session)`);
+  } else {
+    // Deactivate session
+    await client.query(
+      `UPDATE demo_sessions SET is_active = FALSE WHERE session_id = $1`,
+      [sessionId]
+    );
+    console.log(`  ✓  demo_session deactivated`);
+  }
 }
 
 async function main() {
@@ -113,7 +126,7 @@ async function main() {
       }
 
       for (const row of sessions.rows) {
-        await resetSession(client, row.session_id);
+        await resetSession(client, row.session_id, keepSession);
       }
     } else {
       // Verify session exists
@@ -126,7 +139,7 @@ async function main() {
         await client.query('ROLLBACK');
         process.exit(1);
       }
-      await resetSession(client, SESSION_ID);
+      await resetSession(client, SESSION_ID, keepSession);
     }
 
     await client.query('COMMIT');
