@@ -112,6 +112,17 @@ function n(val) {
   return val;
 }
 
+// ext: empty-preserving variant of n() for NOT NULL text columns — a
+// deliberately empty CSV cell loads as '' (empty string), never NULL
+// (n() would turn it into NULL and violate the column's NOT NULL
+// constraint; the Add-1 structural-garble seeds carry empty class /
+// provider_id by design). Scoped to the encounters rowBuilder only —
+// generalization to other tables' NOT NULL columns is a parked item.
+function ee(val) {
+  const v = n(val);
+  return v === null ? '' : v;
+}
+
 // Convert string to boolean
 function toBool(val) {
   if (val === null || val === undefined || val === '') return null;
@@ -198,12 +209,17 @@ const rowBuilders = {
              class, encounter_reason_code, encounter_reason_code_type,
              provider_id, provider_id_type, status, insurance_types, demo_session_id)
           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
+    // ext: NOT NULL text columns (encounter_id, patient_id, organization_id,
+    // encounter_date, class, provider_id, provider_id_type, status) use ee()
+    // — empty CSV cell loads as '', never NULL. Nullable columns keep n().
+    // provider_id_type's old `?? 'npi'` default is subsumed: all CSV rows
+    // carry an explicit value (verified 2026-07-11, zero empty cells).
     params: [
-      n(row.encounter_id), n(row.patient_id), n(row.organization_id),
-      n(row.encounter_date), n(row.encounter_time), n(row.class),
+      ee(row.encounter_id), ee(row.patient_id), ee(row.organization_id),
+      ee(row.encounter_date), n(row.encounter_time), ee(row.class),
       n(row.encounter_reason_code), n(row.encounter_reason_code_type),
-      n(row.provider_id), n(row.provider_id_type) ?? 'npi',
-      n(row.status), n(row.insurance_types), sid
+      ee(row.provider_id), ee(row.provider_id_type),
+      ee(row.status), n(row.insurance_types), sid
     ]
   }),
 
