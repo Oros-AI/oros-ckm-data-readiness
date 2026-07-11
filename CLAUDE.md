@@ -32,7 +32,7 @@ Repo layout:
 - `scoring/` — Node ESM scoring engine (Step 7 scope)
 - `scripts/` — Data loading and session reset (complete)
 - `conditions/` — Condition module config files (new in Step 7)
-- `migrations/` — Neon schema migrations (V001–V013, all applied)
+- `migrations/` — Neon schema migrations (V001–V015, all applied)
 - `docs/` — Canonical design docs (authoritative)
 
 ### 1.5. License, IP, and Positioning (authoritative pointers)
@@ -89,12 +89,12 @@ These hold across every demo-facing session.
 This section reflects what is actually on disk and in Neon. An earlier version of this section claimed Step 7 work was complete; that was inaccurate and is corrected below. **Do not trust Build Plan checkboxes over this baseline.**
 
 #### What is real
-- **21-table schema (V001–V013): live.** In Neon database `ckm_readiness` (project `ckm-readiness` / `morning-dew-32497310`, default branch `production`). All FK constraints and indexes; `use_case_specifications.computation` is nullable since V011. **Note: the data is in the `ckm_readiness` database, not the default `neondb`.**
+- **21-table schema (V001–V015): live.** In Neon database `ckm_readiness` (project `ckm-readiness` / `morning-dew-32497310`, default branch `production`). All FK constraints and indexes; `use_case_specifications.computation` is nullable since V011. **Note: the data is in the `ckm_readiness` database, not the default `neondb`.**
 - **All three demo datasets loaded as raw Tier-1 data:** 3 `demo_sessions`, 150 patients, ~248k `cgm_readings`. Session IDs match Section 6.
 - **`scripts/` (data loading + session reset): complete.**
 - **Docs locked:** Condition Module Schema v0.1, Architecture Specification, ADR (Apr 2026), and the June demo set (incl. the locked Demo UI/UX Specification and the V010 Migration Spec).
 
-#### Step 7 — 7a–7i complete; engine runs checks + aggregation + pathway evaluation + use-case readiness end-to-end, work items onward (7j–7l) remains
+#### Step 7 — 7a–7j complete; engine runs all five stages end-to-end (checks + aggregation + pathway evaluation + use-case readiness + work items), acceptance (7k–7l) remains
 - **7a — V010 applied (2026-06-22).** `migrations/V010__condition_modules.sql` applied to `ckm_readiness`; the schema is now **21 tables**. The three condition-module tables (`condition_modules`, `use_case_specifications`, `use_case_pathway_results`) exist, and the retrofit CHECK on `remediation_work_items.responsible_role` is in place. Verified via spec §5 (all checks passed).
 - **7b — config loader + db scaffolding complete.** `scoring/lib/db.js` (pg pool from `CKM_DIRECT` + `withTransaction`) and `scoring/lib/config_loader.js` exist and are verified against `ckm_readiness` (clean load, located-error rollback, idempotent reload; exit codes 0/0/1). The config tables now hold the loaded diabetes module — these are config-tier, **not** scoring output.
 - **7c — complete (verified 2026-07-06).** All four configs load clean: exit 0, 4 `condition_modules` rows, 4 `use_case_specifications` rows (`diabetes_risk_stratification`, `hypertension_risk_stratification`, `care_coordination`, `vbc_reporting`). The three stubs express boolean aggregation as a degenerate single pathway — no computation block.
@@ -245,8 +245,45 @@ This section reflects what is actually on disk and in Neon. An earlier version o
     ) t;
     ```
   - **Parking lot (one environment-touch sitting):** the stale startup banner (`scoring/index.js` still logs "checks + aggregation stages"), the pg SSL-mode deprecation warning, and the `scripts/.env` dead-credential cleanup.
-- **Engine runs end-to-end through the use-case readiness stage; work items do not exist yet.** `node scoring/index.js --session all` executes four stages against all three sessions: eleven checks, aggregation, pathway evaluation, use-case readiness (7i gate above). `check_results` holds 1,245 rows, `variable_readiness_scores` 729, `use_case_pathway_results` 507, and `use_case_readiness` 507 — all four fingerprinted above. `remediation_work_items` remains empty. The work-item generator does not exist yet.
-- **Next: 7j — work_item_generator** (`scoring/lib/work_item_generator.js` → `remediation_work_items`; one row per FAIL check using `remediation_defaults` from config, upsert on `(check_result_id)`). Inputs flagged above: the eligibility-checks FAIL → work-item path from the 7g carry-forward (config `eligibility_checks` location) lands here. 7k–7l not started.
+- **7j — complete (2026-07-11, commits `1dd3976` V015 + `63e88b5` code).** `scoring/lib/work_item_generator.js` + work-items stage wired into `scoring/index.js` (fifth stage, own transaction per session, after use-case readiness; per-use-case work-item summary).
+  - **V015 (`migrations/V015__remediation_work_items_arbiter.sql`):** `uq_remediation_work_items_upsert` UNIQUE constraint on `remediation_work_items (check_result_id)` replacing the non-unique `idx_remediation_work_items_check_result` — fourth occurrence of the V012/V013/V014 arbiter-gap pattern, constraint form. **Schema is now V015**; table count stays 21. NOTE: V015 was applied to Neon during the interrupted 2026-07-11 morning session and verified post-hoc by the resume audit (gate_7j_build.txt) before the code gate ran.
+  - **Ratified 7j decisions (planning thread, 2026-07-11):**
+    - **D1 — arbiter = UNIQUE(check_result_id):** one work item per FAIL check_result stated as a constraint; check_result_id stability across upserts proven behaviorally at the gate (run-twice digest identical).
+    - **D2 — generic walk:** the generator walks ALL FAIL rows against a lookup built from BOTH config locations (`eligibility_checks` and `variables[].checks`) across all four modules; eligibility FAILs flow through the same exercised path — no special branch exists. Consumes the 7g eligibility carry-forward. Zero layer6 FAILs today → zero rows via exercised code.
+    - **D3 — `use_case_name` sourced from the check's config location;** unambiguous (pre-check: no check_name under two use cases) and now structurally guarded — duplicate check_name across configs throws at lookup build.
+    - **D4 — lifecycle columns are human-owned:** INSERT relies on defaults (status `'open'`, created_at `now()`, work_item_id `gen_random_uuid`); resolved_at/resolution_notes never written; DO UPDATE refreshes content columns only — re-runs cannot reopen resolved items.
+    - **D5 — priority sourced from the FAIL row** (equals config by the assertConfigAgreement invariant).
+    - **D6 — fifth standing fingerprint is content-pure and join-ordered:** work_item_id, check_result_id, created_at excluded; ordering borrowed from check_results via the FK join.
+  - **7j gate (confirmed by planning thread, 2026-07-11):** 124 rows (A 21 / B 58 / C 45); all 17 check×session cells and every named patient list exact vs the locked pre-check inventory; 9-row content mapping with action_required verbatim vs config (programmatic comparison, 9/9 VERBATIM); lifecycle 124 open / 124 resolved_at NULL / 124 notes NULL / 0 use_case_name NULL; anti-joins 0/0/0 (every FAIL has exactly one item, no item on a non-FAIL, no parent-field mismatch); run-twice idempotent by content fingerprint; all four standing regressions unchanged.
+  - **The 20 Session-A smoking work items are CORRECT current behavior** (the known dataset gap, reload ledger, BLOCKING pre-7k) — they re-baseline at the reload, including the fifth fingerprint.
+  - **Reset-order verification (resume audit Phase 2):** `scripts/reset_session.js` deletes `remediation_work_items` (line 51) before `check_results` (line 54) — the V015 FK (NO ACTION) is safe under session reset. Recorded; no scripts change needed.
+  - **Standing fingerprint added (fifth):** `remediation_work_items` — 124 rows @ `2e5a8b845ad18a38278865d0f9f0405e`, canonical query recorded verbatim below (content-pure: work_item_id, check_result_id, created_at excluded; '∅' sentinel, '|' concat_ws, ';' agg, ORDER BY check_name, demo_session_id, patient_id via the check_results join).
+
+    ```sql
+    SELECT count(*) AS rows,
+           md5(string_agg(row_text, ';' ORDER BY check_name, demo_session_id, patient_id)) AS fingerprint
+    FROM (
+      SELECT cr.check_name, w.demo_session_id, w.patient_id,
+             concat_ws('|',
+               coalesce(w.patient_id::text,       '∅'),
+               coalesce(w.organization_id::text,  '∅'),
+               coalesce(cr.check_name::text,      '∅'),
+               coalesce(w.phenotype::text,        '∅'),
+               coalesce(w.use_case_name::text,    '∅'),
+               coalesce(w.responsible_role::text, '∅'),
+               coalesce(w.action_required::text,  '∅'),
+               coalesce(w.priority::text,         '∅'),
+               coalesce(w.status::text,           '∅'),
+               coalesce(w.resolved_at::text,      '∅'),
+               coalesce(w.resolution_notes::text, '∅'),
+               coalesce(w.demo_session_id::text,  '∅')
+             ) AS row_text
+      FROM remediation_work_items w
+      JOIN check_results cr ON cr.check_result_id = w.check_result_id
+    ) t;
+    ```
+- **Engine runs end-to-end through the work-items stage.** `node scoring/index.js --session all` executes five stages against all three sessions: eleven checks, aggregation, pathway evaluation, use-case readiness, work items (7j gate above). `check_results` holds 1,245 rows, `variable_readiness_scores` 729, `use_case_pathway_results` 507, `use_case_readiness` 507, and `remediation_work_items` 124 — all five fingerprinted above. No runtime table remains empty.
+- **Next: 7k — end-to-end Dataset B acceptance, BLOCKED on the dataset reload** (smoking observations for the 20 uncovered patients, reload ledger above). 7l follows.
 
 #### Not started (downstream)
 - Step 8 (UI revamp), Step 9 (agentic layer), Step 10 (Vercel deploy).
@@ -330,7 +367,7 @@ scoring/
 │   ├── aggregator.js                          # (7g B1 — built) variable_readiness_scores aggregation + writer
 │   ├── pathway_evaluator.js                   # (7h — built) use_case_pathway_results writer
 │   ├── use_case_writer.js                     # (7i — built) use_case_readiness writer
-│   └── work_item_generator.js                 # (7j) remediation_work_items generator
+│   └── work_item_generator.js                 # (7j — built) remediation_work_items generator
 └── checks/
     ├── device_patient_linkage_cgm.js          (7e2 — built; Bug 1)
     ├── device_temporal_density_cgm_14d.js     (7e2 — built; Bug 2)
@@ -619,8 +656,8 @@ npm run reset:all
 ### Database Migrations
 ```bash
 cd migrations/
-# As of 2026-07-09 V001–V013 all exist and are applied (21 tables, in DB `ckm_readiness`).
-for f in V001 V002 V003 V004 V005 V006 V007 V008 V009 V010 V011 V012 V013; do
+# As of 2026-07-11 V001–V015 all exist and are applied (21 tables, in DB `ckm_readiness`).
+for f in V001 V002 V003 V004 V005 V006 V007 V008 V009 V010 V011 V012 V013 V014 V015; do
   psql "$CKM_DIRECT" -f ${f}__*.sql
 done
 psql "$CKM_DIRECT" -c "\dt"   # 21 tables

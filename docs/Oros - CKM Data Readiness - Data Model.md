@@ -692,6 +692,8 @@ Aggregated from check results. One row per patient per variable.
 | created_at | TIMESTAMPTZ | N | Timestamp of work item creation. | 3 |
 | demo_session_id | UUID | N | Session reference. | 3 |
 
+**V015 (2026-07-11):** `check_result_id` is the UNIQUE upsert arbiter `uq_remediation_work_items_upsert`, replacing the non-unique `idx_remediation_work_items_check_result` — one work item per FAIL check result, stated as a constraint (same arbiter-gap pattern as V012/V013/V014). At insert, `status` (`'open'`) and `created_at` (`now()`) are default-supplied; the lifecycle fields (`status`, `resolved_at`, `resolution_notes`, `created_at`) are never engine-updated — the work-item writer's DO UPDATE refreshes content columns only.
+
 ## 7. Tier 4a — Use-Case Readiness
 
 ### 7.1 use_case_readiness
