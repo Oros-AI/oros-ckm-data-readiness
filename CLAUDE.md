@@ -84,7 +84,7 @@ These hold across every demo-facing session.
 
 ## 3. Current Build State
 
-### Verified baseline — as of 2026-07-12, code HEAD `8cec258` (fixture-export complete), doc commits may sit on top (judged from code + DB, not from checkboxes)
+### Verified baseline — as of 2026-07-12, code HEAD `df8b858` (Step 8 Increment 1 complete), doc commits may sit on top (judged from code + DB, not from checkboxes)
 
 This section reflects what is actually on disk and in Neon. An earlier version of this section claimed Step 7 work was complete; that was inaccurate and is corrected below. **Do not trust Build Plan checkboxes over this baseline.**
 
@@ -246,6 +246,8 @@ This section reflects what is actually on disk and in Neon. An earlier version o
     ```
   - **Parking lot (one environment-touch sitting):** the stale startup banner (`scoring/index.js` still logs "checks + aggregation stages"), the pg SSL-mode deprecation warning, and the `scripts/.env` dead-credential cleanup.
   - **Parking lot (next config-touch window):** phenotype vocabulary inconsistency — "Date Format Error" (`layer5_date_concordance_a1c`) vs "Date Format Non-Conformance" (`layer5_date_concordance`); one string under the standardized-phenotype-catalog principle. Requires a config edit + engine re-run + work-items fingerprint re-baseline.
+  - **Parked (self-clears in Step 8):** `npm run build` is broken at HEAD by ~40 pre-existing type errors in five legacy wizard files (ArchiaMockClient, App.tsx, TopPipelineBar, AppConfig, DeterministicPipelineEngine — all Replace/Remove per Demo UI/UX Spec §15). Pre-dates Step 8; likely surfaced by the TS 5.4→5.9 range float. `vite dev` is unaffected (no typecheck). Self-clears as Increments 2–4 delete these files — do NOT repair legacy code.
+  - **Parked (environment-touch batch):** `package.json` `"name"` is still the legacy `healthcare-pipeline-ui` — cosmetic public-repo hygiene.
 - **7j — complete (2026-07-11, commits `1dd3976` V015 + `63e88b5` code).** `scoring/lib/work_item_generator.js` + work-items stage wired into `scoring/index.js` (fifth stage, own transaction per session, after use-case readiness; per-use-case work-item summary).
   - **V015 (`migrations/V015__remediation_work_items_arbiter.sql`):** `uq_remediation_work_items_upsert` UNIQUE constraint on `remediation_work_items (check_result_id)` replacing the non-unique `idx_remediation_work_items_check_result` — fourth occurrence of the V012/V013/V014 arbiter-gap pattern, constraint form. **Schema is now V015**; table count stays 21. NOTE: V015 was applied to Neon during the interrupted 2026-07-11 morning session and verified post-hoc by the resume audit (gate_7j_build.txt) before the code gate ran.
   - **Ratified 7j decisions (planning thread, 2026-07-11):**
@@ -307,6 +309,15 @@ Supersedes the former "Open design point — fixture-export layer" block. The **
 - **Population fitnessScore: null by design** — the engine emits per-patient fitness; no population statistic is invented at export.
 - **Evidence convergence ratified AT THE EXPORT BOUNDARY:** `check_results.observed_value` stays heterogeneous-documented in the DB (key-value prose + JSON shapes, per check); the content map's per-check `renderEvidence()` converges them to uniform display strings at export; engine-side convergence REJECTED for the POC — funded-phase item, conditional on a real DB-level consumer existing. Consumes the 7f/7g evidence-convention carry-forward.
 - **Determinism gate (verified):** no timestamps, no minted UUIDs, sorted arrays; export-twice byte-identical (md5 A `d9731106…`, B `4a7d6d9a…`, C `b4416353…`). Evidence: gate_fx_precheck.txt, gate_fx1_selftest.txt, gate_fx1_selftest_v2.txt, gate_fx2_gate.txt (untracked).
+
+#### Step 8 Increment 1 — COMPLETE (2026-07-12, commits `a5a0248` harness + `df8b858` contract/provider)
+Data contract + provider abstraction per Demo UI/UX Spec §17 Increment 1, verified against the eleven-blocker fixture reality (spec revision entry (d)).
+- `src/domain/types.ts` — §7.3 contract + 2026-07-12 revision additions (`Blocker.recommendationType`, `Blocker.bugId`, `'all'` criterion sentinel, null population `fitnessScore`). Data-driven identifiers (`useCaseName`, `stageId`, `appliesToUseCase`) are string-typed, never unions — a new use case or stage arrives via fixture with zero type change. `observedValue`/`threshold` are present-and-nullable (deliberate tightening of §7.3's optional markers to match exporter truth).
+- `src/data/provider.ts` — `getReadinessData` behind `DATA_SOURCE='fixtures'` (`src/config/DemoConfig.ts`); the neon branch throws (designed, not built — no placeholder `neon.ts` file, per planning-thread decision). Internal `getReadinessDataFrom(source, session)` seam exists for gate testability.
+- `src/data/fixtures/index.ts` — static JSON imports (no fetch: zero runtime failure modes, per demo reliability rules), single `as unknown as ReadinessData` cast boundary; the gate test is the content verification the compiler cannot do.
+- `src/data/provider.gate.test.ts` — 15 locked assertions vs the committed fixtures (blocker counts/order/routing/bugIds, site bands and patientCounts, diabetes-B quintet, pipeline stages, 46/27 FAIL rows, neon rejection). Gate: 15/15 green, `typecheck:inc` exit 0. Evidence: gate_inc1_precheck.txt, gate_inc1_build.txt, gate_inc1_build2.txt, gate_inc1_commit.txt (untracked).
+- **Test harness (`a5a0248`):** vitest ^3 (Vite-5-aligned major; vitest 4 pulls a newer internal Vite — re-evaluate the pin only alongside a Vite upgrade). `tsconfig.gate.json` scopes the gate typecheck to the increment surface; subsequent increments ADD their folders to its `include`; it retires (plain `tsc` resumes as the gate) once the legacy wizard files are deleted.
+- **Old wizard untouched** — Increment 1 added foundation alongside it, deleted nothing.
 
 #### Dataset reload ledger (executed at the 7k append, 2026-07-11)
 Both ledger items landed via the surgical CSV-sourced append (7k/7l block above); the CSVs and the live sessions agree.
