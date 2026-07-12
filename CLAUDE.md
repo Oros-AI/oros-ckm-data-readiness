@@ -445,7 +445,7 @@ The three stubs validate that the config loader and engine work generically — 
 |------|--------|------------|-----------------|
 | `hypertension_risk_stratification` | `layer1_notnull_fields_smoking` | ICD-10 I10 active | Bug 3 |
 | `care_coordination` | `layer3_mapped_values` + `layer2_value_standards` | active DM or HTN diagnosis | Bug 4 |
-| `vbc_reporting` | `layer5_date_concordance` | qualifying encounters | Bug 5 |
+| `vbc_reporting` | `layer5_date_concordance` + `layer1_notnull_fields_encounters` | qualifying encounters (24-month window) | Bugs 5 + 7 |
 
 ### Idempotency — tuples each writer owns
 
