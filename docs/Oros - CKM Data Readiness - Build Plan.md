@@ -1,4 +1,6 @@
-# Oros - CKM Data Readiness - Build Plan - Jun 2026
+# Oros - CKM Data Readiness - Build Plan
+
+Living document — versioned by git history.
 
 **Project:** Oros CKM Data Readiness Infrastructure  
 **Status:** Active build — persistence layer complete, condition module schema locked, scoring engine next. Scope governed by the June 25 POC Scope Lock (Diabetes-first, CKM infrastructure visible).  
