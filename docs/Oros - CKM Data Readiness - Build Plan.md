@@ -289,6 +289,16 @@ Priority order if time-constrained: Add-1 (CSV-structural) and Add-2 (recency) h
 - **Remediation Roles and Accountability** — Bug 6 routing updated to Policy/Regulatory (was Program Coordinator + Tech Vendor). Update role mapping for derived metric concordance failure.
 - **Build Plan (this document)** — update Step 7 sub-step checkboxes to ✅ as each sub-step is completed in the backend build thread.
 
+### Public-release preparation (tracked 2026-07-12; execution deferred, off the Step 8 critical path)
+
+Sequence, reconciled by the planning thread with the IP/governance record:
+
+1. **Attribution migration** — create `ATTRIBUTION.md` at repo root (replaces `Oros_ATTRIBUTION.md`; both Build Plan references update in that same commit); add `NOTICE` (Apache convention; start year read from the signed Pre-Existing IP Record, 2026-04-12); README gains a License section including the one-line MIT→Apache 2.0 relicense note (owner relicensed post-assignment, 2026-04-24) for diligence readers. HARD GATES: Sivaram Arabandi's advisory acknowledgment (Schedule A §2.2, predecessor wizard-v3 work) must be present, structured as an acknowledgment distinct from released-artifact contributor attribution (Collaboration Framework Principle 3); Lisa Schiller is not named publicly without her explicit prior sign-off.
+2. **Git history review** — AFTER Step 8 deletes the legacy wizard files (Archia removal is already tracked as Step 8 demo hygiene). Full-history publish is the DEFAULT strategy: the commit history is cited in the Pre-Existing IP Record as ownership evidence. Review targets include the known items: whether scripts/.env or any CKM_DIRECT/Neon credential string ever entered a commit; confirmation gate evidence files were never tracked; residual vendor-attribution strings. A fresh-repo/clean-initial-commit publish is NOT a default fallback — it would orphan the public artifact from cited evidence and requires its own governance decision.
+3. **Dan Connolly review** of the findings + release package, then the flip.
+
+LICENSE file is verified correct (Apache 2.0) — do not modify. The Drive-canonical release runbook absorbs this sequence and remains the canonical checklist; it is never committed to this repo.
+
 ---
 
 ## Agentic Layer
