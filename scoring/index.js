@@ -9,7 +9,7 @@
 // lib/use_case_writer.js, then generates one remediation_work_items row
 // per FAIL via lib/work_item_generator.js; contains NO scoring logic, NO
 // condition logic, NO status mapping. The check registry (CHECKS) holds
-// twelve modules as of ext Add-2.
+// thirteen modules as of ext Add-1/Add-2.
 //
 // Usage:  node scoring/index.js --session <A|B|C|all|session-uuid>
 //   Letters resolve via demo_sessions.dataset_state; a raw session UUID is
@@ -62,6 +62,7 @@ import * as layer1NotnullFieldsSmoking from './checks/layer1_notnull_fields_smok
 import * as layer3MappedValues from './checks/layer3_mapped_values.js';
 import * as layer2ValueStandards from './checks/layer2_value_standards.js';
 import * as layer5DateConcordance from './checks/layer5_date_concordance.js';
+import * as layer1NotnullFieldsEncounters from './checks/layer1_notnull_fields_encounters.js';
 
 // Fixed registry order — deterministic logging only; results are
 // order-independent by design (each check owns its own cohort and rows).
@@ -78,6 +79,7 @@ const CHECKS = [
   layer3MappedValues,
   layer2ValueStandards,
   layer5DateConcordance,
+  layer1NotnullFieldsEncounters,
 ];
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

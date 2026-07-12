@@ -30,7 +30,7 @@
           {
             "pathway_id": "encounter_date_primary",
             "pathway_role": "primary",
-            "variables": ["Encounter Date"],
+            "variables": ["Encounter Date", "Encounter Record"],
             "pass_criterion": "all_variables_ready"
           }
         ],
@@ -56,6 +56,26 @@
                 "phenotype": "Date Format Non-Conformance",
                 "responsible_role": "Technology Vendor",
                 "action_required": "Normalize encounter_date values to YYYYMMDD at the interface layer. Auto-normalize unambiguous formats (e.g., MM/DD/YYYY); flag ambiguous transpositions and impossible dates for source-system lookup or clinical confirmation."
+              }
+            }
+          ]
+        },
+        {
+          "variable_name": "Encounter Record",
+          "pathway_membership": ["encounter_date_primary"],
+          "source_tables": ["encounters"],
+          "checks": [
+            {
+              "check_name": "layer1_notnull_fields_encounters",
+              "threshold": 1.0,
+              "priority": "High",
+              "params": {
+                "required_fields": ["encounter_date", "class", "provider_id", "status"]
+              },
+              "remediation_defaults": {
+                "phenotype": "Structural Feed Non-Conformance",
+                "responsible_role": "Regional Data Node",
+                "action_required": "Reconfigure the source feed: encounter records are arriving with malformed or missing structural fields. Correct the extract/interface configuration at the feed origin; escalate to the Technology Vendor if the defect is in the source system's output format rather than the feed."
               }
             }
           ]
