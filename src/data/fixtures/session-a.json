@@ -1,0 +1,1558 @@
+{
+  "session": {
+    "demoSessionId": "929ce033-41e7-4516-b70c-240e07257f8d",
+    "label": "A",
+    "datasetState": "clean"
+  },
+  "useCases": [
+    {
+      "useCaseName": "diabetes_risk_stratification",
+      "displayName": "Diabetes Risk Stratification",
+      "category": "risk_stratification",
+      "implementationState": "implemented",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": null,
+      "activePathwayId": null,
+      "requiredVariables": [
+        "A1C",
+        "CGM Glucose"
+      ],
+      "blockingVariables": [],
+      "partialVariables": [],
+      "patientCounts": {
+        "ready": 36,
+        "partiallyReady": 0,
+        "notReady": 0
+      },
+      "blockerIds": []
+    },
+    {
+      "useCaseName": "hypertension_risk_stratification",
+      "displayName": "Hypertension Risk Stratification",
+      "category": "risk_stratification",
+      "implementationState": "demonstrated_stub",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": null,
+      "activePathwayId": null,
+      "requiredVariables": [
+        "Smoking Status"
+      ],
+      "blockingVariables": [],
+      "partialVariables": [],
+      "patientCounts": {
+        "ready": 35,
+        "partiallyReady": 0,
+        "notReady": 0
+      },
+      "blockerIds": []
+    },
+    {
+      "useCaseName": "care_coordination",
+      "displayName": "Care Coordination",
+      "category": "care_coordination_delivery",
+      "implementationState": "demonstrated_stub",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": null,
+      "activePathwayId": null,
+      "requiredVariables": [
+        "Condition Code",
+        "Medication Code"
+      ],
+      "blockingVariables": [],
+      "partialVariables": [],
+      "patientCounts": {
+        "ready": 49,
+        "partiallyReady": 0,
+        "notReady": 0
+      },
+      "blockerIds": []
+    },
+    {
+      "useCaseName": "vbc_reporting",
+      "displayName": "Clinical Quality + VBC Reporting",
+      "category": "vbc_reporting",
+      "implementationState": "demonstrated_stub",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": null,
+      "activePathwayId": null,
+      "requiredVariables": [
+        "Encounter Date",
+        "Encounter Record"
+      ],
+      "blockingVariables": [],
+      "partialVariables": [],
+      "patientCounts": {
+        "ready": 49,
+        "partiallyReady": 0,
+        "notReady": 0
+      },
+      "blockerIds": []
+    }
+  ],
+  "blockers": [],
+  "criteria": [
+    {
+      "criterionId": "cgm_temporal_density_floor",
+      "label": "CGM temporal density ≥ 0.70 over the 14-day window",
+      "value": "0.70",
+      "appliesToUseCase": "diabetes_risk_stratification",
+      "tier": "foundational",
+      "configVersion": "diabetes.config.json@0.1",
+      "ownedBy": "Local clinical team"
+    },
+    {
+      "criterionId": "tir_recompute_tolerance",
+      "label": "Time-in-Range recomputation tolerance ± 2pp against raw readings",
+      "value": "± 2pp",
+      "appliesToUseCase": "diabetes_risk_stratification",
+      "tier": "foundational",
+      "configVersion": "diabetes.config.json@0.1",
+      "ownedBy": "Local clinical team"
+    },
+    {
+      "criterionId": "a1c_plausible_range",
+      "label": "A1C plausible range 2.0–20.0 %",
+      "value": "2.0–20.0 %",
+      "appliesToUseCase": "diabetes_risk_stratification",
+      "tier": "foundational",
+      "configVersion": "diabetes.config.json@0.1",
+      "ownedBy": "Local clinical team"
+    },
+    {
+      "criterionId": "a1c_recency_lookback",
+      "label": "A1C recency: 6-month lookback from the evaluation date",
+      "value": "6 months",
+      "appliesToUseCase": "diabetes_risk_stratification",
+      "tier": "customizable",
+      "configVersion": "diabetes.config.json@0.1",
+      "ownedBy": "Local clinical team"
+    },
+    {
+      "criterionId": "diabetes_readiness_bands",
+      "label": "Diabetes readiness bands: READY ≥ 0.85 / PARTIALLY_READY ≥ 0.50",
+      "value": "READY ≥ 0.85 / PARTIALLY_READY ≥ 0.50",
+      "appliesToUseCase": "diabetes_risk_stratification",
+      "tier": "customizable",
+      "configVersion": "diabetes.config.json@0.1",
+      "ownedBy": "Local clinical team"
+    },
+    {
+      "criterionId": "site_display_band",
+      "label": "Site-level display band: PARTIALLY_READY ≥ 0.85 of population READY",
+      "value": "≥ 0.85 of population READY",
+      "appliesToUseCase": "all",
+      "tier": "customizable",
+      "configVersion": "scripts/fixture_content.mjs@0.1",
+      "ownedBy": "Local clinical team"
+    }
+  ],
+  "pipeline": [
+    {
+      "stageId": "ingest",
+      "label": "Ingest",
+      "description": "Raw EHR and device extracts land in the staging tier exactly as delivered — nothing is altered on arrival.",
+      "status": "complete"
+    },
+    {
+      "stageId": "parse",
+      "label": "Parse",
+      "description": "Records are read against the expected structure; malformed records are identified at the earliest possible point and traced to their source feed.",
+      "status": "complete"
+    },
+    {
+      "stageId": "normalize",
+      "label": "Normalize",
+      "description": "Values are standardized into the shared model; unambiguous corrections can be AI-assisted, with a human approving every change.",
+      "status": "complete"
+    },
+    {
+      "stageId": "score",
+      "label": "Score",
+      "description": "The deterministic core: every check, variable, and pathway is evaluated against the configured criteria — same inputs, same results, every time.",
+      "status": "complete",
+      "checkResults": []
+    },
+    {
+      "stageId": "readiness_report",
+      "label": "Readiness report",
+      "description": "Results are organized per use case: what is ready, what is blocked, and exactly why.",
+      "status": "complete"
+    },
+    {
+      "stageId": "remediate",
+      "label": "Remediate",
+      "description": "Each blocker is routed to the role that can fix it; where an AI-suggested fix applies, it waits for human approval.",
+      "status": "complete"
+    },
+    {
+      "stageId": "rescore",
+      "label": "Re-score",
+      "description": "Remediated data goes back through the same deterministic scoring path, and the readiness report is refreshed from the stored results.",
+      "status": "complete"
+    },
+    {
+      "stageId": "unlock",
+      "label": "Unlock",
+      "description": "Use cases whose criteria are met come online — the weekly stratification review and downstream reporting run on data that is fit for purpose.",
+      "status": "complete"
+    }
+  ],
+  "patientRows": [
+    {
+      "patientId": "PAT000001",
+      "useCaseName": "care_coordination",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "terminology_primary"
+    },
+    {
+      "patientId": "PAT000002",
+      "useCaseName": "care_coordination",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "terminology_primary"
+    },
+    {
+      "patientId": "PAT000003",
+      "useCaseName": "care_coordination",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "terminology_primary"
+    },
+    {
+      "patientId": "PAT000004",
+      "useCaseName": "care_coordination",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "terminology_primary"
+    },
+    {
+      "patientId": "PAT000005",
+      "useCaseName": "care_coordination",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "terminology_primary"
+    },
+    {
+      "patientId": "PAT000006",
+      "useCaseName": "care_coordination",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "terminology_primary"
+    },
+    {
+      "patientId": "PAT000007",
+      "useCaseName": "care_coordination",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "terminology_primary"
+    },
+    {
+      "patientId": "PAT000008",
+      "useCaseName": "care_coordination",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "terminology_primary"
+    },
+    {
+      "patientId": "PAT000009",
+      "useCaseName": "care_coordination",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "terminology_primary"
+    },
+    {
+      "patientId": "PAT000010",
+      "useCaseName": "care_coordination",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "terminology_primary"
+    },
+    {
+      "patientId": "PAT000011",
+      "useCaseName": "care_coordination",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "terminology_primary"
+    },
+    {
+      "patientId": "PAT000012",
+      "useCaseName": "care_coordination",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "terminology_primary"
+    },
+    {
+      "patientId": "PAT000013",
+      "useCaseName": "care_coordination",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "terminology_primary"
+    },
+    {
+      "patientId": "PAT000014",
+      "useCaseName": "care_coordination",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "terminology_primary"
+    },
+    {
+      "patientId": "PAT000015",
+      "useCaseName": "care_coordination",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "terminology_primary"
+    },
+    {
+      "patientId": "PAT000016",
+      "useCaseName": "care_coordination",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "terminology_primary"
+    },
+    {
+      "patientId": "PAT000017",
+      "useCaseName": "care_coordination",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "terminology_primary"
+    },
+    {
+      "patientId": "PAT000018",
+      "useCaseName": "care_coordination",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "terminology_primary"
+    },
+    {
+      "patientId": "PAT000019",
+      "useCaseName": "care_coordination",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "terminology_primary"
+    },
+    {
+      "patientId": "PAT000020",
+      "useCaseName": "care_coordination",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "terminology_primary"
+    },
+    {
+      "patientId": "PAT000021",
+      "useCaseName": "care_coordination",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "terminology_primary"
+    },
+    {
+      "patientId": "PAT000022",
+      "useCaseName": "care_coordination",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "terminology_primary"
+    },
+    {
+      "patientId": "PAT000023",
+      "useCaseName": "care_coordination",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "terminology_primary"
+    },
+    {
+      "patientId": "PAT000024",
+      "useCaseName": "care_coordination",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "terminology_primary"
+    },
+    {
+      "patientId": "PAT000025",
+      "useCaseName": "care_coordination",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "terminology_primary"
+    },
+    {
+      "patientId": "PAT000026",
+      "useCaseName": "care_coordination",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "terminology_primary"
+    },
+    {
+      "patientId": "PAT000027",
+      "useCaseName": "care_coordination",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "terminology_primary"
+    },
+    {
+      "patientId": "PAT000028",
+      "useCaseName": "care_coordination",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "terminology_primary"
+    },
+    {
+      "patientId": "PAT000029",
+      "useCaseName": "care_coordination",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "terminology_primary"
+    },
+    {
+      "patientId": "PAT000030",
+      "useCaseName": "care_coordination",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "terminology_primary"
+    },
+    {
+      "patientId": "PAT000031",
+      "useCaseName": "care_coordination",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "terminology_primary"
+    },
+    {
+      "patientId": "PAT000032",
+      "useCaseName": "care_coordination",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "terminology_primary"
+    },
+    {
+      "patientId": "PAT000033",
+      "useCaseName": "care_coordination",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "terminology_primary"
+    },
+    {
+      "patientId": "PAT000034",
+      "useCaseName": "care_coordination",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "terminology_primary"
+    },
+    {
+      "patientId": "PAT000035",
+      "useCaseName": "care_coordination",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "terminology_primary"
+    },
+    {
+      "patientId": "PAT000036",
+      "useCaseName": "care_coordination",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "terminology_primary"
+    },
+    {
+      "patientId": "PAT000037",
+      "useCaseName": "care_coordination",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "terminology_primary"
+    },
+    {
+      "patientId": "PAT000038",
+      "useCaseName": "care_coordination",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "terminology_primary"
+    },
+    {
+      "patientId": "PAT000039",
+      "useCaseName": "care_coordination",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "terminology_primary"
+    },
+    {
+      "patientId": "PAT000040",
+      "useCaseName": "care_coordination",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "terminology_primary"
+    },
+    {
+      "patientId": "PAT000041",
+      "useCaseName": "care_coordination",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "terminology_primary"
+    },
+    {
+      "patientId": "PAT000042",
+      "useCaseName": "care_coordination",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "terminology_primary"
+    },
+    {
+      "patientId": "PAT000043",
+      "useCaseName": "care_coordination",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "terminology_primary"
+    },
+    {
+      "patientId": "PAT000045",
+      "useCaseName": "care_coordination",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "terminology_primary"
+    },
+    {
+      "patientId": "PAT000046",
+      "useCaseName": "care_coordination",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "terminology_primary"
+    },
+    {
+      "patientId": "PAT000047",
+      "useCaseName": "care_coordination",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "terminology_primary"
+    },
+    {
+      "patientId": "PAT000048",
+      "useCaseName": "care_coordination",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "terminology_primary"
+    },
+    {
+      "patientId": "PAT000049",
+      "useCaseName": "care_coordination",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "terminology_primary"
+    },
+    {
+      "patientId": "PAT000050",
+      "useCaseName": "care_coordination",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "terminology_primary"
+    },
+    {
+      "patientId": "PAT000001",
+      "useCaseName": "diabetes_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": 1,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "cgm_primary"
+    },
+    {
+      "patientId": "PAT000002",
+      "useCaseName": "diabetes_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": 1,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "cgm_primary"
+    },
+    {
+      "patientId": "PAT000003",
+      "useCaseName": "diabetes_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": 1,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "cgm_primary"
+    },
+    {
+      "patientId": "PAT000004",
+      "useCaseName": "diabetes_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": 1,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "cgm_primary"
+    },
+    {
+      "patientId": "PAT000005",
+      "useCaseName": "diabetes_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": 1,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "cgm_primary"
+    },
+    {
+      "patientId": "PAT000006",
+      "useCaseName": "diabetes_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": 1,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "cgm_primary"
+    },
+    {
+      "patientId": "PAT000007",
+      "useCaseName": "diabetes_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": 1,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "cgm_primary"
+    },
+    {
+      "patientId": "PAT000008",
+      "useCaseName": "diabetes_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": 1,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "cgm_primary"
+    },
+    {
+      "patientId": "PAT000009",
+      "useCaseName": "diabetes_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": 1,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "cgm_primary"
+    },
+    {
+      "patientId": "PAT000010",
+      "useCaseName": "diabetes_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": 1,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "cgm_primary"
+    },
+    {
+      "patientId": "PAT000011",
+      "useCaseName": "diabetes_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": 1,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "cgm_primary"
+    },
+    {
+      "patientId": "PAT000012",
+      "useCaseName": "diabetes_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": 1,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "cgm_primary"
+    },
+    {
+      "patientId": "PAT000013",
+      "useCaseName": "diabetes_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": 1,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "cgm_primary"
+    },
+    {
+      "patientId": "PAT000014",
+      "useCaseName": "diabetes_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": 1,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "cgm_primary"
+    },
+    {
+      "patientId": "PAT000015",
+      "useCaseName": "diabetes_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": 1,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "cgm_primary"
+    },
+    {
+      "patientId": "PAT000016",
+      "useCaseName": "diabetes_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": 1,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "cgm_primary"
+    },
+    {
+      "patientId": "PAT000017",
+      "useCaseName": "diabetes_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": 1,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "cgm_primary"
+    },
+    {
+      "patientId": "PAT000018",
+      "useCaseName": "diabetes_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": 1,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "cgm_primary"
+    },
+    {
+      "patientId": "PAT000019",
+      "useCaseName": "diabetes_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": 1,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "cgm_primary"
+    },
+    {
+      "patientId": "PAT000020",
+      "useCaseName": "diabetes_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": 1,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "cgm_primary"
+    },
+    {
+      "patientId": "PAT000021",
+      "useCaseName": "diabetes_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": 1,
+      "pathwayResult": "fallback_pass",
+      "activePathwayId": "a1c_fallback"
+    },
+    {
+      "patientId": "PAT000022",
+      "useCaseName": "diabetes_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": 1,
+      "pathwayResult": "fallback_pass",
+      "activePathwayId": "a1c_fallback"
+    },
+    {
+      "patientId": "PAT000023",
+      "useCaseName": "diabetes_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": 1,
+      "pathwayResult": "fallback_pass",
+      "activePathwayId": "a1c_fallback"
+    },
+    {
+      "patientId": "PAT000024",
+      "useCaseName": "diabetes_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": 1,
+      "pathwayResult": "fallback_pass",
+      "activePathwayId": "a1c_fallback"
+    },
+    {
+      "patientId": "PAT000025",
+      "useCaseName": "diabetes_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": 1,
+      "pathwayResult": "fallback_pass",
+      "activePathwayId": "a1c_fallback"
+    },
+    {
+      "patientId": "PAT000026",
+      "useCaseName": "diabetes_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": 1,
+      "pathwayResult": "fallback_pass",
+      "activePathwayId": "a1c_fallback"
+    },
+    {
+      "patientId": "PAT000027",
+      "useCaseName": "diabetes_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": 1,
+      "pathwayResult": "fallback_pass",
+      "activePathwayId": "a1c_fallback"
+    },
+    {
+      "patientId": "PAT000028",
+      "useCaseName": "diabetes_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": 1,
+      "pathwayResult": "fallback_pass",
+      "activePathwayId": "a1c_fallback"
+    },
+    {
+      "patientId": "PAT000029",
+      "useCaseName": "diabetes_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": 1,
+      "pathwayResult": "fallback_pass",
+      "activePathwayId": "a1c_fallback"
+    },
+    {
+      "patientId": "PAT000030",
+      "useCaseName": "diabetes_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": 1,
+      "pathwayResult": "fallback_pass",
+      "activePathwayId": "a1c_fallback"
+    },
+    {
+      "patientId": "PAT000041",
+      "useCaseName": "diabetes_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": 1,
+      "pathwayResult": "fallback_pass",
+      "activePathwayId": "a1c_fallback"
+    },
+    {
+      "patientId": "PAT000046",
+      "useCaseName": "diabetes_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": 1,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "cgm_primary"
+    },
+    {
+      "patientId": "PAT000047",
+      "useCaseName": "diabetes_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": 1,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "cgm_primary"
+    },
+    {
+      "patientId": "PAT000048",
+      "useCaseName": "diabetes_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": 1,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "cgm_primary"
+    },
+    {
+      "patientId": "PAT000049",
+      "useCaseName": "diabetes_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": 1,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "cgm_primary"
+    },
+    {
+      "patientId": "PAT000050",
+      "useCaseName": "diabetes_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": 1,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "cgm_primary"
+    },
+    {
+      "patientId": "PAT000002",
+      "useCaseName": "hypertension_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "smoking_status_primary"
+    },
+    {
+      "patientId": "PAT000005",
+      "useCaseName": "hypertension_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "smoking_status_primary"
+    },
+    {
+      "patientId": "PAT000007",
+      "useCaseName": "hypertension_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "smoking_status_primary"
+    },
+    {
+      "patientId": "PAT000008",
+      "useCaseName": "hypertension_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "smoking_status_primary"
+    },
+    {
+      "patientId": "PAT000009",
+      "useCaseName": "hypertension_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "smoking_status_primary"
+    },
+    {
+      "patientId": "PAT000010",
+      "useCaseName": "hypertension_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "smoking_status_primary"
+    },
+    {
+      "patientId": "PAT000011",
+      "useCaseName": "hypertension_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "smoking_status_primary"
+    },
+    {
+      "patientId": "PAT000012",
+      "useCaseName": "hypertension_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "smoking_status_primary"
+    },
+    {
+      "patientId": "PAT000013",
+      "useCaseName": "hypertension_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "smoking_status_primary"
+    },
+    {
+      "patientId": "PAT000015",
+      "useCaseName": "hypertension_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "smoking_status_primary"
+    },
+    {
+      "patientId": "PAT000018",
+      "useCaseName": "hypertension_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "smoking_status_primary"
+    },
+    {
+      "patientId": "PAT000019",
+      "useCaseName": "hypertension_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "smoking_status_primary"
+    },
+    {
+      "patientId": "PAT000020",
+      "useCaseName": "hypertension_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "smoking_status_primary"
+    },
+    {
+      "patientId": "PAT000021",
+      "useCaseName": "hypertension_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "smoking_status_primary"
+    },
+    {
+      "patientId": "PAT000023",
+      "useCaseName": "hypertension_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "smoking_status_primary"
+    },
+    {
+      "patientId": "PAT000027",
+      "useCaseName": "hypertension_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "smoking_status_primary"
+    },
+    {
+      "patientId": "PAT000031",
+      "useCaseName": "hypertension_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "smoking_status_primary"
+    },
+    {
+      "patientId": "PAT000032",
+      "useCaseName": "hypertension_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "smoking_status_primary"
+    },
+    {
+      "patientId": "PAT000033",
+      "useCaseName": "hypertension_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "smoking_status_primary"
+    },
+    {
+      "patientId": "PAT000034",
+      "useCaseName": "hypertension_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "smoking_status_primary"
+    },
+    {
+      "patientId": "PAT000035",
+      "useCaseName": "hypertension_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "smoking_status_primary"
+    },
+    {
+      "patientId": "PAT000036",
+      "useCaseName": "hypertension_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "smoking_status_primary"
+    },
+    {
+      "patientId": "PAT000037",
+      "useCaseName": "hypertension_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "smoking_status_primary"
+    },
+    {
+      "patientId": "PAT000038",
+      "useCaseName": "hypertension_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "smoking_status_primary"
+    },
+    {
+      "patientId": "PAT000039",
+      "useCaseName": "hypertension_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "smoking_status_primary"
+    },
+    {
+      "patientId": "PAT000040",
+      "useCaseName": "hypertension_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "smoking_status_primary"
+    },
+    {
+      "patientId": "PAT000041",
+      "useCaseName": "hypertension_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "smoking_status_primary"
+    },
+    {
+      "patientId": "PAT000042",
+      "useCaseName": "hypertension_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "smoking_status_primary"
+    },
+    {
+      "patientId": "PAT000043",
+      "useCaseName": "hypertension_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "smoking_status_primary"
+    },
+    {
+      "patientId": "PAT000045",
+      "useCaseName": "hypertension_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "smoking_status_primary"
+    },
+    {
+      "patientId": "PAT000046",
+      "useCaseName": "hypertension_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "smoking_status_primary"
+    },
+    {
+      "patientId": "PAT000047",
+      "useCaseName": "hypertension_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "smoking_status_primary"
+    },
+    {
+      "patientId": "PAT000048",
+      "useCaseName": "hypertension_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "smoking_status_primary"
+    },
+    {
+      "patientId": "PAT000049",
+      "useCaseName": "hypertension_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "smoking_status_primary"
+    },
+    {
+      "patientId": "PAT000050",
+      "useCaseName": "hypertension_risk_stratification",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "smoking_status_primary"
+    },
+    {
+      "patientId": "PAT000001",
+      "useCaseName": "vbc_reporting",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "encounter_date_primary"
+    },
+    {
+      "patientId": "PAT000002",
+      "useCaseName": "vbc_reporting",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "encounter_date_primary"
+    },
+    {
+      "patientId": "PAT000003",
+      "useCaseName": "vbc_reporting",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "encounter_date_primary"
+    },
+    {
+      "patientId": "PAT000004",
+      "useCaseName": "vbc_reporting",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "encounter_date_primary"
+    },
+    {
+      "patientId": "PAT000005",
+      "useCaseName": "vbc_reporting",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "encounter_date_primary"
+    },
+    {
+      "patientId": "PAT000006",
+      "useCaseName": "vbc_reporting",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "encounter_date_primary"
+    },
+    {
+      "patientId": "PAT000007",
+      "useCaseName": "vbc_reporting",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "encounter_date_primary"
+    },
+    {
+      "patientId": "PAT000008",
+      "useCaseName": "vbc_reporting",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "encounter_date_primary"
+    },
+    {
+      "patientId": "PAT000009",
+      "useCaseName": "vbc_reporting",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "encounter_date_primary"
+    },
+    {
+      "patientId": "PAT000010",
+      "useCaseName": "vbc_reporting",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "encounter_date_primary"
+    },
+    {
+      "patientId": "PAT000011",
+      "useCaseName": "vbc_reporting",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "encounter_date_primary"
+    },
+    {
+      "patientId": "PAT000012",
+      "useCaseName": "vbc_reporting",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "encounter_date_primary"
+    },
+    {
+      "patientId": "PAT000013",
+      "useCaseName": "vbc_reporting",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "encounter_date_primary"
+    },
+    {
+      "patientId": "PAT000014",
+      "useCaseName": "vbc_reporting",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "encounter_date_primary"
+    },
+    {
+      "patientId": "PAT000015",
+      "useCaseName": "vbc_reporting",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "encounter_date_primary"
+    },
+    {
+      "patientId": "PAT000016",
+      "useCaseName": "vbc_reporting",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "encounter_date_primary"
+    },
+    {
+      "patientId": "PAT000017",
+      "useCaseName": "vbc_reporting",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "encounter_date_primary"
+    },
+    {
+      "patientId": "PAT000018",
+      "useCaseName": "vbc_reporting",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "encounter_date_primary"
+    },
+    {
+      "patientId": "PAT000019",
+      "useCaseName": "vbc_reporting",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "encounter_date_primary"
+    },
+    {
+      "patientId": "PAT000020",
+      "useCaseName": "vbc_reporting",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "encounter_date_primary"
+    },
+    {
+      "patientId": "PAT000021",
+      "useCaseName": "vbc_reporting",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "encounter_date_primary"
+    },
+    {
+      "patientId": "PAT000022",
+      "useCaseName": "vbc_reporting",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "encounter_date_primary"
+    },
+    {
+      "patientId": "PAT000023",
+      "useCaseName": "vbc_reporting",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "encounter_date_primary"
+    },
+    {
+      "patientId": "PAT000024",
+      "useCaseName": "vbc_reporting",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "encounter_date_primary"
+    },
+    {
+      "patientId": "PAT000025",
+      "useCaseName": "vbc_reporting",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "encounter_date_primary"
+    },
+    {
+      "patientId": "PAT000026",
+      "useCaseName": "vbc_reporting",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "encounter_date_primary"
+    },
+    {
+      "patientId": "PAT000027",
+      "useCaseName": "vbc_reporting",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "encounter_date_primary"
+    },
+    {
+      "patientId": "PAT000028",
+      "useCaseName": "vbc_reporting",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "encounter_date_primary"
+    },
+    {
+      "patientId": "PAT000029",
+      "useCaseName": "vbc_reporting",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "encounter_date_primary"
+    },
+    {
+      "patientId": "PAT000030",
+      "useCaseName": "vbc_reporting",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "encounter_date_primary"
+    },
+    {
+      "patientId": "PAT000032",
+      "useCaseName": "vbc_reporting",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "encounter_date_primary"
+    },
+    {
+      "patientId": "PAT000033",
+      "useCaseName": "vbc_reporting",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "encounter_date_primary"
+    },
+    {
+      "patientId": "PAT000034",
+      "useCaseName": "vbc_reporting",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "encounter_date_primary"
+    },
+    {
+      "patientId": "PAT000035",
+      "useCaseName": "vbc_reporting",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "encounter_date_primary"
+    },
+    {
+      "patientId": "PAT000036",
+      "useCaseName": "vbc_reporting",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "encounter_date_primary"
+    },
+    {
+      "patientId": "PAT000037",
+      "useCaseName": "vbc_reporting",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "encounter_date_primary"
+    },
+    {
+      "patientId": "PAT000038",
+      "useCaseName": "vbc_reporting",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "encounter_date_primary"
+    },
+    {
+      "patientId": "PAT000039",
+      "useCaseName": "vbc_reporting",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "encounter_date_primary"
+    },
+    {
+      "patientId": "PAT000040",
+      "useCaseName": "vbc_reporting",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "encounter_date_primary"
+    },
+    {
+      "patientId": "PAT000041",
+      "useCaseName": "vbc_reporting",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "encounter_date_primary"
+    },
+    {
+      "patientId": "PAT000042",
+      "useCaseName": "vbc_reporting",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "encounter_date_primary"
+    },
+    {
+      "patientId": "PAT000043",
+      "useCaseName": "vbc_reporting",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "encounter_date_primary"
+    },
+    {
+      "patientId": "PAT000044",
+      "useCaseName": "vbc_reporting",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "encounter_date_primary"
+    },
+    {
+      "patientId": "PAT000045",
+      "useCaseName": "vbc_reporting",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "encounter_date_primary"
+    },
+    {
+      "patientId": "PAT000046",
+      "useCaseName": "vbc_reporting",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "encounter_date_primary"
+    },
+    {
+      "patientId": "PAT000047",
+      "useCaseName": "vbc_reporting",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "encounter_date_primary"
+    },
+    {
+      "patientId": "PAT000048",
+      "useCaseName": "vbc_reporting",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "encounter_date_primary"
+    },
+    {
+      "patientId": "PAT000049",
+      "useCaseName": "vbc_reporting",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "encounter_date_primary"
+    },
+    {
+      "patientId": "PAT000050",
+      "useCaseName": "vbc_reporting",
+      "overallStatus": "READY",
+      "fitnessScore": null,
+      "pathwayResult": "primary_pass",
+      "activePathwayId": "encounter_date_primary"
+    }
+  ]
+}
