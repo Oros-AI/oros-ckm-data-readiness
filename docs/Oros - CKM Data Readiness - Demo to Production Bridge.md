@@ -135,3 +135,23 @@ the requirements spine; the budget project does the costing.)*
 - Confirmation of collaborator engagements (Dan Connolly — governance + capability enforcement,
   the Endo connection; Sngular — secure infra/DevOps partner; both currently "in discussion")
   → §5 framing as intent vs. committed.
+
+---
+
+## Fixture-export window — production ledger (2026-07-12)
+
+Seven items parked during the fixture-export build (fx-1/fx-2). Each is a real production design surface deliberately NOT built into the POC; the demo ships the simplest defensible version and this ledger records what the funded phase owes.
+
+**1. Site-scoped remediation routing configuration.** The POC routes each phenotype to one responsible role from the condition-module config — a single baseline. In production, routing encodes *local alignment*: who does what, and who is paid to do it, varies by site, program, and contract. Routing becomes a site-scoped configuration layer over the condition baseline, owned by the local team the way criteria already are.
+
+**2. `recommendationType` as local configuration.** The demo carries a fixed taxonomy (which blockers are AI-assistable) in the authored content map. Whether a phenotype is AI-assistable is itself part of the local alignment — a site with a terminology service under contract may auto-fix codes a smaller site routes to its vendor. Production moves the taxonomy from authored constant to site-scoped configuration, subject to the same human-approval discipline.
+
+**3. Evidence/context presentation iteration.** The opt-in `{evidenceExample}` interpolation is v0.1 "color" — one rendered example per blocker. What context a report reviewer or a routed actor actually needs (how many examples, which fields, what drill-down) is a post-POC design surface, driven by field feedback from the people who receive the reports and the work items, not by engineering preference.
+
+**4. Phenotype catalog as standardized shared vocabulary.** Ratified principle: phenotype strings are a standardized catalog at the same governance tier as the seven canonical responsible-role strings. Routing varies locally; vocabulary does not. A shared catalog is the prerequisite for cross-site benchmarking — "Identity Linkage Failure" must mean the same thing at every deployment or the aggregate view is noise. (First cleanup already parked: the two date-concordance phenotype strings differ and should converge to one catalog entry.)
+
+**5. Site-level readiness bands per reporting program.** The demo's uniform display band (READY 1.0 / PARTIALLY_READY ≥ 0.85 of population READY) is a display convention. In production, site-level readiness for reporting use cases is a *program-defined criterion* — each program and contract states what fraction of the population must be reportable, per measure. Bands become per-program configuration with provenance, replacing the uniform display constant.
+
+**6. Multi-program mechanism.** Generalize on the rule of two: a program registry (site → participating programs), shared element definitions with program-referenced thresholds, and threshold provenance (which program demanded which value). This includes check execution cadence as configuration — always-on vs sampled vs event-triggered — e.g. TIR recomputation runs as an audit-cadence control under a reporting program rather than a continuous operational criterion.
+
+**7. Program-spec intake and incorporation process.** Onboarding a real program (HEDIS measurement year, a state VBC contract) needs a repeatable process: an intake document per program, a mapping exercise against the condition-module config schema, and findings routed to their owners — Bridge items, vocabulary catalog entries, or parked threshold questions. The first real program in the funded phase is the ideal stress-test of the config schema's claimed generality.

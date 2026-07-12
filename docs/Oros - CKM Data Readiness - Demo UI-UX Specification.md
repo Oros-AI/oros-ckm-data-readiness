@@ -673,3 +673,14 @@ Increment 1 is the foundation everything renders against, so it comes first and 
 ---
 
 *End of specification. Locked June 2026. Subsequent changes are revisions to a locked contract — note them in the revision history and flag any that affect the §7 data contract or §10 recommendation shape, since the build depends on those being stable.*
+
+---
+
+## Revision history
+
+**2026-07-12 — fixture-export build (fx-1 `ebb67c3` + fx-2 `8cec258`).** Revisions to the locked contract, all additive or clarifying; flagged per the closing note because (a) touches the §7 data contract and §10 recommendation shape:
+
+- **(a) Additive `Blocker` fields: `recommendationType` and `bugId`.** §7.3's `Blocker` and §10.1's recommendation-carried `recommendationType` are reconciled by carrying the type **on the blocker** in the fixture (engine classification via the authored content map, resolved per session for the two Bug 5 date checks, which flip `ai_suggested_fix` (B) → `route_to_stakeholder` (C)). `bugId` (`bug_1`..`bug_9`) is a content-map hint linking the blocker to the Reconciliation doc entry. The §10.3 `Recommendation` shape is unchanged; `recommendationId` on the blocker links as specified.
+- **(b) `ConfiguredCriterion.appliesToUseCase` admits the documented sentinel `'all'`** for the one site-level display-band criterion that spans every use case's rollup; all other criteria use the frozen use_case_name enum as specified.
+- **(c) Population-level `UseCaseSummary.fitnessScore` is `null` by design** for all use cases (not only boolean stubs): the engine emits per-patient fitness (carried in `patientRows`), and the export invents no population statistic. The population headline is `overallStatus` from the site display band over the strict ready fraction (READY 1.0 / PARTIALLY_READY ≥ 0.85).
+- **(d) Bug counts.** The six-bug counts in §6.2 and the §17 checkpoints read as **illustrative of the then-current dataset**. The engine now emits nine bugs / eleven blockers in Session B (six in Session C) following the bug-set extension; the fixture carries them all and they render with zero view-code change, exactly per §3/§8.3 — the property those sections exist to guarantee.
