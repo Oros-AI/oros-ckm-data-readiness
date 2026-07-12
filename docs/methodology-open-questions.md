@@ -238,3 +238,48 @@ instead span all pathway-eligible variables.
 
 **Owner:** Hanieh + Dominique. **Status:** open — for the methodology triage
 pass.
+
+---
+
+## 11. Union geometry vs population_definition for stub use cases
+
+*Raised during ext-5/ext-5b (bug-set extension), 2026-07-11.*
+
+**Question:** How should a use case's patient row-set be governed when its
+variables' check cohorts diverge from its `population_definition`? The stub
+use cases declare eligibility criteria but do not enforce them as checks
+(only diabetes has a layer6 eligibility check), and the pathway evaluator's
+row-set is the UNION of patients holding variable rows for any pathway
+variable (7h D4, no eligibility filtering). Documented case: adding the
+"Encounter Record" variable with an any-encounter cohort pulled PAT000031
+(six encounters, all outside the 24-month qualifying window — outside the
+Encounter Date cohort) into the vbc row set as NOT_READY across ALL
+sessions, including clean Dataset A. Interim fix (ext-5b): the new check
+windows its cohort and audited rows to the qualifying-encounters lookback
+read from `population_definition` — an eligibility-vs-readiness conflation
+removed at the check layer. The general reconciliation — should stub use
+cases enforce population_definition as eligibility checks, or should the
+evaluator intersect the union with the population — is funded-phase design
+work.
+
+**Owner:** Dominique (engine design) + Hanieh (population semantics).
+**Status:** open — funded phase.
+
+---
+
+## 12. A1C recency parameters (for Hanieh)
+
+*Raised during ext-4 (`fitness_recency_a1c`), 2026-07-11.*
+
+**Question:** Validate the A1C recency criterion's clinical parameters,
+currently config defaults: (a) the lookback value — 6 calendar months from
+the evaluation date (HEDIS measurement-year framing may argue for a
+different window per use case); (b) inclusive-boundary semantics — a lab
+dated exactly on the window-start day counts as current (PAT000001/003 sit
+exactly on the boundary, 20240514, and PASS); (c) the months-vs-days
+convention — calendar-month arithmetic, not a fixed day count, so window
+length varies 181–184 days by anchor date. All three are config-owned
+(`recency` block on the A1C variable); the engine takes whatever the config
+says.
+
+**Owner:** Hanieh. **Status:** open — for the methodology triage pass.

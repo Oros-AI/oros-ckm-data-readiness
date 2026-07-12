@@ -231,13 +231,19 @@ For each bug the demo shows: what failed, which use case is blocked, who is resp
 
 ---
 
-## Planned Bug-Set Expansion (build work, not yet built)
+## Bug-Set Expansion — BUILT (Add-1/2/3 live as of 2026-07-11)
 
-> **Status: planned build work, not yet built.** This section describes future dataset and engine work. It is intentionally *not* reflected in the canonical `Oros - CKM Data Readiness - Synthetic Dataset Specification`, which correctly continues to describe the six bugs that currently exist. These additions move into the Dataset Spec only after they are actually built. Build Plan says "planned"; Dataset Spec says "exists."
+> **Status: BUILT.** The three committed additions (Add-1/2/3) were built in the ext window (2026-07-11): dataset seeds live in Dataset B (Add-1/Add-3, resolved/unresolved in C per each entry), detection checks live in the engine, config entries loaded, routing verified at the ext-5/ext-5b gates. **Nine seeded bugs across 13 checks; Dataset A fully clean at check and use-case levels.** Authoritative row-level detail: `Oros - CKM Data Readiness - Dataset B Bug Reconciliation.md` entries 7/8/9. The canonical `Synthetic Dataset Specification` (Track 2, Drive-canonical) still describes the original six bugs — update it at the next Drive-doc touch. Add-4 and denominator-validity remain funded-phase.
+
+**Built summary (owning check → targets → routing):**
+
+- **Add-1 → `layer1_notnull_fields_encounters`** (vbc_reporting, new "Encounter Record" variable on `encounter_date_primary`). Seeds: ENC000392/395/401/408/421/427 (`class` + `provider_id` emptied, B only) across PAT000042/043/045; the audit is windowed to the vbc qualifying-encounters lookback, so the three in-window garbles (ENC000395/408/427) carry the FAILs. Routing: Structural Feed Non-Conformance → Regional Data Node. Resolved in C.
+- **Add-2 → `fitness_recency_a1c`** (diabetes_risk_stratification, A1C variable; weights rebalanced 0.40/0.24/0.16/0.20). Targets: PAT000012/022/050 — naturally stale A1C (no seed rows; the "seed" is the deliberately absent recency backfill for exactly these three). FAILs in B and C — unresolved in C by design (a stale lab needs collection, not data repair). Routing: Stale Required Lab → Primary Care Site.
+- **Add-3 → `layer2_ranges_numeric_a1c`** (existing check; new FAIL surface). Seeds: OBS000095/185/255 values garbled to 81.0/93.0/66.0 `%` (B only) on PAT000011/023/049. Resolved in C. Routing: Provider Input Error → Primary Care Site.
 
 **Purpose.** The current six seeded bugs are device-heavy and content-skewed (device: Bugs 1, 2, 6; EHR: Bug 3 missing field, Bug 4 invalid codes, Bug 5 date format). They under-represent Foundational-readiness (structural) failures and Fit-for-purpose-readiness (recency/availability) failures that dominate real EHR data and that make the two-phase readiness model visible in the demo rather than only narrated. The additions trace the diabetes operational arc: risk monitoring of the diabetic population, then care delivery, then value-based-care reporting.
 
-### Three committed additions (to be built)
+### Three committed additions (BUILT — design rationale retained below)
 
 **Add-1. CSV-structural conformance failure — Foundational readiness (structural).** The seeded defect is a structural/conformance failure at the **CSV level** — a malformed structural field / unparseable row structure — detected at the Load/Normalize step and routed to the source feed owner ("reconfigure the feed at the source"); detected earliest, most automatable notification. **HL7v2 USCDI-v3 parse-failure is the production framing** carried in deck/voiceover, *not* a literal parse in the POC: the pipeline loads CSV, not HL7v2, and a true HL7v2 parse layer would be new machinery out of scope. Credibility anchor for the voiceover: structural parse-failure rates run ~5–10% of HL7v2 messages (founder's HIE research). Honest under the three-state vocabulary: the phenotype (structural non-conformance, detected at load, routed to the feed owner) is real and **Demonstrated**; the HL7v2 substrate is **Architectural** — production framing only. The cleanest Foundational-readiness structural demonstration; the current set has none (Bug 4 only partially carries it as the bridge case). Founder-owned (interoperability/data-engineering; outside Hanieh Razzaghi's clinical-content domain).
 

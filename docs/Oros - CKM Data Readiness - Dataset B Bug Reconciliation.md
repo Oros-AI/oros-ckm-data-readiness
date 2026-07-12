@@ -2,7 +2,7 @@
 
 **Project:** Oros CKM Data Readiness POC  
 **Document purpose:** Authoritative reference for Dataset B (buggy) and Dataset C (remediated) generation  
-**Last updated:** 2026-04-02
+**Last updated:** 2026-07-11 (ext window — bugs 7/8/9 added, recency backfill recorded)
 
 ---
 
@@ -140,6 +140,67 @@ for all Dataset B and Dataset C generation scripts.
 
 ---
 
+### Bug 7 — CSV-Structural Conformance Failure (ext Add-1, built 2026-07-11)
+
+| Field | Value |
+|---|---|
+| **Affected records** | ENC000392, ENC000395 (PAT000042); ENC000401, ENC000408 (PAT000043); ENC000421, ENC000427 (PAT000045) |
+| **Affected table** | encounters.csv |
+| **Affected fields** | `class`, `provider_id` — emptied (loaded as empty string, not NULL, per the ext loader rule for NOT NULL text columns) |
+| **Dataset A value** | All structural fields populated on all 490 encounters |
+| **Dataset B value** | The six records above carry `class` = '' and `provider_id` = '' |
+| **Effect** | Structural conformance audit fails for PAT000042/043/045. Only the three in-window records (ENC000395, ENC000408, ENC000427) carry the FAILs — the audit is windowed to the vbc qualifying-encounters lookback; the pre-window garbles (ENC000392, ENC000401, ENC000421) exist in the data but sit outside the audit by design. |
+| **Check triggered** | `layer1_notnull_fields_encounters` — Priority: High |
+| **Use case blocked** | VBC Reporting — NOT READY (blocking variable: Encounter Record) |
+| **Dataset C status** | ✅ FULLY RESOLVED — all structural fields populated in C. |
+| **Framing note** | HL7v2 USCDI-v3 parse-failure is the production framing (Architectural); the POC phenotype — structural non-conformance detected at load, routed to the feed owner — is Demonstrated. |
+
+---
+
+### Bug 8 — Stale A1C / Lab Recency Failure (ext Add-2, built 2026-07-11)
+
+| Field | Value |
+|---|---|
+| **Target patients** | PAT000012, PAT000022, PAT000050 |
+| **Affected table** | observations.csv |
+| **Affected field** | None — **no seed rows exist for this bug.** The seed is the deliberately ABSENT recency backfill for exactly these three patients: their newest A1C predates the 6-month lookback window (window start 20240514; e.g. PAT000050's latest is 20240509). |
+| **Dataset A value** | All 36 DM-cohort patients have an in-window A1C (recency backfill covers 012/022/050 in A only) |
+| **Dataset B value** | PAT000012/022/050 have A1C rows, none in-window |
+| **Effect** | Recency check fails; A1C variable drops to 0.80 PARTIALLY_READY. PAT000012/050 stay diabetes-READY via `cgm_primary` (the device path carries current glycemic data) while the stale-lab work item stays on the ledger; PAT000022 (no valid CGM) lands `no_valid_pathway` / PARTIALLY_READY. |
+| **Check triggered** | `fitness_recency_a1c` — Priority: High |
+| **Use case blocked** | Diabetes Risk Stratification — degraded per patient as above |
+| **Dataset C status** | ❌ UNRESOLVED by design — a stale lab needs collection at the point of care (or CGM enrollment), not data repair. Identical FAIL set in B and C. |
+
+---
+
+### Bug 9 — Implausible A1C Value (ext Add-3, built 2026-07-11)
+
+| Field | Value |
+|---|---|
+| **Affected records** | OBS000095 (PAT000011), OBS000185 (PAT000023), OBS000255 (PAT000049) |
+| **Affected table** | observations.csv |
+| **Affected field** | `value` (code 4548-4, `value_units` = `%` unchanged) |
+| **Dataset A value** | Clinically plausible A1C values |
+| **Dataset B value** | 81.0 / 93.0 / 66.0 — format-valid numerics far outside the plausible 2.0–20.0 % range (unit-error phenotype) |
+| **Effect** | Range-plausibility fails for the three patients; A1C variable drops to 0.76 PARTIALLY_READY. PAT000011/049 stay diabetes-READY via `cgm_primary`; PAT000023 lands `no_valid_pathway` / PARTIALLY_READY. |
+| **Check triggered** | `layer2_ranges_numeric_a1c` — Priority: High (existing check; first seeded FAIL surface) |
+| **Use case blocked** | Diabetes Risk Stratification — degraded per patient as above |
+| **Dataset C status** | ✅ FULLY RESOLVED — plausible values restored in C. |
+
+---
+
+### Dataset-gap fix — A1C recency backfill (ext, 7k-precedent; not a bug)
+
+OBS001442–1448: current A1C rows (effective_date 20241015, in-range values, encounter_id
+NULL so both layer5 date-concordance checks are untouched) appended so that Bug 8's FAIL
+set is exactly its three targets and Dataset A goes fully clean. Dataset A receives all
+seven (PAT000004, 005, 012, 014, 020, 022, 050); Datasets B and C receive only the four
+non-targets (PAT000004, 005, 014, 020). Same category as the 7k smoking-coverage fix:
+a dataset gap closed so a check reads its intended story, recorded here as the
+authoritative occupied-row ledger.
+
+---
+
 ## Check and readiness cross-reference
 
 | Bug | Check name | Priority | Dataset A | Dataset B | Dataset C |
@@ -151,6 +212,9 @@ for all Dataset B and Dataset C generation scripts.
 | 4 | layer2_value_standards | Medium | READY | PARTIALLY READY | ✅ RESOLVED |
 | 5 | layer5_date_concordance | Medium | READY | NOT READY | 🟡 PARTIALLY RESOLVED |
 | 6 | device_derived_metric_consistency | Medium | READY | NOT READY | ✅ RESOLVED |
+| 7 | layer1_notnull_fields_encounters | High | READY | NOT READY | ✅ RESOLVED |
+| 8 | fitness_recency_a1c | High | READY | DEGRADED (see Bug 8) | ❌ UNRESOLVED (by design) |
+| 9 | layer2_ranges_numeric_a1c | High | READY | DEGRADED (see Bug 9) | ✅ RESOLVED |
 
 ---
 
@@ -177,6 +241,11 @@ it cannot fix, and routes them to the right actors.
 ---
 
 ## Dataset canonical file inventory
+
+> **Staleness note (2026-07-11):** the row counts and MD5s below predate the 7k append
+> (smoking coverage + PAT000041 A1C) and the ext window (Add-1/Add-3 seeds, recency
+> backfill). Current observations CSVs: A 1,448 / B 1,439 / C 1,439 rows; encounters B
+> carries the Bug 7 empty-field records. Re-inventory at the next dataset freeze.
 
 ### Dataset A — 10 files
 
