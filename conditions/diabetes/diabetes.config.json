@@ -151,7 +151,7 @@
               "check_name": "layer1_notnull_fields_a1c",
               "threshold": 1.0,
               "priority": "High",
-              "weight": 0.50,
+              "weight": 0.40,
               "params": { "required_fields": ["value", "effective_date", "value_units"] },
               "remediation_defaults": {
                 "phenotype": "Missing Required Field",
@@ -163,7 +163,7 @@
               "check_name": "layer2_ranges_numeric_a1c",
               "threshold": 0.98,
               "priority": "High",
-              "weight": 0.30,
+              "weight": 0.24,
               "params": { "min_value": 2.0, "max_value": 20.0, "expected_units": "%" },
               "remediation_defaults": {
                 "phenotype": "Provider Input Error",
@@ -175,12 +175,23 @@
               "check_name": "layer5_date_concordance_a1c",
               "threshold": 0.97,
               "priority": "Medium",
-              "weight": 0.20,
+              "weight": 0.16,
               "params": { "max_delta_days": 0 },
               "remediation_defaults": {
                 "phenotype": "Date Format Error",
                 "responsible_role": "Technology Vendor",
                 "action_required": "Reconcile A1C result date with the associated encounter date. Correct date concordance at the interface layer."
+              }
+            },
+            {
+              "check_name": "fitness_recency_a1c",
+              "threshold": 1.0,
+              "priority": "High",
+              "weight": 0.20,
+              "remediation_defaults": {
+                "phenotype": "Stale Required Lab",
+                "responsible_role": "Primary Care Site",
+                "action_required": "Obtain a current A1C: order lab collection at the next visit, or confirm CGM enrollment so the device pathway can carry glycemic monitoring while EHR lab currency is remediated."
               }
             }
           ]

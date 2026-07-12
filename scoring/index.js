@@ -1,14 +1,15 @@
 // scoring/index.js
 // Thin orchestrator for the deterministic scoring engine — checks stage
 // (7g A1), aggregation stage (7g B1), pathway evaluation (7h), use-case
-// readiness (7i), then work items (7j). Sequences the eleven check modules
-// per session, rolls check_results up into variable_readiness_scores via
+// readiness (7i), then work items (7j). Sequences the registered check
+// modules per session, rolls check_results up into variable_readiness_scores via
 // lib/aggregator.js, walks the config pathways into
 // use_case_pathway_results via lib/pathway_evaluator.js, joins pathway
 // verdicts to the variable surface into use_case_readiness via
 // lib/use_case_writer.js, then generates one remediation_work_items row
 // per FAIL via lib/work_item_generator.js; contains NO scoring logic, NO
-// condition logic, NO status mapping.
+// condition logic, NO status mapping. The check registry (CHECKS) holds
+// twelve modules as of ext Add-2.
 //
 // Usage:  node scoring/index.js --session <A|B|C|all|session-uuid>
 //   Letters resolve via demo_sessions.dataset_state; a raw session UUID is
@@ -56,6 +57,7 @@ import * as deviceDerivedMetricConsistencyCgm from './checks/device_derived_metr
 import * as layer1NotnullFieldsA1c from './checks/layer1_notnull_fields_a1c.js';
 import * as layer2RangesNumericA1c from './checks/layer2_ranges_numeric_a1c.js';
 import * as layer5DateConcordanceA1c from './checks/layer5_date_concordance_a1c.js';
+import * as fitnessRecencyA1c from './checks/fitness_recency_a1c.js';
 import * as layer1NotnullFieldsSmoking from './checks/layer1_notnull_fields_smoking.js';
 import * as layer3MappedValues from './checks/layer3_mapped_values.js';
 import * as layer2ValueStandards from './checks/layer2_value_standards.js';
@@ -71,6 +73,7 @@ const CHECKS = [
   layer1NotnullFieldsA1c,
   layer2RangesNumericA1c,
   layer5DateConcordanceA1c,
+  fitnessRecencyA1c,
   layer1NotnullFieldsSmoking,
   layer3MappedValues,
   layer2ValueStandards,
