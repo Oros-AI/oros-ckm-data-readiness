@@ -12,19 +12,36 @@
 // The predicate handles both anyway (all four current required fields are
 // NOT NULL columns; the check must not depend on that).
 //
-// Cohort: every patient with >=1 encounter row in the session (50) — no
-// diagnosis or class filter; structural feed conformance is
+// Window (ext-5b): the cohort AND the audited rows are scoped to the use
+// case's reporting window — window_start = EVALUATION_DATE minus the vbc
+// population_definition qualifying-encounters lookback_months (read from
+// the loaded config, shape-asserted, never hardcoded), string-compared
+// INCLUSIVE both ends (fitness_recency_a1c convention). CRITICAL: the
+// window is DATE-ONLY — class and the other audited fields never filter
+// the audit (a garbled class must not remove a row from the audit; the
+// Add-1 seeds live in exactly those fields). Rows with malformed dates
+// (Bug 5 territory) sort outside the window lexicographically and drop
+// from this audit — date validity is layer5's concern, structural
+// presence is this check's. This windowing removes the
+// eligibility-vs-readiness conflation that pulled patients with no
+// in-window encounters into the vbc row set.
+//
+// Cohort: every patient with >=1 IN-WINDOW encounter row in the session —
+// no diagnosis or class filter; structural feed conformance is
 // population-independent. No NOT_APPLICABLE branch: cohort membership
-// guarantees >=1 encounter row.
+// guarantees >=1 in-window encounter row.
 //
 // Nothing hardcoded (Core Constraint): the required-field list comes from
 // the check entry's params.required_fields, shape-validated against the
 // known encounters columns (fields are interpolated into SQL as column
-// identifiers — allowlist, never raw config content). No date logic;
-// nothing anchors to NOW().
+// identifiers — allowlist, never raw config content); the window lookback
+// comes from population_definition; the anchor from constants.js
+// EVALUATION_DATE. Nothing anchors to NOW().
 //
 // Returns CheckResultRow[] shaped for scoring/lib/writer.js writeCheckResults.
 // Never writes check_results itself.
+
+import { EVALUATION_DATE } from '../lib/constants.js';
 
 export const CHECK_NAME = 'layer1_notnull_fields_encounters';
 export const VARIABLE_NAME = 'Encounter Record';
@@ -68,11 +85,33 @@ function assertConfigAgreement(entry) {
   }
 }
 
+// window_start = evaluation date minus N CALENDAR months, as a YYYYMMDD
+// string (fitness_recency_a1c convention: pure integer arithmetic, no Date
+// object; day clamps to the target month's last day if shorter).
+function computeWindowStart(evaluationDate, lookbackMonths) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(evaluationDate);
+  if (!match) {
+    throw new Error(`${CHECK_NAME}: EVALUATION_DATE ${JSON.stringify(evaluationDate)} is not YYYY-MM-DD`);
+  }
+  let year = Number(match[1]);
+  let month = Number(match[2]) - lookbackMonths;
+  let day = Number(match[3]);
+  while (month <= 0) {
+    month += 12;
+    year -= 1;
+  }
+  const daysInMonth = [31, (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0 ? 29 : 28,
+    31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1];
+  if (day > daysInMonth) day = daysInMonth;
+  return `${year}${String(month).padStart(2, '0')}${String(day).padStart(2, '0')}`;
+}
+
 // Loads the check's config entry and returns the validated required-field
-// list. Shape validation only — the field list itself is config-owned.
+// list plus the reporting-window lookback. Shape validation only — the
+// field list and the lookback are config-owned.
 async function loadConfig(client) {
   const result = await client.query(
-    'SELECT variables FROM use_case_specifications WHERE use_case_name = $1',
+    'SELECT variables, population_definition FROM use_case_specifications WHERE use_case_name = $1',
     [USE_CASE_NAME],
   );
   if (result.rows.length === 0) {
@@ -111,13 +150,33 @@ async function loadConfig(client) {
     }
   }
 
-  return { requiredFields };
+  // Reporting window: the vbc qualifying-encounters lookback owns it.
+  // Shape-asserted (positive integer); the value is config-owned — never
+  // hardcode 24.
+  const criteria = result.rows[0].population_definition?.eligibility_criteria;
+  const criterion = Array.isArray(criteria)
+    ? criteria.find((c) => c.criterion_id === 'qualifying_encounters')
+    : null;
+  if (!criterion) {
+    throw new Error(
+      `${CHECK_NAME}: population_definition has no 'qualifying_encounters' eligibility criterion — reload the config`,
+    );
+  }
+  if (!Number.isInteger(criterion.lookback_months) || criterion.lookback_months <= 0) {
+    throw new Error(
+      `${CHECK_NAME}: qualifying_encounters lookback_months must be a positive integer, got ${JSON.stringify(criterion.lookback_months)}`,
+    );
+  }
+
+  return { requiredFields, lookbackMonths: criterion.lookback_months };
 }
 
-// Per encounter row, collect the required fields that are missing (NULL or
-// empty string); per patient, count conformant rows and gather failing
-// encounter_ids with their missing fields as evidence. Field names in the
-// CASE expressions are allowlist-validated identifiers (see loadConfig).
+// Per IN-WINDOW encounter row, collect the required fields that are missing
+// (NULL or empty string); per patient, count conformant rows and gather
+// failing encounter_ids with their missing fields as evidence. Field names
+// in the CASE expressions are allowlist-validated identifiers (see
+// loadConfig). The window predicate is DATE-ONLY (string BETWEEN, inclusive
+// both ends) — audited fields never filter the audit.
 function buildSql(requiredFields) {
   const missingCases = requiredFields
     .map((f) => `CASE WHEN NULLIF(e.${f}::text, '') IS NULL THEN '${f}' END`)
@@ -131,6 +190,7 @@ function buildSql(requiredFields) {
         concat_ws(',', ${missingCases}) AS missing_fields
       FROM encounters e
       WHERE e.demo_session_id = $1
+        AND e.encounter_date BETWEEN $2 AND $3
     )
     SELECT
       pe.patient_id,
@@ -151,12 +211,14 @@ function buildSql(requiredFields) {
 /**
  * @param {import('pg').PoolClient} client - client inside the caller's transaction
  * @param {string} sessionId - demo_session_id to evaluate
- * @returns {Promise<Array<object>>} CheckResultRow[] — one per patient with encounters
+ * @returns {Promise<Array<object>>} CheckResultRow[] — one per patient with in-window encounters
  */
 export async function runCheck(client, sessionId) {
-  const { requiredFields } = await loadConfig(client);
+  const { requiredFields, lookbackMonths } = await loadConfig(client);
+  const windowEnd = EVALUATION_DATE.replaceAll('-', '');
+  const windowStart = computeWindowStart(EVALUATION_DATE, lookbackMonths);
 
-  const result = await client.query(buildSql(requiredFields), [sessionId]);
+  const result = await client.query(buildSql(requiredFields), [sessionId, windowStart, windowEnd]);
 
   return result.rows.map((row) => {
     // Binary strict PASS: every encounter row conformant on all required
