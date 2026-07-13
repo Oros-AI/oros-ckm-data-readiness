@@ -29,3 +29,6 @@ dist-ssr
 .env.backend
 .env.backend.*
 scripts/.env
+
+# Gate evidence files — verification record, never committed
+evidence/
