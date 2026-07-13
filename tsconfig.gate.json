@@ -1,4 +1,12 @@
 {
   "extends": "./tsconfig.json",
-  "include": ["src/domain", "src/data", "src/config/DemoConfig.ts", "src/theme"]
+  "include": [
+    "src/domain",
+    "src/data",
+    "src/config/DemoConfig.ts",
+    "src/theme",
+    "src/state",
+    "src/views",
+    "src/App.tsx"
+  ]
 }
