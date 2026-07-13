@@ -9,6 +9,7 @@
     "src/theme",
     "src/state",
     "src/views",
+    "src/views/PipelineView",
     "src/App.tsx"
   ]
 }
