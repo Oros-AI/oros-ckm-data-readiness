@@ -1,5 +1,5 @@
 {
-  "name": "healthcare-pipeline-ui",
+  "name": "oros-ckm-data-readiness",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -8,7 +8,6 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "typecheck": "tsc",
-    "typecheck:inc": "tsc -p tsconfig.gate.json",
     "test": "vitest",
     "test:run": "vitest run",
     "load:config": "node scoring/lib/config_loader.js",
