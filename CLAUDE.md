@@ -84,7 +84,7 @@ These hold across every demo-facing session.
 
 ## 3. Current Build State
 
-### Verified baseline — as of 2026-07-12, code HEAD `95744fe` (brand foundation imported; Increment 2 entry dependencies satisfied), doc commits may sit on top (judged from code + DB, not from checkboxes)
+### Verified baseline — as of 2026-07-12, code HEAD `38c77be` (Step 8 Increment 2 complete), doc commits may sit on top (judged from code + DB, not from checkboxes)
 
 This section reflects what is actually on disk and in Neon. An earlier version of this section claimed Step 7 work was complete; that was inaccurate and is corrected below. **Do not trust Build Plan checkboxes over this baseline.**
 
@@ -319,6 +319,15 @@ Data contract + provider abstraction per Demo UI/UX Spec §17 Increment 1, verif
 - `src/data/provider.gate.test.ts` — 15 locked assertions vs the committed fixtures (blocker counts/order/routing/bugIds, site bands and patientCounts, diabetes-B quintet, pipeline stages, 46/27 FAIL rows, neon rejection). Gate: 15/15 green, `typecheck:inc` exit 0. Evidence: gate_inc1_precheck.txt, gate_inc1_build.txt, gate_inc1_build2.txt, gate_inc1_commit.txt (untracked).
 - **Test harness (`a5a0248`):** vitest ^3 (Vite-5-aligned major; vitest 4 pulls a newer internal Vite — re-evaluate the pin only alongside a Vite upgrade). `tsconfig.gate.json` scopes the gate typecheck to the increment surface; subsequent increments ADD their folders to its `include`; it retires (plain `tsc` resumes as the gate) once the legacy wizard files are deleted.
 - **Old wizard untouched** — Increment 1 added foundation alongside it, deleted nothing.
+
+#### Step 8 Increment 2 — COMPLETE (2026-07-12, commits `674cc66` harness + `35b94e7` tokens + `38c77be` front door)
+The use-case front door per Demo UI/UX Spec §17 Increment 2. Gate G2-1..G2-17 all green: 31/31 tests, `typecheck:inc` exit 0, visual review passed on all three sessions. Evidence: gate_inc2_precheck.txt, gate_inc2a_harness.txt, gate_inc2b_tokens.txt, gate_inc2c_frontdoor.txt, gate_inc2_closeout.txt (untracked).
+- **`src/App.tsx` rewritten as the new entry** (session selector + headline + `UseCaseView`; no legacy imports, no CSS import — that stays in main.tsx). The legacy wizard is now UNREACHABLE in dev (vite bundles from the new entry only); deletion sequencing unchanged: `agents/*` at Increment 3, remaining legacy files at Increment 4.
+- **`src/theme/tokens.ts`** — sole importer of tokens.json (G2-6 grep-enforced); `getStatusTokens` exhaustive over ReadinessStatus (`never` default arm); token-group separation (brand vs status) gate-asserted disjoint (G2-4).
+- **Front door** (`src/views/UseCaseView/` + `src/views/shared/` + `src/state/demoState.ts`): data flows only through `getReadinessData`; cards render displayName/badge/chip/counts/blockers/criteria list-driven; FourFactsPanel renders whatFailed/whatUnlocks VERBATIM from the Blocker record (the exporter-appended "Check: …" suffix arrives inside the string — never re-appended); population grain shows no fitness numbers and nothing pathway-related; criteria presence is data-driven (diabetes 5, stubs none, site band once at view level).
+- **inc2-0 pathway-label question RESOLVED BY EVIDENCE:** `activePathwayId` is null at population grain by design, so nothing renders and no exporter change is needed. A candidate `pathwayNarrative` authored field (reconciled-narrative copy for the diabetes card) is parked to the v0.1-copy ledger — decide at Increment 5.
+- **v0.1-copy ledger additions:** (a) candidate `pathwayNarrative` authored field per above; (b) the care_coordination card shows "Invalid Terminology Code" twice (Bug 4's two checks share the phenotype) — candidate disambiguation via check-name secondary text on the collapsed blocker row, Increment 3 window.
+- **Environment-touch batch addition:** vitest's transitive `baseline-browser-mapping` staleness advisory on every test run — transitive devDep refresh candidate.
 
 #### Brand foundation import — COMPLETE (2026-07-12, commit `95744fe`)
 Drive→repo export of the locked Design Tokens v0.1 (Increment 2 entry dependency).

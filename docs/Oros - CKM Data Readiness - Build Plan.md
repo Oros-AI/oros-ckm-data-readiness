@@ -144,6 +144,8 @@ Step 7 is the critical path. All sub-steps must complete before Step 8 can begin
 | 7k | End-to-end test: run scoring engine against Dataset B, verify all 6 bugs surface with correct use case blocking, phenotypes, and stakeholder routing | 7d–7j |
 | 7l | Run scoring engine against Dataset C, verify use cases unlock correctly and pathway results update | 7k |
 
+**Step 8 Increment 2 — ✅ COMPLETE (2026-07-12; commits `674cc66` render-gate harness, `35b94e7` theme/tokens.ts, `38c77be` use-case front door).** Front door live: capability cards, readiness chips, three-state badges, four-facts blocker panels, configured-criteria surfacing — all list-driven from the committed fixtures via the Increment 1 provider; G2-1..G2-17 gates green plus visual review on all three sessions. **Next: Increment 3 (recommendation source + drawer; legacy `agents/*` removal — the Archia demo-hygiene item lands here).**
+
 **Fixture-export step — ✅ COMPLETE (2026-07-12; commits `ebb67c3` fx-1 content map, `8cec258` fx-2 exporter + fixtures).** `scripts/fixture_content.mjs` + `scripts/export_fixtures.mjs` serialize engine output to `src/data/fixtures/session-{a,b,c}.json` per the UI/UX spec §7.3/§8.3 contract (deterministic, export-twice byte-identical). These fixtures are the Step 8 `DATA_SOURCE='fixtures'` source. **Next: Step 8 Increment 1 continues (`domain/types.ts`, `data/provider.ts`) against the committed fixtures.** Ratified decisions and the production ledger live in CLAUDE.md §3 (Fixture-export block) and the Demo-to-Production Bridge doc.
 
 **Step 8: UI/UX Revamp**  
