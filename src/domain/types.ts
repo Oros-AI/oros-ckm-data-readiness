@@ -127,6 +127,33 @@ export interface CheckResultView {
   patientId: string;
 }
 
+// ---- recommendation seam (Demo UI/UX Spec §10; Increment 3a) ----
+// The shape getRecommendation(blocker) returns in both AGENT_MODE modes.
+// Identity fields are passthrough from the Blocker, never re-derived.
+
+export interface ProposedAction {
+  summary: string;
+  targetCheckName: string; // always the blocker's checkName
+  proposedValue: string | null;
+  expectedOutcome: string;
+}
+
+export interface Recommendation {
+  recommendationId: string; // = blocker.recommendationId
+  blockerId: string;
+  checkName: string;
+  recommendationType: RecommendationType; // = blocker.recommendationType
+  blockedCapability: string; // = blocker.capabilityBlocked
+  responsibleRole: ResponsibleRole; // = blocker.responsibleRole
+  remediationPlainLanguage: string;
+  rationale: string;
+  confidence: number | null; // null in scripted mode — no invented certainty
+  source: 'live' | 'scripted';
+  // Present-and-nullable (Blocker precedent): non-null only for
+  // ai_suggested_fix, null for route_to_stakeholder.
+  proposedAction: ProposedAction | null;
+}
+
 export interface PatientUseCaseRow {
   patientId: string;
   useCaseName: string;
