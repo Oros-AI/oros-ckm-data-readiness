@@ -5,8 +5,9 @@
 // The exporter already appends "Check: <check_name>" to whatFailed at the
 // export boundary, so the Check line arrives inside the verbatim string —
 // appending it again here would double it.
-// The recommendation affordance is inert in Increment 2 (disabled, no
-// handler) — the drawer wires up in Increment 3.
+// The recommendation affordance opens the RemediationDrawer (mounted once
+// in App, Increment 3b) — this button is the drawer's ONLY invocation
+// site in src/.
 
 import type { Blocker } from '../../domain/types';
 import { tokens } from '../../theme/tokens';
@@ -19,7 +20,13 @@ const factHeaderStyle = {
   margin: '0.75rem 0 0.15rem',
 } as const;
 
-export function FourFactsPanel({ blocker }: { blocker: Blocker }) {
+interface FourFactsPanelProps {
+  blocker: Blocker;
+  // Optional so the panel stays renderable standalone (G2-13); App wires it.
+  onOpenDrawer?: (blockerId: string) => void;
+}
+
+export function FourFactsPanel({ blocker, onOpenDrawer }: FourFactsPanelProps) {
   return (
     <div
       data-testid="four-facts-panel"
@@ -49,14 +56,16 @@ export function FourFactsPanel({ blocker }: { blocker: Blocker }) {
 
       <button
         type="button"
-        disabled
+        data-testid={`open-drawer-${blocker.blockerId}`}
+        onClick={() => onOpenDrawer?.(blocker.blockerId)}
         style={{
           marginTop: '0.75rem',
-          border: `1px solid ${tokens.neutral.border}`,
-          backgroundColor: tokens.neutral.light,
-          color: tokens.neutral.gray,
+          border: `1px solid ${tokens.brand.green}`,
+          backgroundColor: tokens.brand.greenTint1,
+          color: tokens.brand.ink,
           borderRadius: '4px',
           padding: '0.3rem 0.7rem',
+          cursor: 'pointer',
         }}
       >
         Open remediation recommendation →

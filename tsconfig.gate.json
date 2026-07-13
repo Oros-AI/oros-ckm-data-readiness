@@ -5,6 +5,7 @@
     "src/data",
     "src/config/DemoConfig.ts",
     "src/recommendations",
+    "src/components/RemediationDrawer",
     "src/theme",
     "src/state",
     "src/views",

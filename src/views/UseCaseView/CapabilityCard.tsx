@@ -5,6 +5,8 @@
 // carries null; mechanical pathway ids are never rendered raw).
 
 import type { Blocker, ConfiguredCriterion, UseCaseSummary } from '../../domain/types';
+import { keyDecision } from '../../state/demoState';
+import type { Decision, SessionId } from '../../state/demoState';
 import { tokens } from '../../theme/tokens';
 import { ReadinessChip } from '../shared/ReadinessChip';
 import { ImplementationBadge } from '../shared/ImplementationBadge';
@@ -17,6 +19,9 @@ interface CapabilityCardProps {
   criteria: ConfiguredCriterion[]; // criteria applying to exactly this use case
   expandedBlockerId: string | null;
   onToggleBlocker: (blockerId: string) => void;
+  session: SessionId; // scopes decision keys (a B decision is invisible in C)
+  decisions: Record<string, Decision>;
+  onOpenDrawer: (blockerId: string) => void;
 }
 
 export function CapabilityCard({
@@ -25,6 +30,9 @@ export function CapabilityCard({
   criteria,
   expandedBlockerId,
   onToggleBlocker,
+  session,
+  decisions,
+  onOpenDrawer,
 }: CapabilityCardProps) {
   return (
     <article
@@ -58,31 +66,75 @@ export function CapabilityCard({
           <h3 style={{ margin: '0 0 0.35rem', fontSize: '0.8rem', color: tokens.neutral.gray }}>
             Blockers
           </h3>
-          {blockers.map((blocker) => (
-            <div key={blocker.blockerId}>
-              <button
-                type="button"
-                data-testid={`blocker-${blocker.blockerId}`}
-                aria-expanded={expandedBlockerId === blocker.blockerId}
-                onClick={() => onToggleBlocker(blocker.blockerId)}
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  textAlign: 'left',
-                  border: `1px solid ${tokens.neutral.border}`,
-                  backgroundColor: tokens.neutral.light,
-                  color: tokens.brand.ink,
-                  borderRadius: '4px',
-                  padding: '0.35rem 0.6rem',
-                  marginBottom: '0.3rem',
-                  cursor: 'pointer',
-                }}
-              >
-                {blocker.phenotype}
-              </button>
-              {expandedBlockerId === blocker.blockerId && <FourFactsPanel blocker={blocker} />}
-            </div>
-          ))}
+          {blockers.map((blocker) => {
+            const decision = decisions[keyDecision(session, blocker.recommendationId)];
+            return (
+              <div key={blocker.blockerId}>
+                <button
+                  type="button"
+                  data-testid={`blocker-${blocker.blockerId}`}
+                  aria-expanded={expandedBlockerId === blocker.blockerId}
+                  onClick={() => onToggleBlocker(blocker.blockerId)}
+                  style={{
+                    display: 'block',
+                    width: '100%',
+                    textAlign: 'left',
+                    border: `1px solid ${tokens.neutral.border}`,
+                    backgroundColor: tokens.neutral.light,
+                    color: tokens.brand.ink,
+                    borderRadius: '4px',
+                    padding: '0.35rem 0.6rem',
+                    marginBottom: '0.3rem',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <span
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'baseline',
+                      gap: '0.5rem',
+                    }}
+                  >
+                    <span>{blocker.phenotype}</span>
+                    {decision && (
+                      <span
+                        data-testid={`decided-marker-${blocker.blockerId}`}
+                        style={{
+                          border: `1px solid ${tokens.neutral.border}`,
+                          backgroundColor: tokens.neutral.surface,
+                          color: tokens.brand.ink,
+                          borderRadius: '4px',
+                          padding: '0.05rem 0.4rem',
+                          fontSize: '0.7rem',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        Decided: {decision}
+                      </span>
+                    )}
+                  </span>
+                  {/* Uniform secondary line: distinguishes rows sharing a
+                      phenotype (e.g. Bug 4's two checks), list-driven. */}
+                  <span
+                    data-testid={`blocker-checkname-${blocker.blockerId}`}
+                    style={{
+                      display: 'block',
+                      fontFamily: tokens.typography.mono.family,
+                      fontSize: '0.7rem',
+                      color: tokens.neutral.gray,
+                      marginTop: '0.1rem',
+                    }}
+                  >
+                    {blocker.checkName}
+                  </span>
+                </button>
+                {expandedBlockerId === blocker.blockerId && (
+                  <FourFactsPanel blocker={blocker} onOpenDrawer={onOpenDrawer} />
+                )}
+              </div>
+            );
+          })}
         </section>
       )}
 

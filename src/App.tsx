@@ -8,6 +8,7 @@
 import { useDemoState } from './state/demoState';
 import type { SessionId } from './state/demoState';
 import { UseCaseView } from './views/UseCaseView/UseCaseView';
+import { RemediationDrawer } from './components/RemediationDrawer';
 import { tokens } from './theme/tokens';
 
 const SESSIONS: SessionId[] = ['A', 'B', 'C'];
@@ -63,6 +64,18 @@ export default function App() {
         session={state.session}
         expandedBlockerId={state.expandedBlockerId}
         onToggleBlocker={state.toggleBlocker}
+        decisions={state.decisions}
+        onOpenDrawer={state.openDrawer}
+      />
+
+      {/* Drawer shell mounts once here (spec §5); opened only from the
+          four-facts panel affordance. */}
+      <RemediationDrawer
+        session={state.session}
+        blockerId={state.openDrawerBlockerId}
+        decisions={state.decisions}
+        onDecide={state.decide}
+        onClose={state.closeDrawer}
       />
     </main>
   );

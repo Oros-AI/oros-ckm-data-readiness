@@ -8,7 +8,7 @@
 import { useEffect, useState } from 'react';
 import type { ReadinessData } from '../../domain/types';
 import { getReadinessData } from '../../data/provider';
-import type { SessionId } from '../../state/demoState';
+import type { Decision, SessionId } from '../../state/demoState';
 import { tokens } from '../../theme/tokens';
 import { CapabilityCard } from './CapabilityCard';
 import { CriteriaCard } from '../shared/CriteriaCard';
@@ -17,9 +17,17 @@ interface UseCaseViewProps {
   session: SessionId;
   expandedBlockerId: string | null;
   onToggleBlocker: (blockerId: string) => void;
+  decisions: Record<string, Decision>;
+  onOpenDrawer: (blockerId: string) => void;
 }
 
-export function UseCaseView({ session, expandedBlockerId, onToggleBlocker }: UseCaseViewProps) {
+export function UseCaseView({
+  session,
+  expandedBlockerId,
+  onToggleBlocker,
+  decisions,
+  onOpenDrawer,
+}: UseCaseViewProps) {
   const [data, setData] = useState<ReadinessData | null>(null);
 
   useEffect(() => {
@@ -55,6 +63,9 @@ export function UseCaseView({ session, expandedBlockerId, onToggleBlocker }: Use
           criteria={data.criteria.filter((c) => c.appliesToUseCase === useCase.useCaseName)}
           expandedBlockerId={expandedBlockerId}
           onToggleBlocker={onToggleBlocker}
+          session={session}
+          decisions={decisions}
+          onOpenDrawer={onOpenDrawer}
         />
       ))}
 

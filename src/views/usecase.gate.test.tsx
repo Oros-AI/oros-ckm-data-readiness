@@ -184,7 +184,8 @@ describe('front-door gate — Increment 2 (G2-7..G2-16)', () => {
     expect(q.getByText(blocker.whatUnlocks)).toBeTruthy();
     expect(q.getByText(blocker.phenotype)).toBeTruthy();
     const drawerButton = q.getByRole('button', { name: /Open remediation recommendation/ });
-    expect((drawerButton as HTMLButtonElement).disabled).toBe(true);
+    // Enabled since Increment 3b (drawer wired); was disabled in Increment 2.
+    expect((drawerButton as HTMLButtonElement).disabled).toBe(false);
   });
 
   it('G2-13: every B and C blocker (17) renders all four facts + phenotype', async () => {
