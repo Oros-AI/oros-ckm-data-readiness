@@ -15,7 +15,8 @@ import { ImplementationBadge } from '../shared/ImplementationBadge';
 
 // 'complete'/'attention' from the functional status group; 'pending'
 // from the neutrals. Exhaustive: a new stage status is a compile error.
-function stageFill(status: PipelineStageView['status']): string {
+// Exported: the PipelineView status legend shares this exact mapping.
+export function stageFill(status: PipelineStageView['status']): string {
   switch (status) {
     case 'complete':
       return tokens.status.ready;
@@ -44,7 +45,14 @@ export function StageArc({ stages }: { stages: PipelineStageView[] }) {
   return (
     <div
       data-testid="pipeline-arc"
-      style={{ display: 'flex', alignItems: 'flex-start', gap: '0.4rem', flexWrap: 'wrap' }}
+      style={{
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: '0.3rem',
+        flexWrap: 'nowrap',
+        overflowX: 'auto',
+        paddingBottom: '0.25rem',
+      }}
     >
       <style>{entranceCss}</style>
       {stages.map((stage, index) => (
@@ -53,7 +61,7 @@ export function StageArc({ stages }: { stages: PipelineStageView[] }) {
             <span
               aria-hidden="true"
               style={{
-                flex: '0 0 1.1rem',
+                flex: '0 0 0.75rem',
                 height: '2px',
                 backgroundColor: tokens.neutral.border,
                 marginTop: '0.35rem',
@@ -79,7 +87,8 @@ function StageNode({ stage, index }: { stage: PipelineStageView; index: number }
         flexDirection: 'column',
         alignItems: 'center',
         gap: '0.25rem',
-        minWidth: '5.5rem',
+        minWidth: '4.75rem',
+        flex: '0 0 auto',
         textAlign: 'center',
         animation: 'pvStageIn 320ms ease-out both',
         animationDelay: `${index * 80}ms`,
@@ -87,6 +96,7 @@ function StageNode({ stage, index }: { stage: PipelineStageView; index: number }
     >
       <span
         aria-hidden="true"
+        data-testid={`node-dot-${stage.stageId}`}
         style={{
           width: '0.75rem',
           height: '0.75rem',

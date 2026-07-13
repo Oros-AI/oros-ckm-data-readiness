@@ -307,3 +307,46 @@ describe('view toggle gate - Increment 4b (G4b-1..G4b-4)', () => {
     expect(result.current.openDrawerBlockerId).toBeNull();
   });
 });
+
+describe('arc layout + legend gate - Increment 4b2 (G4b2-1..G4b2-3)', () => {
+  it('G4b2-1: legend renders the three approved words once, every session; only in pipeline view', async () => {
+    for (const session of SESSIONS) {
+      await renderView(session);
+      const legends = screen.getAllByTestId('status-legend');
+      expect(legends).toHaveLength(1);
+      const legend = within(legends[0]);
+      expect(legend.getByText('Complete')).toBeTruthy();
+      expect(legend.getByText('Needs attention')).toBeTruthy();
+      expect(legend.getByText('Pending')).toBeTruthy();
+      expect(legends[0].querySelectorAll('li')).toHaveLength(3);
+      cleanup();
+    }
+
+    // Only in the pipeline view: absent on the use-case lead, present
+    // after the toggle.
+    await openAppB();
+    expect(screen.queryByTestId('status-legend')).toBeNull();
+    fireEvent.click(screen.getByTestId('view-pipeline'));
+    await screen.findByText(PIPELINE_CAPTION);
+    expect(screen.getAllByTestId('status-legend')).toHaveLength(1);
+  });
+
+  it('G4b2-2: legend dots share the stage token mapping (DOM color equality per status)', async () => {
+    await renderView('B');
+    const color = (testId: string) => (screen.getByTestId(testId) as HTMLElement).style.backgroundColor;
+    // B signature stages: ingest complete, remediate attention, rescore pending.
+    expect(color('legend-dot-complete')).toBe(color('node-dot-ingest'));
+    expect(color('legend-dot-attention')).toBe(color('node-dot-remediate'));
+    expect(color('legend-dot-pending')).toBe(color('node-dot-rescore'));
+    expect(color('legend-dot-complete')).not.toBe(color('legend-dot-attention'));
+    expect(color('legend-dot-attention')).not.toBe(color('legend-dot-pending'));
+  });
+
+  it('G4b2-3: arc style contract - nowrap flex with horizontal scroll (JSDOM cannot measure layout; visual confirmation follows)', async () => {
+    await renderView('A');
+    const arc = screen.getByTestId('pipeline-arc') as HTMLElement;
+    expect(arc.style.display).toBe('flex');
+    expect(arc.style.flexWrap).toBe('nowrap');
+    expect(arc.style.overflowX).toBe('auto');
+  });
+});

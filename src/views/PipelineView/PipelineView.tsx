@@ -7,12 +7,54 @@
 // resolves. Not wired into App at inc4-a; the gate test mounts it.
 
 import { useEffect, useState } from 'react';
-import type { ReadinessData } from '../../domain/types';
+import type { PipelineStageView, ReadinessData } from '../../domain/types';
 import { getReadinessData } from '../../data/provider';
 import type { SessionId } from '../../state/demoState';
 import { tokens } from '../../theme/tokens';
-import { StageArc } from './StageArc';
+import { StageArc, stageFill } from './StageArc';
 import { ChecksPanel } from './ChecksPanel';
+
+// Legend entries reuse the stage nodes' exact status-to-token mapping
+// (stageFill); color literals are never duplicated here.
+const LEGEND: Array<{ status: PipelineStageView['status']; label: string }> = [
+  { status: 'complete', label: 'Complete' },
+  { status: 'attention', label: 'Needs attention' },
+  { status: 'pending', label: 'Pending' },
+];
+
+function StatusLegend() {
+  return (
+    <ul
+      data-testid="status-legend"
+      style={{ display: 'flex', gap: '0.9rem', listStyle: 'none', margin: 0, padding: 0 }}
+    >
+      {LEGEND.map(({ status, label }) => (
+        <li
+          key={status}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.3rem',
+            fontSize: '0.75rem',
+            color: tokens.neutral.gray,
+          }}
+        >
+          <span
+            aria-hidden="true"
+            data-testid={`legend-dot-${status}`}
+            style={{
+              width: '0.6rem',
+              height: '0.6rem',
+              borderRadius: '999px',
+              backgroundColor: stageFill(status),
+            }}
+          />
+          {label}
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 export function PipelineView({ session }: { session: SessionId }) {
   const [data, setData] = useState<ReadinessData | null>(null);
@@ -34,9 +76,21 @@ export function PipelineView({ session }: { session: SessionId }) {
 
   return (
     <section data-testid="pipeline-view">
-      <p style={{ margin: '0 0 1rem', fontSize: '0.9rem', color: tokens.neutral.gray }}>
-        Pre-computed results from the scoring engine, presented stage by stage.
-      </p>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'baseline',
+          gap: '1rem',
+          flexWrap: 'wrap',
+          margin: '0 0 1rem',
+        }}
+      >
+        <p style={{ margin: 0, fontSize: '0.9rem', color: tokens.neutral.gray }}>
+          Pre-computed results from the scoring engine, presented stage by stage.
+        </p>
+        <StatusLegend />
+      </div>
       <StageArc stages={data.pipeline} />
       {stagesWithRows.map((stage) => (
         <ChecksPanel key={stage.stageId} stage={stage} />
