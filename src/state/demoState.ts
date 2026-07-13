@@ -6,8 +6,10 @@
 // Increment 5, will be the undo).
 
 import { useState } from 'react';
+import { LEAD_VIEW } from '../config/DemoConfig';
 
 export type SessionId = 'A' | 'B' | 'C';
+export type ViewId = 'use_case' | 'pipeline';
 export type Decision = 'approved' | 'rejected';
 
 // Decision keys are session-scoped composites: recommendationIds are
@@ -20,6 +22,8 @@ export function keyDecision(session: SessionId, recommendationId: string): strin
 export interface DemoState {
   session: SessionId;
   selectSession: (session: SessionId) => void;
+  view: ViewId;
+  selectView: (view: ViewId) => void;
   expandedBlockerId: string | null;
   toggleBlocker: (blockerId: string) => void;
   openDrawerBlockerId: string | null;
@@ -29,17 +33,28 @@ export interface DemoState {
   decide: (recommendationId: string, decision: Decision) => void;
 }
 
-export function useDemoState(): DemoState {
+// initialView defaults to config for the app; the parameter exists for
+// gate testability (Increment 1 seam precedent). App passes no argument.
+export function useDemoState(initialView: ViewId = LEAD_VIEW): DemoState {
   const [session, setSession] = useState<SessionId>('B');
+  const [view, setView] = useState<ViewId>(initialView);
   const [expandedBlockerId, setExpandedBlockerId] = useState<string | null>(null);
   const [openDrawerBlockerId, setOpenDrawerBlockerId] = useState<string | null>(null);
   const [decisions, setDecisions] = useState<Record<string, Decision>>({});
 
   const selectSession = (next: SessionId) => {
     setSession(next);
-    // blocker ids and drawer context are session-scoped
+    // blocker ids and drawer context are session-scoped; view selection
+    // deliberately survives a session switch (R2, 2026-07-13)
     setExpandedBlockerId(null);
     setOpenDrawerBlockerId(null);
+  };
+
+  const selectView = (next: ViewId) => {
+    setView(next);
+    // R1 (2026-07-13): entering the pipeline view closes the drawer;
+    // expandedBlockerId is left unchanged. Toggling never opens the drawer.
+    if (next === 'pipeline') setOpenDrawerBlockerId(null);
   };
 
   const toggleBlocker = (blockerId: string) => {
@@ -59,6 +74,8 @@ export function useDemoState(): DemoState {
   return {
     session,
     selectSession,
+    view,
+    selectView,
     expandedBlockerId,
     toggleBlocker,
     openDrawerBlockerId,

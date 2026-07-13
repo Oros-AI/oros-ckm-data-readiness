@@ -6,11 +6,22 @@
 // test needs adjusting.
 
 import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  renderHook,
+  screen,
+  within,
+} from '@testing-library/react';
+import App from '../App';
 import { PipelineView } from './PipelineView/PipelineView';
 import { StageArc } from './PipelineView/StageArc';
 import { getReadinessData } from '../data/provider';
 import type { PipelineStageView } from '../domain/types';
+import { LEAD_VIEW } from '../config/DemoConfig';
+import { useDemoState } from '../state/demoState';
 
 afterEach(cleanup);
 
@@ -205,5 +216,94 @@ describe('pipeline view gate - Increment 4a (G4a-1..G4a-5)', () => {
     expect(cell.textContent).toBe(String(row.observedValue));
 
     expect(within(group).getByText('Hide records')).toBeTruthy();
+  });
+});
+
+// Increment 4b: view toggle + LEAD_VIEW wiring. The initialView seam is
+// the useDemoState parameter (R3; App passes no argument), so the
+// pipeline-initial branch is exercised at the hook level and rendered
+// content is asserted through App + the toggle.
+const PIPELINE_CAPTION = 'Pre-computed results from the scoring engine, presented stage by stage.';
+
+async function openAppB() {
+  render(<App />);
+  await screen.findAllByTestId('capability-card');
+}
+
+describe('view toggle gate - Increment 4b (G4b-1..G4b-4)', () => {
+  it("G4b-1: LEAD_VIEW === 'use_case'", () => {
+    expect(LEAD_VIEW).toBe('use_case');
+  });
+
+  it('G4b-2: initialView seam + rendered content per view', async () => {
+    // Hook seam: default follows LEAD_VIEW; explicit parameter wins.
+    const defaulted = renderHook(() => useDemoState());
+    expect(defaulted.result.current.view).toBe('use_case');
+    const explicit = renderHook(() => useDemoState('pipeline'));
+    expect(explicit.result.current.view).toBe('pipeline');
+
+    // Rendered: use_case lead shows cards, no pipeline caption.
+    await openAppB();
+    expect(screen.getAllByTestId('capability-card')).toHaveLength(4);
+    expect(screen.queryByText(PIPELINE_CAPTION)).toBeNull();
+
+    // Rendered: pipeline view shows the approved caption, no cards.
+    fireEvent.click(screen.getByTestId('view-pipeline'));
+    expect(await screen.findByText(PIPELINE_CAPTION)).toBeTruthy();
+    expect(screen.queryAllByTestId('capability-card')).toHaveLength(0);
+  });
+
+  it('G4b-3: toggle both directions; session survives toggle; view survives session switch', async () => {
+    await openAppB();
+
+    // Session C, then toggle to pipeline: session selection survives.
+    fireEvent.click(screen.getByTestId('session-C'));
+    await screen.findAllByTestId('capability-card');
+    fireEvent.click(screen.getByTestId('view-pipeline'));
+    await screen.findByText(PIPELINE_CAPTION);
+    expect(screen.getByTestId('session-C').getAttribute('aria-pressed')).toBe('true');
+    // C signature: rescore complete, unlock attention.
+    expect(screen.getByTestId('stage-rescore').getAttribute('data-status')).toBe('complete');
+    expect(screen.getByTestId('stage-unlock').getAttribute('data-status')).toBe('attention');
+
+    // View survives a session switch (R2): C -> B, still pipeline.
+    fireEvent.click(screen.getByTestId('session-B'));
+    expect(await screen.findByText(PIPELINE_CAPTION)).toBeTruthy();
+    expect(screen.queryAllByTestId('capability-card')).toHaveLength(0);
+    expect(screen.getByTestId('view-pipeline').getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByTestId('stage-rescore').getAttribute('data-status')).toBe('pending');
+
+    // Toggle back: capabilities render again.
+    fireEvent.click(screen.getByTestId('view-use_case'));
+    expect(await screen.findAllByTestId('capability-card')).toHaveLength(4);
+    expect(screen.queryByText(PIPELINE_CAPTION)).toBeNull();
+  });
+
+  it('G4b-4: R1 behavioral - toggling to pipeline closes the drawer and never opens it', async () => {
+    await openAppB();
+
+    // Open the drawer from the four-facts affordance.
+    fireEvent.click(await screen.findByTestId('blocker-blk_layer3_mapped_values'));
+    fireEvent.click(screen.getByTestId('open-drawer-blk_layer3_mapped_values'));
+    expect(await screen.findByTestId('remediation-drawer')).toBeTruthy();
+
+    // Toggle to pipeline: drawer closed.
+    fireEvent.click(screen.getByTestId('view-pipeline'));
+    await screen.findByText(PIPELINE_CAPTION);
+    expect(screen.queryByTestId('remediation-drawer')).toBeNull();
+
+    // Toggle back: drawer stays closed; expandedBlockerId untouched (R1),
+    // so the four-facts panel is still expanded.
+    fireEvent.click(screen.getByTestId('view-use_case'));
+    await screen.findAllByTestId('capability-card');
+    expect(screen.queryByTestId('remediation-drawer')).toBeNull();
+    expect(screen.getByTestId('four-facts-panel')).toBeTruthy();
+
+    // Hook grain: selectView never opens the drawer.
+    const { result } = renderHook(() => useDemoState());
+    act(() => result.current.selectView('pipeline'));
+    expect(result.current.openDrawerBlockerId).toBeNull();
+    act(() => result.current.selectView('use_case'));
+    expect(result.current.openDrawerBlockerId).toBeNull();
   });
 });
