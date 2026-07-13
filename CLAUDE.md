@@ -84,7 +84,7 @@ These hold across every demo-facing session.
 
 ## 3. Current Build State
 
-### Verified baseline — as of 2026-07-12, code HEAD `df8b858` (Step 8 Increment 1 complete), doc commits may sit on top (judged from code + DB, not from checkboxes)
+### Verified baseline — as of 2026-07-12, code HEAD `95744fe` (brand foundation imported; Increment 2 entry dependencies satisfied), doc commits may sit on top (judged from code + DB, not from checkboxes)
 
 This section reflects what is actually on disk and in Neon. An earlier version of this section claimed Step 7 work was complete; that was inaccurate and is corrected below. **Do not trust Build Plan checkboxes over this baseline.**
 
@@ -319,6 +319,13 @@ Data contract + provider abstraction per Demo UI/UX Spec §17 Increment 1, verif
 - `src/data/provider.gate.test.ts` — 15 locked assertions vs the committed fixtures (blocker counts/order/routing/bugIds, site bands and patientCounts, diabetes-B quintet, pipeline stages, 46/27 FAIL rows, neon rejection). Gate: 15/15 green, `typecheck:inc` exit 0. Evidence: gate_inc1_precheck.txt, gate_inc1_build.txt, gate_inc1_build2.txt, gate_inc1_commit.txt (untracked).
 - **Test harness (`a5a0248`):** vitest ^3 (Vite-5-aligned major; vitest 4 pulls a newer internal Vite — re-evaluate the pin only alongside a Vite upgrade). `tsconfig.gate.json` scopes the gate typecheck to the increment surface; subsequent increments ADD their folders to its `include`; it retires (plain `tsc` resumes as the gate) once the legacy wizard files are deleted.
 - **Old wizard untouched** — Increment 1 added foundation alongside it, deleted nothing.
+
+#### Brand foundation import — COMPLETE (2026-07-12, commit `95744fe`)
+Drive→repo export of the locked Design Tokens v0.1 (Increment 2 entry dependency).
+- `src/theme/tokens.json` — machine-readable mirror of the Drive-canonical "Oros Brand — Design Tokens v0.1" (LOCKED 2026-07-12), UI context only; md5 `e96ef4ce9e162d740a80c747b18cc263`. Change flow: Drive first, repo second — this file is never edited directly.
+- `src/assets/logo/` — four vector masters (Logo/Symbol × RVB/NB), exact Drive-master filenames, pure vectors, no editor metadata; NB variants carry no fill (mono-green/reverse derivations are CSS-level). Usage per tokens doc: full lockup on title surfaces only; symbol as corner mark on content surfaces; min symbol 24px.
+- Key token rules for the view build: brand group (INK/GREEN/GOLD + tints) vs status group (READY #2F9E44 / PARTIAL #D97706 / NOT_READY #C0392B, with darkened text variants) are separate and never crossed; gold text always GOLD-TEXT #8A5E1E, never raw GOLD; logo gradient exists only inside the mark. `theme/tokens.ts` consumes the JSON in Increment 2.
+- v0.1-copy ledger addition: the brand em-dash rule (externally facing surfaces) collides with committed fixture prose (whatFailed strings contain em dashes); parked to the post-funding fixture-prose revision — changing it requires an exporter re-run + fixture re-fingerprint.
 
 #### Dataset reload ledger (executed at the 7k append, 2026-07-11)
 Both ledger items landed via the surgical CSV-sourced append (7k/7l block above); the CSVs and the live sessions agree.
