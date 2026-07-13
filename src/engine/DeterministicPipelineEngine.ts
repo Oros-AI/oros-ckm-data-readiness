@@ -43,7 +43,6 @@ export class DeterministicPipelineEngine implements PipelineEngine {
 
   constructor(config?: Record<string, any>) {
     this.state = this.createInitialState();
-    // Initialize agent hooks (uses ArchiaMockClient internally for now)
     this.agentHooks = new AgentHooks({
       apiKey: 'mock-key', // Will use mock client
       orgId: 'mock-org',

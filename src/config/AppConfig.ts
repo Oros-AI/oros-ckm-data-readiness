@@ -9,7 +9,6 @@ interface AppConfiguration {
   /**
    * Controls whether AI/agentic features are enabled.
    * When true:
-   * - AgentInsightsDrawer can be shown for error analysis
    * - "Ask AI" CTAs appear in eligible steps
    * - Analytics "Ask Anything" tab is enabled
    * When false:
@@ -33,7 +32,6 @@ interface AppConfiguration {
    * Feature flags for gradual rollout (future use)
    */
   features: {
-    enableMockArchia: boolean;  // Use mock Archia responses instead of real API
     enableAuditLog: boolean;     // Track all pipeline operations
     enableExport: boolean;       // Allow NDJSON export
   };
@@ -55,7 +53,6 @@ function loadConfig(): AppConfiguration {
     API_BASE_URL: apiBaseUrl,
     ENVIRONMENT: environment,
     features: {
-      enableMockArchia: true,  // Always use mocks in Phase 1
       enableAuditLog: false,   // Disabled for Phase 1
       enableExport: true,      // Keep existing export functionality
     },
