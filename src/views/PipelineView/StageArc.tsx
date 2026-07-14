@@ -11,7 +11,6 @@ import { Fragment } from 'react';
 import type { PipelineStageView } from '../../domain/types';
 import { tokens } from '../../theme/tokens';
 import { getStageAnnotation } from './stageAnnotations';
-import { ImplementationBadge } from '../shared/ImplementationBadge';
 
 // 'complete'/'attention' from the functional status group; 'pending'
 // from the neutrals. Exhaustive: a new stage status is a compile error.
@@ -106,40 +105,23 @@ function StageNode({ stage, index }: { stage: PipelineStageView; index: number }
       />
       <span style={{ fontSize: '0.8rem', color: tokens.brand.ink }}>{stage.label}</span>
 
-      {annotation?.kind === 'ai_assist' && (
+      {/* The arc renders ONLY the arc_chip slot (inc5-a); ai_strip
+          annotations render in the strip below the arc. */}
+      {annotation?.kind === 'arc_chip' && (
         <span
           data-testid={`annotation-${stage.stageId}`}
           style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '0.15rem',
-            fontSize: '0.7rem',
+            border: `1px solid ${tokens.neutral.border}`,
+            backgroundColor: tokens.neutral.light,
             color: tokens.neutral.gray,
-          }}
-        >
-          <span>AI-assist</span>
-          <ImplementationBadge state={annotation.state} />
-        </span>
-      )}
-
-      {annotation?.kind === 'deterministic_core' && (
-        <span
-          data-testid={`annotation-${stage.stageId}`}
-          style={{
-            border: `1px solid ${tokens.brand.ink}`,
-            backgroundColor: tokens.neutral.surface,
-            color: tokens.brand.ink,
             borderRadius: '4px',
             padding: '0.1rem 0.45rem',
             fontSize: '0.7rem',
             fontWeight: 600,
           }}
         >
-          Deterministic core
-          <span style={{ display: 'block', fontWeight: 400, color: tokens.neutral.gray }}>
-            No AI in scoring.
-          </span>
+          {annotation.label}
+          <span style={{ display: 'block', fontWeight: 400 }}>{annotation.secondary}</span>
         </span>
       )}
     </div>

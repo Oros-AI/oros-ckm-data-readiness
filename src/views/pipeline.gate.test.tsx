@@ -16,7 +16,7 @@ import {
   within,
 } from '@testing-library/react';
 import App from '../App';
-import { PipelineView } from './PipelineView/PipelineView';
+import { AiAssistStrip, PipelineView } from './PipelineView/PipelineView';
 import { StageArc } from './PipelineView/StageArc';
 import { getReadinessData } from '../data/provider';
 import type { PipelineStageView } from '../domain/types';
@@ -140,25 +140,25 @@ describe('pipeline view gate - Increment 4a (G4a-1..G4a-5)', () => {
     }
   });
 
-  it('G4a-3: annotations at exactly normalize/remediate/score; unknown stageId unannotated', async () => {
+  it('G4a-3 (amended inc5-a, per D3): the arc carries exactly one annotation, at Score; AI-assist re-homed to the strip; unknown stageId unannotated', async () => {
     await renderView('B');
 
-    const normalize = within(screen.getByTestId('stage-normalize'));
-    expect(normalize.getByTestId('annotation-normalize').textContent).toContain('AI-assist');
-    expect(normalize.getByText('Architectural')).toBeTruthy();
+    // Arc region: exactly one annotation chip, at Score, no AI-assist mark.
+    const arc = screen.getByTestId('pipeline-arc');
+    const arcAnnotations = arc.querySelectorAll('[data-testid^="annotation-"]');
+    expect(arcAnnotations).toHaveLength(1);
+    expect(arcAnnotations[0].getAttribute('data-testid')).toBe('annotation-score');
+    expect(arcAnnotations[0].textContent).toContain('Deterministic core');
+    expect(arcAnnotations[0].textContent).toContain('No AI in scoring.');
+    expect(arc.textContent).not.toContain('AI-assist');
 
-    const remediate = within(screen.getByTestId('stage-remediate'));
-    expect(remediate.getByTestId('annotation-remediate').textContent).toContain('AI-assist');
-    expect(remediate.getByText('Demonstrated (stub)')).toBeTruthy();
+    // The AI-assist marks now live in the strip (asserted fully in G5a-2/3).
+    const strip = screen.getByTestId('ai-assist-strip');
+    expect(within(strip).getByTestId('strip-entry-normalize')).toBeTruthy();
+    expect(within(strip).getByTestId('strip-entry-remediate')).toBeTruthy();
 
-    const score = within(screen.getByTestId('stage-score'));
-    const scoreAnnotation = score.getByTestId('annotation-score');
-    expect(scoreAnnotation.textContent).toContain('Deterministic core');
-    expect(scoreAnnotation.textContent).toContain('No AI in scoring.');
-    expect(scoreAnnotation.textContent).not.toContain('AI-assist');
-
-    for (const stageId of ['ingest', 'parse', 'readiness_report', 'rescore', 'unlock']) {
-      expect(screen.queryByTestId(`annotation-${stageId}`)).toBeNull();
+    for (const stageId of ['ingest', 'parse', 'normalize', 'readiness_report', 'remediate', 'rescore', 'unlock']) {
+      expect(arc.querySelector(`[data-testid="annotation-${stageId}"]`)).toBeNull();
     }
     cleanup();
 
@@ -348,5 +348,73 @@ describe('arc layout + legend gate - Increment 4b2 (G4b2-1..G4b2-3)', () => {
     expect(arc.style.display).toBe('flex');
     expect(arc.style.flexWrap).toBe('nowrap');
     expect(arc.style.overflowX).toBe('auto');
+  });
+});
+
+// inc5-a: annotation restructure. Strip literals below are the locked
+// approved copy; a mismatch means the authored surface drifted.
+const STRIP_TITLE_LOCKED = 'Where AI assists in this pipeline';
+const STRIP_FRAMING_LOCKED =
+  'The deterministic pipeline is the source of truth. AI assists at these two stages, a person approves every change, and scoring itself uses no AI.';
+
+describe('annotation restructure gate - Increment 5a (G5a-1..G5a-6)', () => {
+  it('G5a-1: exactly one annotation chip in the arc, at Score, copy verbatim, sessions A/B/C', async () => {
+    for (const session of SESSIONS) {
+      await renderView(session);
+      const arc = screen.getByTestId('pipeline-arc');
+      const arcAnnotations = arc.querySelectorAll('[data-testid^="annotation-"]');
+      expect(arcAnnotations).toHaveLength(1);
+      expect(arcAnnotations[0].getAttribute('data-testid')).toBe('annotation-score');
+      expect(arcAnnotations[0].textContent).toBe('Deterministic coreNo AI in scoring.');
+      expect(arc.textContent).not.toContain('AI-assist');
+      cleanup();
+    }
+  });
+
+  it('G5a-2: strip renders title, both entries, and framing sentence verbatim (scripted mode)', async () => {
+    await renderView('B');
+    const strip = screen.getByTestId('ai-assist-strip');
+    const q = within(strip);
+    expect(q.getByText(STRIP_TITLE_LOCKED)).toBeTruthy();
+    expect(q.getByTestId('strip-entry-normalize').textContent).toBe(
+      'Normalize: AI-assist Architectural',
+    );
+    expect(q.getByTestId('strip-entry-remediate').textContent).toBe(
+      'Remediate: AI-assist Demonstrated (stub)',
+    );
+    expect(q.getByText(STRIP_FRAMING_LOCKED)).toBeTruthy();
+    expect(strip.querySelectorAll('li')).toHaveLength(2);
+  });
+
+  it('G5a-3: the Remediate entry state derives from AGENT_MODE (badge mechanism, as the old in-arc assertion)', async () => {
+    await renderView('B');
+    const remediateEntry = within(screen.getByTestId('strip-entry-remediate'));
+    expect(remediateEntry.getByText('Demonstrated (stub)')).toBeTruthy();
+    const normalizeEntry = within(screen.getByTestId('strip-entry-normalize'));
+    expect(normalizeEntry.getByText('Architectural')).toBeTruthy();
+  });
+
+  it('G5a-4: strip absent from the use-case view', async () => {
+    await openAppB();
+    expect(screen.queryByTestId('ai-assist-strip')).toBeNull();
+    fireEvent.click(screen.getByTestId('view-pipeline'));
+    await screen.findByText(PIPELINE_CAPTION);
+    expect(screen.getByTestId('ai-assist-strip')).toBeTruthy();
+  });
+
+  it('G5a-6: unknown stageId renders unannotated in BOTH slots, no error', async () => {
+    const synthetic: PipelineStageView = {
+      stageId: 'synthetic_stage',
+      label: 'Synthetic',
+      status: 'complete',
+    };
+    render(<StageArc stages={[synthetic]} />);
+    expect(screen.getByTestId('stage-synthetic_stage')).toBeTruthy();
+    expect(screen.queryByTestId('annotation-synthetic_stage')).toBeNull();
+    cleanup();
+
+    render(<AiAssistStrip stages={[synthetic]} />);
+    expect(screen.queryByTestId('ai-assist-strip')).toBeNull();
+    expect(screen.queryByTestId('strip-entry-synthetic_stage')).toBeNull();
   });
 });
