@@ -227,6 +227,8 @@ const PIPELINE_CAPTION = 'Pre-computed results from the scoring engine, presente
 
 async function openAppB() {
   render(<App />);
+  // Session-explicit since inc5-c (the default session moved to A, D5).
+  fireEvent.click(screen.getByTestId('session-B'));
   await screen.findAllByTestId('capability-card');
 }
 

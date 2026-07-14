@@ -1,9 +1,10 @@
 // src/state/demoState.ts
 // Minimal demo state for the Step 8 front door (spec §15: replaces the
-// wizard's seven-step state model). Selected session, one expanded
-// blocker, the remediation drawer target, and recommendation decisions.
-// Plain React state: no library, no persistence, no undo (reset, in
-// Increment 5, will be the undo).
+// wizard's seven-step state model). Selected session, active view, one
+// expanded blocker, the remediation drawer target, and recommendation
+// decisions. Plain React state: no library, no persistence; reset() is
+// the undo (inc5-c). A fresh load and a reset land on the identical
+// known state (D5: session A, the configured lead view, nothing open).
 
 import { useState } from 'react';
 import { LEAD_VIEW } from '../config/DemoConfig';
@@ -31,12 +32,13 @@ export interface DemoState {
   closeDrawer: () => void;
   decisions: Record<string, Decision>;
   decide: (recommendationId: string, decision: Decision) => void;
+  reset: () => void;
 }
 
 // initialView defaults to config for the app; the parameter exists for
 // gate testability (Increment 1 seam precedent). App passes no argument.
 export function useDemoState(initialView: ViewId = LEAD_VIEW): DemoState {
-  const [session, setSession] = useState<SessionId>('B');
+  const [session, setSession] = useState<SessionId>('A');
   const [view, setView] = useState<ViewId>(initialView);
   const [expandedBlockerId, setExpandedBlockerId] = useState<string | null>(null);
   const [openDrawerBlockerId, setOpenDrawerBlockerId] = useState<string | null>(null);
@@ -71,6 +73,17 @@ export function useDemoState(initialView: ViewId = LEAD_VIEW): DemoState {
     }));
   };
 
+  // Reset re-points; it does not recompute. Lands on the fresh-load
+  // state: session A, the configured lead view, nothing open, and the
+  // decisions map cleared across ALL sessions (Increment 3 D2 transfer).
+  const reset = () => {
+    setSession('A');
+    setView(LEAD_VIEW);
+    setExpandedBlockerId(null);
+    setOpenDrawerBlockerId(null);
+    setDecisions({});
+  };
+
   return {
     session,
     selectSession,
@@ -83,5 +96,6 @@ export function useDemoState(initialView: ViewId = LEAD_VIEW): DemoState {
     closeDrawer,
     decisions,
     decide,
+    reset,
   };
 }

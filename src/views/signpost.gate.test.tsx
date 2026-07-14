@@ -37,7 +37,7 @@ describe('session signpost gate - Increment 5b (G5b-1..G5b-3)', () => {
 
   it('G5b-2: the line updates when the session switches', async () => {
     await openApp();
-    expect(signpostText()).toBe(SIGNPOSTS.B); // default session
+    expect(signpostText()).toBe(SIGNPOSTS.A); // default session (A since inc5-c, D5)
     fireEvent.click(screen.getByTestId('session-C'));
     expect(signpostText()).toBe(SIGNPOSTS.C);
     fireEvent.click(screen.getByTestId('session-B'));
@@ -46,14 +46,14 @@ describe('session signpost gate - Increment 5b (G5b-1..G5b-3)', () => {
 
   it('G5b-3: present in both views; survives the view toggle', async () => {
     await openApp();
-    expect(signpostText()).toBe(SIGNPOSTS.B);
+    expect(signpostText()).toBe(SIGNPOSTS.A);
 
     fireEvent.click(screen.getByTestId('view-pipeline'));
     await screen.findByText(PIPELINE_CAPTION);
-    expect(signpostText()).toBe(SIGNPOSTS.B);
+    expect(signpostText()).toBe(SIGNPOSTS.A);
 
     fireEvent.click(screen.getByTestId('view-use_case'));
     await screen.findAllByTestId('capability-card');
-    expect(signpostText()).toBe(SIGNPOSTS.B);
+    expect(signpostText()).toBe(SIGNPOSTS.A);
   });
 });

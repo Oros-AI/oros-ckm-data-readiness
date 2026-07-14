@@ -93,9 +93,9 @@ describe('remediation drawer gate - Increment 3b (G3b-1..G3b-8)', () => {
   it('G3b-3: approve/reject record session-keyed decisions; confirmation + row marker render', async () => {
     // State grain: decide() writes the `${session}:${recommendationId}` key.
     const { result } = renderHook(() => useDemoState());
-    expect(result.current.session).toBe('B');
+    expect(result.current.session).toBe('A');
     act(() => result.current.decide('rec_layer3_mapped_values', 'approved'));
-    expect(result.current.decisions[keyDecision('B', 'rec_layer3_mapped_values')]).toBe(
+    expect(result.current.decisions[keyDecision('A', 'rec_layer3_mapped_values')]).toBe(
       'approved',
     );
 

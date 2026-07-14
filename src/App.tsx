@@ -86,6 +86,24 @@ export default function App() {
               </button>
             ))}
           </div>
+          {/* Tertiary chrome (inc5-c): semantics live in demoState.reset. */}
+          <button
+            type="button"
+            data-testid="reset-demo"
+            onClick={state.reset}
+            style={{
+              marginLeft: 'auto',
+              border: 'none',
+              background: 'none',
+              color: tokens.neutral.gray,
+              fontSize: '0.8rem',
+              textDecoration: 'underline',
+              cursor: 'pointer',
+              padding: '0.3rem 0',
+            }}
+          >
+            Reset demo
+          </button>
         </div>
         {/* Selector-adjacent chrome (inc5-b): states what the ACTIVE
             session is, in both views; copy lives in sessionSignpost.ts. */}
