@@ -10,6 +10,7 @@ import type { SessionId, ViewId } from './state/demoState';
 import { UseCaseView } from './views/UseCaseView/UseCaseView';
 import { PipelineView } from './views/PipelineView/PipelineView';
 import { RemediationDrawer } from './components/RemediationDrawer';
+import { getSessionSignpost } from './views/shared/sessionSignpost';
 import { tokens } from './theme/tokens';
 
 const SESSIONS: SessionId[] = ['A', 'B', 'C'];
@@ -34,7 +35,7 @@ export default function App() {
       }}
     >
       <header style={{ marginBottom: '1.5rem' }}>
-        <div style={{ display: 'flex', gap: '1.2rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+        <div style={{ display: 'flex', gap: '1.2rem', flexWrap: 'wrap', marginBottom: '0.35rem' }}>
           <div
             role="group"
             aria-label="Demo session"
@@ -86,6 +87,14 @@ export default function App() {
             ))}
           </div>
         </div>
+        {/* Selector-adjacent chrome (inc5-b): states what the ACTIVE
+            session is, in both views; copy lives in sessionSignpost.ts. */}
+        <p
+          data-testid="session-signpost"
+          style={{ margin: '0 0 1rem', fontSize: '0.8rem', color: tokens.neutral.gray }}
+        >
+          {getSessionSignpost(state.session)}
+        </p>
         <h1 style={{ margin: 0, fontSize: '1.5rem', color: tokens.brand.ink }}>
           Can this population's data support each capability?
         </h1>
