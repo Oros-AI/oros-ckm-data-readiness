@@ -134,8 +134,6 @@ This infrastructure is being developed as a governance-aligned open source asset
 
 - **Hanieh Razzaghi (CHOP)** — clinical domain expert, scoring engine validation
 - **Dan Connolly (Agoric/W3C)** — governance framework for trusted open source assets
-- **Kris Kowal (Endo/Agoric)** — safe AI code execution, governance codification
-- **Chime Ogbuji** — local LLM (Qwen 3 trained on SNOMED CT/ICD-10/RxNorm/LOINC)
 
 The Colorado rural health pilot is intended as the first deployment under this governance framework, with a potential IRB through the University of Colorado Anschutz.
 
@@ -143,7 +141,7 @@ The Colorado rural health pilot is intended as the first deployment under this g
 
 ## License
 
-MIT License — see `LICENSE` file.
+Apache 2.0 — see `LICENSE` file.
 
 Intended to become fully open source following initial funding and pilot deployment. See `docs/Oros - CKM Data Readiness - Pilot Concept.docx` for the open source strategy.
 
