@@ -1,152 +1,80 @@
 # Oros CKM Data Readiness Infrastructure
 
-A data readiness infrastructure for Cardio-Kidney-Metabolic (CKM) conditions — evaluating clinical and device data quality against use-case requirements, surfacing gaps, routing remediation to responsible actors, and gating analytics on validated data.
-
-Built for a rural Colorado CKM pilot as part of the CMS rural health initiative. Designed as a governance-aligned open source asset.
-
----
-
-## What This Does
-
-Clinical sites contributing data to regional nodes (ACOs, HIEs, IDNs) often have data quality issues that block care coordination, risk stratification, and VBC reporting. This infrastructure:
-
-1. **Scores** incoming data against a check registry (completeness, terminology, temporal coverage, patient linkage, derived metric concordance)
-2. **Surfaces blockers** — which variables are failing, why, and which use cases are blocked
-3. **Routes remediation** — AI-suggested patches for system-fixable issues, stakeholder work items for issues requiring external action
-4. **Re-scores** after approved remediation — showing the iterative improvement arc
-5. **Unlocks analytics** — HEDIS measures, VBC quality metrics, care coordination outputs — gated on validated data readiness
-
----
-
-## Use Cases Supported
-
-| Use Case | Status |
-|----------|--------|
-| Diabetes Risk Stratification | ✅ Active |
-| Hypertension Risk Stratification | ✅ Active |
-| Heart Failure Monitoring | ✅ Active |
-| Care Coordination — Diabetes | ✅ Active |
-| Care Coordination — HTN | ✅ Active |
-| VBC Reporting — ACCESS CKM | ✅ Active |
-| HEDIS CDC — Diabetes | ✅ Active |
-
----
+A deterministic data quality scoring and remediation engine for clinical data readiness, built for Cardio-Kidney-Metabolic (CKM) conditions. The engine evaluates whether a patient population's data is fit for purpose for each clinical use case (risk stratification, care coordination, value-based care reporting), surfaces the specific checks that block readiness, and routes remediation work items to the roles that can act on them. It is a multi-state proof of concept targeting Kansas, Montana, and Colorado.
 
 ## Architecture
 
-### Four-Tier Data Model
+**Four-tier data model.** Raw data is never modified after load.
 
 ```
-Tier 1 — Raw Input         Original data, never modified
-Tier 2 — Normalized        Companion NR fields, audit-safe
-Tier 3 — Check Results     Scores, patches, work items
-Tier 4 — Use-Case Ready    Fitness scores, OMOP CDM, FHIR R4
+Tier 1  Raw Input          Original data, append-only after load
+Tier 2  Normalized         Companion normalized fields, audit-safe
+Tier 3  Check Results      Scores, patches, remediation work items
+Tier 4  Use-Case Ready     Fitness scores and readiness statuses
 ```
 
-### Pipeline
+**The arc.**
 
 ```
-Data Ingestion → Normalization → Scoring → Remediation → Analytics
+Load -> Normalize -> Score -> Surface Blockers -> Remediate -> Re-score -> Unlock Analytics
 ```
 
-### Agentic Layer (optional)
+**Condition-blind engine, condition modules as configuration.** All thresholds, weights, variables, pathways, and remediation defaults live in condition module configuration files under `conditions/`. Adding a condition requires configuration, not engine code changes. The scoring engine is fully deterministic and runs without any AI.
 
-An AI-augmented remediation layer that can be toggled on/off without affecting the deterministic pipeline. Activated during site onboarding and novel issue triage. Off by default for routine processing. See `docs/Oros - CKM Data Readiness - Agentic Layer Architecture.md`.
+## What is real today
 
----
+This is a demo, not a product. The labels below follow the project's three-state vocabulary.
 
-## Repository Structure
+**Implemented**
 
-```
-oros-ckm-data-readiness/
-├── docs/                          ← Architecture and specification documents
-│   ├── archive/december-2025/     ← Original December 2025 design (preserved)
-│   ├── Oros - CKM Data Readiness - Data Model.docx
-│   ├── Oros - CKM Data Readiness - Technical Specification.docx
-│   ├── Oros - CKM Data Readiness - Methodology Architecture.docx
-│   ├── Oros - CKM Data Readiness - Synthetic Dataset Specification.docx
-│   ├── Oros - CKM Data Readiness - Remediation Roles and Accountability.docx
-│   ├── Oros - CKM Data Readiness - Baseline Methodology.docx
-│   ├── Oros - CKM Data Readiness - Pilot Concept.docx
-│   ├── Oros - CKM Data Readiness - Agentic Layer Architecture.md
-│   └── Oros - CKM Data Readiness - Build Plan - Apr 2026.md
-├── scripts/                       ← Data loading and session management
-│   ├── load_dataset.js            ← Load Dataset A/B/C into Neon
-│   ├── reset_session.js           ← Reset demo sessions
-│   ├── sessions.md                ← Active session IDs
-│   └── README.md
-├── scoring/                       ← Scoring engine (Step 7 — in progress)
-├── src/                           ← React UI (Step 8 — revision in progress)
-└── LICENSE                        ← Apache 2.0 License
-```
+- Deterministic scoring engine: five stages (checks, variable aggregation, pathway evaluation, use-case readiness, work-item generation) across 13 checks
+- Three synthetic demo sessions: A (clean baseline), B (seeded data defects), C (after one remediation pass)
+- Demo UI: use-case readiness front door, under-the-hood pipeline view, remediation drawer with real human approve/reject
+- Diabetes condition module (full configuration)
 
----
+**Demonstrated as stub**
 
-## Synthetic Datasets
+- Scripted remediation recommendations, pre-authored and keyed to the seeded defects
+- Hypertension risk stratification, care coordination, and VBC reporting use cases (boolean aggregation stubs)
 
-Three dataset states for the demo arc:
+**Architectural**
 
-| Dataset | Description | Use Cases |
-|---------|-------------|-----------|
-| A — Clean | All checks pass | All READY — "what good looks like" |
-| B — Buggy | 6 seeded bugs across EHR + device data | Multiple blocked — "where most sites are" |
-| C — Remediated | Partial fix — some bugs resolved, some require external action | Iterative story — one pass doesn't fix everything |
+- Live AI-generated recommendations behind the `AGENT_MODE` flag
+- Live database reads behind the `DATA_SOURCE` flag
+- Additional condition modules
 
-Datasets live on OrosFast at `/Volumes/OrosFast/workspace/data/ckm-readiness/synthetic/`.
+All data in this repository is synthetic. It contains no PHI. It is not a medical device and not production software.
 
----
+## Running it
 
-## Getting Started
-
-### Prerequisites
-- Node.js v18+
-- psql (PostgreSQL client)
-- Neon account with `ckm_readiness` database
-
-### Database setup
-```bash
-# Run migrations V001–V009 against ckm_readiness
-cd migrations/
-for f in V001 V002 V003 V004 V005 V006 V007 V008 V009; do
-  psql "$CKM_DIRECT" -f ${f}__*.sql
-done
-```
-
-### Load data
-```bash
-cd scripts/
-npm install
-cp .env.example .env   # Add your Neon connection strings
-npm run load:a         # Load Dataset A
-```
-
-### Run the UI
 ```bash
 npm install
-npm run dev
+npm run dev        # fixtures mode is the default; the demo runs entirely from fixtures checked into the repo
+npm run test:run   # test suite
 ```
 
----
+Engine scripts exist under `scoring/` but require a database; they are not needed to run the demo.
 
-## Governance and Collaboration
+## Documentation
 
-This infrastructure is being developed as a governance-aligned open source asset. Key collaborators:
-
-- **Clinical methodology lead (external academic partner)** — clinical domain expert, scoring engine validation
-- **Dan Connolly (Agoric/W3C)** — governance framework for trusted open source assets
-
-The Colorado rural health pilot is intended as the first deployment under this governance framework, with a potential IRB through the University of Colorado Anschutz.
-
----
+| Document (in `docs/`) | Purpose |
+|-----------------------|---------|
+| `Oros - CKM Data Readiness - Data Model.md` | Full schema for the 21-table database |
+| `Oros - CKM Data Readiness - Condition Module Schema.md` | Condition module configuration contract and engine behavior |
+| `Oros - CKM Data Readiness - Technical Specification.docx` | Check registry, scoring formulas, priority weights |
+| `Oros - CKM Data Readiness - Synthetic Dataset Specification.docx` | CSV schemas and patient cohort mapping |
+| `Oros - CKM Data Readiness - Dataset B Bug Reconciliation.md` | Seeded defect targets and remediation outcomes |
+| `Oros - CKM Data Readiness - Device Data Model and Readiness Extension.docx` | Device check registry and field definitions for CGM, BP, and scale data |
+| `Oros - CKM Data Readiness - Signal and Data Elements Table.docx` | Clinical signals the clean dataset should produce |
+| `Oros - CKM Data Readiness - V010 Migration Spec.md` | Migration specification for the condition module tables |
+| `Oros - CKM Data Readiness - Agentic Drawer Spec Decision.md` | Remediation drawer behavior: scripted-first with a switchable source |
 
 ## License
 
-Apache 2.0 — see `LICENSE` file.
+Apache 2.0. See [LICENSE](LICENSE).
 
-Intended to become fully open source following initial funding and pilot deployment. See `docs/Oros - CKM Data Readiness - Pilot Concept.docx` for the open source strategy.
+Copyright 2025-2026 Oros AI LLC
 
----
+This repository was originally released under the MIT License and was relicensed to Apache 2.0 by its owner in July 2026.
 
-## Contact
-
-Dominique Pahud — dom@oros.ai — Oros-AI
+Contribution process and CLA are being finalized; please open an issue before submitting substantial pull requests.
