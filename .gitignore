@@ -32,3 +32,6 @@ scripts/.env
 
 # Gate evidence files — verification record, never committed
 evidence/
+
+# internal working docs, never published
+docs-private/

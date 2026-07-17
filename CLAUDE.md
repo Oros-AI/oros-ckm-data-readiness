@@ -803,11 +803,11 @@ Consult these for anything a demo audience sees, and for identity / license / pa
 
 | Filename | Purpose |
 |----------|---------|
-| `Oros - CKM Data Readiness - June 25 POC Scope Lock.md` | Operational source of truth for June 25 demo scope: Diabetes-first, CKM infrastructure visible, six-bug arc, three-state vocabulary, frozen strings |
+| `Oros - CKM Data Readiness - June 25 POC Scope Lock.md` (internal working set, not published) | Operational source of truth for June 25 demo scope: Diabetes-first, CKM infrastructure visible, six-bug arc, three-state vocabulary, frozen strings |
 | `Oros - CKM Data Readiness - Agentic Drawer Spec Decision.md` | Operative for demo drawer behavior: switchable source, scripted-first, auto-fallback, recommendation data shape |
-| `Oros - CKM Data Readiness - Strategic Decisions Extract - Jun 2026.md` | Authoritative for identity, multi-state deployment, license (Apache 2.0 / Framework), and partner treatment |
-| `Oros - CKM Data Readiness - Build Plan.md` | Step ordering, sub-step dependencies, demo narrative; carries the June 25 scope reframing (Option A, three-state vocabulary, agentic conditionality, Archia attribution removal) |
-| `Oros - CKM Data Readiness - Demo UI-UX Specification.md` | **Locked.** Governing contract for the Step 8 UI/UX revamp. Owns: the two views (use-case front door / pipeline under-the-hood toggle, curated readiness arc) and audience lead-view toggle; the data-driven rendering contract (§7); the `getReadinessData`/`DATA_SOURCE` provider abstraction and fixture-export step; the `getRecommendation`/`AGENT_MODE` drawer with the net-new recommendation shape (incl. `recommendationType`); Foundational vs Fit-for-purpose framing; semantic/functional design tokens; and the foundations-first build increments (§17). |
+| `Oros - CKM Data Readiness - Strategic Decisions Extract - Jun 2026.md` (internal working set, not published) | Authoritative for identity, multi-state deployment, license (Apache 2.0 / Framework), and partner treatment |
+| `Oros - CKM Data Readiness - Build Plan.md` (internal working set, not published) | Step ordering, sub-step dependencies, demo narrative; carries the June 25 scope reframing (Option A, three-state vocabulary, agentic conditionality, Archia attribution removal) |
+| `Oros - CKM Data Readiness - Demo UI-UX Specification.md` (internal working set, not published) | **Locked.** Governing contract for the Step 8 UI/UX revamp. Owns: the two views (use-case front door / pipeline under-the-hood toggle, curated readiness arc) and audience lead-view toggle; the data-driven rendering contract (§7); the `getReadinessData`/`DATA_SOURCE` provider abstraction and fixture-export step; the `getRecommendation`/`AGENT_MODE` drawer with the net-new recommendation shape (incl. `recommendationType`); Foundational vs Fit-for-purpose framing; semantic/functional design tokens; and the foundations-first build increments (§17). |
 
 ### Primary — Step 7 critical path
 
@@ -816,10 +816,10 @@ Reference these frequently while building Step 7.
 | Filename | Purpose |
 |----------|---------|
 | `Oros - CKM Data Readiness - Condition Module Schema.md` | Config contract, new table DDL, engine behavior contract |
-| `Oros - CKM Data Readiness - Architecture Specification.docx` | Canonical object model (Variable, Condition Module, Use Case Specification). Supersedes Baseline Methodology. |
+| `Oros - CKM Data Readiness - Architecture Specification.docx` (internal working set, not published) | Canonical object model (Variable, Condition Module, Use Case Specification). Supersedes Baseline Methodology. |
 | `Oros - CKM Data Readiness - Data Model.md` | Full schema for all 21 tables (markdown-canonical in-repo; converted from `.docx`) |
 | `Oros - CKM Data Readiness - Technical Specification.docx` | Check registry, scoring formulas, priority weights |
-| `Oros - CKM Data Readiness - Architecture Decision Record - Apr 2026.docx` | Decisions 1–4 (sidecar, config+DB, representation sequence, deployment host) |
+| `Oros - CKM Data Readiness - Architecture Decision Record - Apr 2026.docx` (internal working set, not published) | Decisions 1–4 (sidecar, config+DB, representation sequence, deployment host) |
 | `Oros - CKM Data Readiness - Dataset B Bug Reconciliation.md` | Exact bug targets, remediation outcomes, acceptance test |
 | `Oros - CKM Data Readiness - Synthetic Dataset Specification.docx` | CSV schemas, patient cohort mapping |
 
@@ -829,15 +829,15 @@ Read when other docs point to them or when deeper domain/governance context is n
 
 | Filename | Purpose |
 |----------|---------|
-| `Oros - CKM Data Readiness - Methodology Architecture.docx` | Clinical methodology — variable-level evaluation, use-case fitness |
+| `Oros - CKM Data Readiness - Methodology Architecture.docx` (internal working set, not published) | Clinical methodology — variable-level evaluation, use-case fitness |
 | `Oros - CKM Data Readiness - Device Data Model and Readiness Extension.docx` | Device check registry, field-level definitions for CGM/BP/scale |
-| `Oros - CKM Data Readiness - Remediation Roles and Accountability.docx` | Source of the 7 canonical `responsible_role` strings |
-| `Oros - CKM Data Readiness - Operational Governance Framework.docx` | Seven functional roles, upstream source for Remediation Roles |
-| `Oros - CKM Data Readiness - Operational Care Model.docx` | Clinical workflow and care-team context |
+| `Oros - CKM Data Readiness - Remediation Roles and Accountability.docx` (internal working set, not published) | Source of the 7 canonical `responsible_role` strings |
+| `Oros - CKM Data Readiness - Operational Governance Framework.docx` (internal working set, not published) | Seven functional roles, upstream source for Remediation Roles |
+| `Oros - CKM Data Readiness - Operational Care Model.docx` (internal working set, not published) | Clinical workflow and care-team context |
 | `Oros - CKM Data Readiness - Signal and Data Elements Table.docx` | Clinical signals the clean dataset should produce |
-| `Oros - CKM Data Readiness - Agentic Layer Architecture.md` | Step 9 / horizon — broader agentic vision and vendor exploration. **Context only, not current state.** The Agentic Drawer Spec Decision is operative for the demo drawer. |
-| `Oros - CKM Data Readiness - Agentic Security Explainer.md` | Plain-language security model (runtime, sandboxing, prompt injection) — horizon context only |
-| `Oros - Dev Environment - Studio Setup - Apr 2026.md` | tmux, SSH, Neon connection, migration run-book |
+| `Oros - CKM Data Readiness - Agentic Layer Architecture.md` (internal working set, not published) | Step 9 / horizon — broader agentic vision and vendor exploration. **Context only, not current state.** The Agentic Drawer Spec Decision is operative for the demo drawer. |
+| `Oros - CKM Data Readiness - Agentic Security Explainer.md` (internal working set, not published) | Plain-language security model (runtime, sandboxing, prompt injection) — horizon context only |
+| `Oros - Dev Environment - Studio Setup - Apr 2026.md` (internal working set, not published) | tmux, SSH, Neon connection, migration run-book |
 
 When any doc conflicts with this file, the doc wins. When in doubt, ask.
 
@@ -851,4 +851,4 @@ When any doc conflicts with this file, the doc wins. When in doubt, ask.
   - **The clinical methodology lead** (external academic partner) — clinical methodology, validation of thresholds/weights. Primary near-term demo stakeholder.
   - **Dan Connolly** — governance + capability enforcement (the Endo connection).
   - **Sngular** — secure infrastructure and DevOps partner.
-- Deployment host: Regional node (ACO/IDN), not directly at clinical sites. Multi-state and opportunistic — POC targets Kansas, Montana, and Colorado, with Kansas the likely first deployment (see the Build Plan's Strategic Context).
+- Deployment host: Regional node (ACO/IDN), not directly at clinical sites. Multi-state and opportunistic — POC targets Kansas, Montana, and Colorado, with Kansas the likely first deployment (see the Build Plan's Strategic Context; internal working set, not published).
