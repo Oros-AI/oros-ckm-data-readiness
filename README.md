@@ -77,7 +77,7 @@ oros-ckm-data-readiness/
 │   └── README.md
 ├── scoring/                       ← Scoring engine (Step 7 — in progress)
 ├── src/                           ← React UI (Step 8 — revision in progress)
-└── LICENSE                        ← MIT License
+└── LICENSE                        ← Apache 2.0 License
 ```
 
 ---
@@ -132,7 +132,7 @@ npm run dev
 
 This infrastructure is being developed as a governance-aligned open source asset. Key collaborators:
 
-- **Hanieh Razzaghi (CHOP)** — clinical domain expert, scoring engine validation
+- **Clinical methodology lead (external academic partner)** — clinical domain expert, scoring engine validation
 - **Dan Connolly (Agoric/W3C)** — governance framework for trusted open source assets
 
 The Colorado rural health pilot is intended as the first deployment under this governance framework, with a potential IRB through the University of Colorado Anschutz.
