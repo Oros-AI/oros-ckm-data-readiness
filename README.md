@@ -59,6 +59,7 @@ Engine scripts exist under `scoring/` but require a database; they are not neede
 
 | Document (in `docs/`) | Purpose |
 |-----------------------|---------|
+| `COLLABORATION-FRAMEWORK.md` (repo root) | Governance, licensing, and partnership principles for the shared infrastructure |
 | `Oros - CKM Data Readiness - Data Model.md` | Full schema for the 21-table database |
 | `Oros - CKM Data Readiness - Condition Module Schema.md` | Condition module configuration contract and engine behavior |
 | `Oros - CKM Data Readiness - Technical Specification.docx` | Check registry, scoring formulas, priority weights |
