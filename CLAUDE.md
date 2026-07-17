@@ -19,7 +19,7 @@ If a backend section and a June demo doc appear to disagree about demo-facing be
 
 ## 1. Project Overview
 
-CKM Data Readiness — a data quality infrastructure for Cardio-Kidney-Metabolic conditions. Oros is the **neutral steward of shared open infrastructure**, serving all parties (rural health programs, HIEs, payers, health systems) and competing with none. Deployment is **multi-state and opportunistic** — deployed wherever motivated sites, funding, and partners emerge. The POC targets Kansas, Montana, and Colorado, with Kansas the likely first deployment (the Build Plan's Strategic Context owns this; see it for per-state status).
+CKM Data Readiness — a data quality infrastructure for Cardio-Kidney-Metabolic conditions. Oros is the **neutral steward of shared open infrastructure**, serving all parties (rural health programs, HIEs, payers, health systems) and competing with none. Deployment is **multi-state and opportunistic** — deployed wherever motivated sites, funding, and partners emerge. The POC targets Kansas, Montana, and Colorado, with Kansas the likely first deployment (the Build Plan's Strategic Context owns this (internal working set, not published)).
 
 The POC demonstrates the arc:
 
@@ -39,7 +39,7 @@ Repo layout:
 
 - **License: Apache License 2.0.** The **Collaboration Framework** (Governance folder, cross-project) owns license, IP, attribution, stewardship, and anti-capture principles. This repo and all docs **reference** the Framework; they do not restate it. Do not introduce MIT or any other license framing.
 - **Independent origin.** CKM infrastructure was developed independently prior to any funded institutional engagement. Funding a consulting engagement or pilot does not transfer ownership.
-- **Positioning is owned by the Strategic Decisions Extract** (`docs/Oros - CKM Data Readiness - Strategic Decisions Extract - Jun 2026.md`). It is authoritative for identity, deployment strategy, license framing, and partner treatment. Consult it before writing anything a stakeholder sees.
+- **Positioning is owned by the Strategic Decisions Extract** (`docs/Oros - CKM Data Readiness - Strategic Decisions Extract - Jun 2026.md` (internal working set, not published)). It is authoritative for identity, deployment strategy, license framing, and partner treatment. Consult it before writing anything a stakeholder sees.
 
 ### 1.6. Durable Demo Rules (apply to everything a demo audience sees)
 
@@ -850,5 +850,4 @@ When any doc conflicts with this file, the doc wins. When in doubt, ask.
 - Stakeholders / collaborators:
   - **The clinical methodology lead** (external academic partner) — clinical methodology, validation of thresholds/weights. Primary near-term demo stakeholder.
   - **Dan Connolly** — governance + capability enforcement (the Endo connection).
-  - **Sngular** — secure infrastructure and DevOps partner.
 - Deployment host: Regional node (ACO/IDN), not directly at clinical sites. Multi-state and opportunistic — POC targets Kansas, Montana, and Colorado, with Kansas the likely first deployment (see the Build Plan's Strategic Context; internal working set, not published).
