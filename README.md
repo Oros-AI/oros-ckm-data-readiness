@@ -19,7 +19,7 @@ Tier 4  Use-Case Ready     Fitness scores and readiness statuses
 Load -> Normalize -> Score -> Surface Blockers -> Remediate -> Re-score -> Unlock Analytics
 ```
 
-**Condition-blind engine, condition modules as configuration.** All thresholds, weights, variables, pathways, and remediation defaults live in condition module configuration files under `conditions/`. Adding a condition requires configuration, not engine code changes. The scoring engine is fully deterministic and runs without any AI.
+**Condition-blind engine, condition modules as configuration.** All thresholds, weights, variables, pathways, and remediation defaults live in condition module configuration files under `conditions/`. The engine contains no condition-specific logic; conditions are defined as configuration modules. The diabetes module is the first full implementation of this contract. The scoring engine is fully deterministic and runs without any AI.
 
 ## What is real today
 
@@ -75,6 +75,6 @@ Apache 2.0. See [LICENSE](LICENSE).
 
 Copyright 2025-2026 Oros AI LLC
 
-This repository was originally released under the MIT License and was relicensed to Apache 2.0 by its owner in July 2026.
+This repository was previously licensed under the MIT License and was relicensed to Apache 2.0 by its owner in July 2026.
 
 Contribution process and CLA are being finalized; please open an issue before submitting substantial pull requests.

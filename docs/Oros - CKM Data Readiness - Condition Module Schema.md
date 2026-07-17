@@ -4,7 +4,7 @@ CKM Data Readiness Infrastructure — Condition Module Schema Definition
 
 **Scope:** Diabetes Risk Stratification only. This is the first condition module schema iteration. It is deliberately narrow — it covers exactly what the Diabetes Risk Stratification use case needs. Generalization to Hypertension, Heart Failure, and other conditions is deferred. The schema is expected to extend, not get retrofitted, when additional conditions are added.
 
-**Status:** Draft for Hanieh validation. Thresholds, weights, and A1C check name references are proposed defaults pending clinical review.
+**Status:** Draft pending clinical methodology review. Thresholds, weights, and A1C check name references are proposed defaults pending clinical review.
 
 **Architecture reference:** ADR Decision 2 (April 8, 2026) — Option C. Config file is the human-facing interface. Database is the runtime representation loaded at startup.
 
@@ -391,11 +391,11 @@ Observable behaviors the engine must produce from this config. This is not engin
 
 ---
 
-## 7. Open Questions for Hanieh
+## 7. Open Questions for Clinical Methodology Review
 
 Items requiring clinical informatics validation before the config is locked.
 
-1. **Check weights.** The proposed weights (CGM: 0.40/0.40/0.20; A1C: 0.50/0.30/0.20) are placeholders. Hanieh should validate that the relative weight of identity linkage vs. temporal density vs. derived metric consistency reflects clinical priority for risk stratification.
+1. **Check weights.** The proposed weights (CGM: 0.40/0.40/0.20; A1C: 0.50/0.30/0.20) are placeholders. The clinical methodology lead should validate that the relative weight of identity linkage vs. temporal density vs. derived metric consistency reflects clinical priority for risk stratification.
 
 2. **Threshold bands.** The proposed bands (READY ≥ 0.85, PARTIALLY_READY ≥ 0.50, NOT_READY < 0.50) are placeholders. These should be validated against clinical precedent — NCQA, ADA/ATTD, and any ACO-specific thresholds used in Colorado rural settings.
 
@@ -407,7 +407,7 @@ Items requiring clinical informatics validation before the config is locked.
 
 6. **Denominator reporting.** Does the Diabetes Risk Stratification output need to report both numerator (READY patients) and denominator (eligible patients) explicitly, beyond the per-patient readiness record? If so, this is a new aggregated output — not currently in Data Model v2.
 
-7. **Check registry gap.** Four check names referenced here do not yet have scoring engine implementations (see Section 5.2). Hanieh validation is not strictly required for the implementation itself, but the naming convention should be confirmed as consistent with what Hanieh and the registry maintainers expect for future conditions.
+7. **Check registry gap.** Four check names referenced here do not yet have scoring engine implementations (see Section 5.2). Validation by the clinical methodology lead is not strictly required for the implementation itself, but the naming convention should be confirmed as consistent with what the clinical methodology lead and the registry maintainers expect for future conditions.
 
 ---
 
