@@ -46,7 +46,7 @@ The switchable design depends on both modes returning the same shape. This shape
 
 ## Build order (important sequencing)
 
-1. **Scripted mode first.** Build the drawer UI plus `getRecommendation()` with pre-written recs for the six demo bugs plus real approve/reject. This is the minimum-presentable agentic story (reliable for LACIE Wed / ICS Fri), AND it is the fallback, so it must exist regardless. Building it first also forces a clean recommendation data shape that live mode then conforms to.
+1. **Scripted mode first.** Build the drawer UI plus `getRecommendation()` with pre-written recs for the six demo bugs plus real approve/reject. This is the minimum-presentable agentic story, AND it is the fallback, so it must exist regardless. Building it first also forces a clean recommendation data shape that live mode then conforms to.
 2. **Get the entire demo solid with scripted mode.**
 3. **Add live mode last,** behind the flag, with automatic fallback to scripted. This is the "first thing cut if time is short" item, but cutting it now just means leaving the flag on scripted, with zero loss to the rest of the demo.
 
@@ -58,7 +58,7 @@ Architect the recommendation source as a single abstracted function with a mode 
 
 ## Data reset (related)
 
-Reset uses the existing `demo_sessions` mechanism from the Data Model (is_active flag plus DELETE in reverse dependency order; raw CSVs persist for reload). For the demo, "reset" means re-point to a clean session / reload the dataset state (A, B, or C). Because results are pre-computed and persisted, reset does not re-run the engine. The persistence layer makes this clean between run-throughs and between the LACIE and ICS meetings.
+Reset uses the existing `demo_sessions` mechanism from the Data Model (is_active flag plus DELETE in reverse dependency order; raw CSVs persist for reload). For the demo, "reset" means re-point to a clean session / reload the dataset state (A, B, or C). Because results are pre-computed and persisted, reset does not re-run the engine. The persistence layer makes this clean between run-throughs and between demo meetings.
 
 ## Out of scope (future)
 
