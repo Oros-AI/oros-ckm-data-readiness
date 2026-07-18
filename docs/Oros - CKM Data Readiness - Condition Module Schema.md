@@ -4,9 +4,11 @@ CKM Data Readiness Infrastructure — Condition Module Schema Definition
 
 **Scope:** Diabetes Risk Stratification only. This is the first condition module schema iteration. It is deliberately narrow — it covers exactly what the Diabetes Risk Stratification use case needs. Generalization to Hypertension, Heart Failure, and other conditions is deferred. The schema is expected to extend, not get retrofitted, when additional conditions are added.
 
+A condition module spans all use cases relevant to its condition. In v0.1, the diabetes module fully implements diabetes risk stratification; care coordination and VBC reporting are evaluated through stub aggregation, with full implementation planned for the funded phase.
+
 **Status:** Draft pending clinical methodology review. Thresholds, weights, and A1C check name references are proposed defaults pending clinical review.
 
-**Architecture reference:** ADR Decision 2 (April 8, 2026) — Option C. Config file is the human-facing interface. Database is the runtime representation loaded at startup.
+**Architecture reference:** Architecture Decision Record (internal working set, not published), Decision 2 (April 8, 2026) — Option C. Config file is the human-facing interface. Database is the runtime representation loaded at startup.
 
 ---
 
@@ -20,7 +22,7 @@ Three principles drive the design:
 
 **check_name as string reference.** The condition module references check names as strings (e.g., `"device_patient_linkage_cgm"`). These strings must already exist in the check registry (Technical Specification Section 2). This schema does not define new check types, does not propose a new `checks` table, and does not alter the check registry. If a referenced check name is not implemented as a scoring engine file, it is flagged as a dependency.
 
-**Existing Data Model v2 is not migrated.** All runtime outputs are written to existing tables (`check_results`, `variable_readiness_scores`, `use_case_readiness`, `remediation_work_items`) using existing field names. One new runtime table (`use_case_pathway_results`) is introduced for pathway evaluation results that have no existing home. Three new config tables (`condition_modules`, `use_case_specifications`, plus the runtime pathway table) are additive — no ALTER TABLE on existing schema.
+**The existing Data Model is not migrated.** All runtime outputs are written to existing tables (`check_results`, `variable_readiness_scores`, `use_case_readiness`, `remediation_work_items`) using existing field names. One new runtime table (`use_case_pathway_results`) is introduced for pathway evaluation results that have no existing home. Three new config tables (`condition_modules`, `use_case_specifications`, plus the runtime pathway table) are additive — no ALTER TABLE on existing schema.
 
 ---
 
@@ -246,13 +248,13 @@ Three principles drive the design:
 
 ---
 
-## 3. Mapping to Data Model v2
+## 3. Mapping to the Data Model
 
-Every runtime output field maps to an existing Data Model v2 column. One new runtime table is introduced for pathway results.
+Every runtime output field maps to an existing Data Model column. One new runtime table is introduced for pathway results.
 
 ### 3.1 Where each output is written
 
-| Config element                              | Existing Data Model v2 field                          | Notes |
+| Config element                              | Existing Data Model field                          | Notes |
 |---------------------------------------------|-------------------------------------------------------|-------|
 | checks[].check_name                         | `check_results.check_name` (VARCHAR 64)               | String reference only. No new check entity table. |
 | checks[].priority                           | `check_results.priority` (VARCHAR 8)                  | Values: High, Medium, Low. |
@@ -399,13 +401,13 @@ Items requiring clinical informatics validation before the config is locked.
 
 2. **Threshold bands.** The proposed bands (READY ≥ 0.85, PARTIALLY_READY ≥ 0.50, NOT_READY < 0.50) are placeholders. These should be validated against clinical precedent — NCQA, ADA/ATTD, and any ACO-specific thresholds used in Colorado rural settings.
 
-3. **A1C recency window.** The Architecture Specification says "at least one result within the past 6 months" for risk stratification. Confirm 6 months is correct for rural primary care context, or whether it should align with HEDIS (12 months) or another benchmark.
+3. **A1C recency window.** The Architecture Specification (internal working set, not published) says "at least one result within the past 6 months" for risk stratification. Confirm 6 months is correct for rural primary care context, or whether it should align with HEDIS (12 months) or another benchmark.
 
 4. **Pathway evaluation sequencing.** When CGM passes as the primary pathway, should A1C checks still be evaluated and written to `check_results` (for completeness and UI transparency), or skipped for efficiency? Current contract assumes "evaluate everything, use only the winning pathway for use case scoring."
 
 5. **Required_variables semantics.** When the active pathway is `cgm_primary`, should `use_case_readiness.required_variables` be `["CGM Glucose"]` (reflecting the active pathway) or `["CGM Glucose", "A1C"]` (reflecting all pathway-eligible variables)? The current contract proposes the former.
 
-6. **Denominator reporting.** Does the Diabetes Risk Stratification output need to report both numerator (READY patients) and denominator (eligible patients) explicitly, beyond the per-patient readiness record? If so, this is a new aggregated output — not currently in Data Model v2.
+6. **Denominator reporting.** Does the Diabetes Risk Stratification output need to report both numerator (READY patients) and denominator (eligible patients) explicitly, beyond the per-patient readiness record? If so, this is a new aggregated output — not currently in the Data Model.
 
 7. **Check registry gap.** Four check names referenced here do not yet have scoring engine implementations (see Section 5.2). Validation by the clinical methodology lead is not strictly required for the implementation itself, but the naming convention should be confirmed as consistent with what the clinical methodology lead and the registry maintainers expect for future conditions.
 
@@ -435,7 +437,7 @@ Explicit non-goals. These are out of scope for v0.1 and should not be added with
 - It does not support conditional variable requirements (e.g., "A1C is required only if patient is over 65"). All variables are unconditionally assigned to their pathways.
 - It does not support multi-condition use cases (e.g., CKM joint diabetes + hypertension stratification). Each condition module is independent.
 - It does not support dynamic thresholds (e.g., "threshold is 0.70 in year one, 0.80 in year two"). Thresholds are static per loaded config version.
-- It does not include value sets beyond the diagnosis codes needed for eligibility. Medication value sets (insulin, GLP-1, SGLT2) are referenced in the Architecture Specification as optional context variables but are not included in this v0.1 schema. They can be added when the use case expands beyond pathway-primary risk stratification.
+- It does not include value sets beyond the diagnosis codes needed for eligibility. Medication value sets (insulin, GLP-1, SGLT2) are referenced in the Architecture Specification (internal working set, not published) as optional context variables but are not included in this v0.1 schema. They can be added when the use case expands beyond pathway-primary risk stratification.
 
 ---
 
@@ -451,10 +453,10 @@ This is schema version `0.1`. The `schema_version` field at the top of every con
 
 ## 11. Relationship to Other Documents
 
-- **Architecture Specification (v1.2, April 2026)** — Defines the object model (Variable, Condition Module, Use Case Specification) this schema implements.
-- **Technical Specification** — Defines the check registry whose check names this schema references as strings.
-- **Data Model (v2)** — Defines the existing tables and field names this schema's runtime outputs are written to.
-- **Architecture Decision Record (April 2026)** — Decision 2 establishes Option C (config file + database). This schema is the concrete implementation of that decision.
-- **Remediation Roles and Accountability** — Defines the canonical `responsible_role` values this schema references in remediation defaults.
-- **Operational Governance Framework** — Defines the seven functional roles this schema maps to.
-- **Build Plan (April 2026)** — Step 7 identifies this schema as an immediate prerequisite before the `conditions/` directory is populated.
+- **Architecture Specification (v1.2, April 2026)** (internal working set, not published) — Defines the object model (Variable, Condition Module, Use Case Specification) this schema implements.
+- **Technical Specification** (`Oros - CKM Data Readiness - Technical Specification.docx`) — Defines the check registry whose check names this schema references as strings.
+- **Data Model** (`Oros - CKM Data Readiness - Data Model.md`) — Defines the existing tables and field names this schema's runtime outputs are written to.
+- **Architecture Decision Record (April 2026)** (internal working set, not published) — Decision 2 establishes Option C (config file + database). This schema is the concrete implementation of that decision.
+- **Remediation Roles and Accountability** (internal working set, not published) — Defines the canonical `responsible_role` values this schema references in remediation defaults.
+- **Operational Governance Framework** (internal working set, not published) — Defines the seven functional roles this schema maps to.
+- **Build Plan (April 2026)** (internal working set, not published) — Step 7 identifies this schema as an immediate prerequisite before the `conditions/` directory is populated.
