@@ -298,7 +298,7 @@ This section reflects what is actually on disk and in Neon. An earlier version o
 - **Step 8 Increments 1–5 COMPLETE (2026-07-12/13)** — contract/provider, use-case front door, recommendation seam + drawer + Archia removal, pipeline view + view toggle + final legacy deletion (build green, plain `tsc` gate, package renamed), reset + signposting + annotation restructure; see the increment blocks below. **Public release executed 2026-07-18; see the Public release block below.** Increments 6 (live upgrades, optional) and 7 (visual finish) remain deferred by design.
 
 #### Not started (downstream)
-- Step 9 (agentic layer), Step 10 (Vercel deploy — password protection is a MUST, see the Increment 5 block). Step 8 Increments 6 (live upgrades, optional) and 7 (visual finish) are deferred by design.
+- Step 9 (agentic layer). Step 8 Increments 6 (live upgrades, optional) and 7 (visual finish) are deferred by design.
 
 #### Fixture-export — COMPLETE (fx window, 2026-07-12; commits `ebb67c3` fx-1 + `8cec258` fx-2)
 Supersedes the former "Open design point — fixture-export layer" block. The **export layer owns** everything the UI/UX spec requires that the engine schema does not emit — no schema change; consumes 7i D6 (site-level rollup is an export-layer derivation).
@@ -368,7 +368,7 @@ The repository is PUBLIC (Apache 2.0) as of 2026-07-18. Release preparation, gat
 - **Public docs reference-currency pass.** Condition Module Schema patched for reference currency and module scope framing (commit `cad7435`). Scope language: a condition module spans all use cases relevant to its condition; in v0.1 the diabetes module fully implements diabetes risk stratification, with care coordination and VBC reporting evaluated through stub aggregation.
 - **Collaboration Framework working draft published** at repo root as `COLLABORATION-FRAMEWORK.md`; `ATTRIBUTION.md` and `NOTICE` finalized (copyright 2025-2026).
 - **Verified extraction fact sheet** produced in `evidence/` (git-ignored): population 50 patients per session, 13 checks, 507 use-case readiness rows, fixtures byte-identical to the fx-window baselines.
-- **Next planned:** password-protected demo deployment (Step 10); docx-to-markdown conversion of the four public `.docx` docs; Increment 7 visual polish remains deferred.
+- **Step 10 COMPLETE (2026-07-18):** demo deployed to Cloudflare Pages (production branch ckm-poc-build, Vite build) behind Cloudflare Access with email one-time-PIN allowlist. Posture amended from Vercel to Cloudflare Pages + Access: same protection intent (collaborator review infrastructure, link follows a framed conversation), zero cost. Pushes to ckm-poc-build auto-deploy. Remaining next planned: index.html tab title update (stale app name, one line); docx-to-markdown conversion of the four public `.docx` docs; Increment 7 visual polish deferred.
 
 #### Brand foundation import — COMPLETE (2026-07-12, commit `95744fe`)
 Drive→repo export of the locked Design Tokens v0.1 (Increment 2 entry dependency).
