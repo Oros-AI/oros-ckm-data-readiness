@@ -4,11 +4,11 @@
 
 *Oros CKM Data Readiness Infrastructure*
 
-*Version 1.0 | August 3, 2026*
+*Version 1.1 \| August 4, 2026*
 
 *© 2026 Oros. Released under the Apache License 2.0.*
 
-# C.1 Purpose and Status
+## C.1 Purpose and Status
 
 This companion defines the structure of a Site Information Flow Specification, the artifact produced when the framework is instantiated at a site.
 
@@ -16,7 +16,7 @@ The format is open. The content is not. A site’s programs, pathways, vendors, 
 
 The format specifies what must be recorded, not what the answers should be. Where an attribute calls for a site determination, the framework supplies no default. A specification with honest gaps is more useful than one with invented completeness.
 
-# C.2 Conventions
+## C.2 Conventions
 
 **Pointer discipline.** Data elements are recorded as references to the shared Variable Library defined in the Architecture Specification. A specification never defines a variable, its code sets, or its extraction logic. If a workflow appears to require an element with no Variable Library entry, that is recorded as an open item and routed to variable authoring, not resolved locally.
 
@@ -28,13 +28,13 @@ The format specifies what must be recorded, not what the answers should be. Wher
 
 **Presentation by workflow.** Flow records are stored as a flat set, each with a stable identifier, and are presented grouped by the workflow they serve. A specification carrying several dozen flows is not readable as a list. Grouping by workflow lets a clinical or operational reader see, for one workflow, which elements it depends on, where each comes from, how it travels, and how often. The same flow may appear under more than one workflow, and it remains one record.
 
-# C.3 Site-Level Sections
+## C.3 Site-Level Sections
 
-## C.3.1 Specification Identity
+### C.3.1 Specification Identity
 
 Site name, engagement identifier, specification version, date of current version, and the person or role accountable for maintaining the specification.
 
-## C.3.2 Program Enumeration
+### C.3.2 Program Enumeration
 
 This section records the externally authored requirements the site operates under. It is the origin of a substantial share of the site’s information needs, and it is the section most subject to change from outside the site.
 
@@ -56,11 +56,11 @@ These entries are site determinations. Institutions interpret the same rules dif
 
 **Derived capture requirements.** The consolidated set of elements that must be captured on a consistent basis for the enumerated programs to remain satisfied, expressed as Variable Library references with the required cadence and completeness. This is the bridge from the program enumeration to the flow records: each derived requirement should be traceable to at least one flow, and a requirement with no supporting flow is an open gap.
 
-## C.3.3 Workflow Inventory
+### C.3.3 Workflow Inventory
 
 The clinical workflows in scope for the specification, named as the site names them, each with a pointer to the flows that serve it. Workflow definitions belong to the Operational Care Model and are referenced here, not restated.
 
-# C.4 The Flow Record
+## C.4 The Flow Record
 
 One record per flow. A flow missing any attribute is not yet specified.
 
@@ -84,7 +84,7 @@ One record per flow. A flow missing any attribute is not yet specified.
 | Consequence record    | The five consequence terms, recorded for the current configuration: cadence, granularity, cost, dependency, reimbursability. See C.5.                                                                                                                                                                                                                                                                                                                      |
 | Concession record     | Where the flow does not support the workflow as designed, which of the three responses was chosen, and by whom. See C.6.                                                                                                                                                                                                                                                                                                                                   |
 
-# C.5 The Consequence Record
+## C.5 The Consequence Record
 
 Five terms, recorded per configuration, in fixed vocabulary so that consequences are comparable across flows and discussable with non-technical leadership.
 
@@ -98,7 +98,7 @@ Five terms, recorded per configuration, in fixed vocabulary so that consequences
 
 - **Reimbursability.** Whether this configuration produces what the site’s enumerated programs require, in the form and on the schedule the site has determined those programs require. This is a site determination throughout, resolved against the entries in C.3.2 rather than against any figure supplied by the framework. A reimbursability entry that reads as unresolved is a legitimate finding, usually meaning the governing program requirements are not yet stable, and it should be dated alongside the program enumeration section it depends on.
 
-# C.6 The Concession Record
+## C.6 The Concession Record
 
 When information cannot support the workflow as designed, exactly one of three responses is chosen and recorded:
 
@@ -110,7 +110,7 @@ When information cannot support the workflow as designed, exactly one of three r
 
 Each concession record carries the **accepting authority**: the named local clinical or operational leader who accepted it. This naming is the point of the record. A concession accepted by an identified person is a decision that can be revisited when circumstances change. A concession absorbed by no one becomes permanent by default and invisible to everyone who later wonders why the program underperforms.
 
-# C.7 Revision History
+## C.7 Revision History
 
 Two revision logs, kept separately.
 
@@ -120,7 +120,7 @@ Two revision logs, kept separately.
 
 Re-discovery revisits two questions at once: what the site now wants, and what the environment now offers. A revision that addresses only one of them is incomplete.
 
-# C.8 What This Format Does Not Carry
+## C.8 What This Format Does Not Carry
 
 **Sustainability planning.** The specification captures the inputs to sustainability analysis: programs, documentation requirements, configurations, costs, dependencies, and access bases. The analysis itself, meaning strategy and recommendations for how a site sustains data-driven care over time, is engagement work and is not part of this open format.
 

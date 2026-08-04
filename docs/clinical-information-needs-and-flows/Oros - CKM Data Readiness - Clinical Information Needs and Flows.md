@@ -2,11 +2,11 @@
 
 *Oros CKM Data Readiness Infrastructure*
 
-*Version 1.0 | August 3, 2026*
+*Version 1.1 \| August 4, 2026*
 
 *© 2026 Oros. Released under the Apache License 2.0.*
 
-# 1. Purpose and Positioning
+## 1. Purpose and Positioning
 
 This document answers one question: what information is required to make each clinical workflow operationally possible and sustainable, and how must that information move?
 
@@ -14,7 +14,7 @@ Every clinical program depends on information arriving in the right place, at th
 
 This document is a compass, not a map. It gives you the reasoning pattern for deriving information needs from clinical work and a shared vocabulary for describing how information moves. It does not chart every feed, interface, and program a site might encounter. That level of detail belongs in the companion references and, above all, in each site’s own specification. The document is intentionally minimal. Sophistication accrues in the companions and in the site-specific work, not here.
 
-This work was developed independently by Oros and serves the Rising T1DE Alliance and any organization committed to helping patients live better lives.
+This work was developed independently by Oros, and is offered to the Rising T1DE Alliance and to any organization committed to helping patients live better lives.
 
 **Scope boundary.** The generic framework in this document is open under Apache 2.0 and is complete as it stands. It does not depend on contributed content to be useful. Site adaptations, meaning the specific flows, configurations, and program lists for a given organization, are produced per engagement and belong to the sites that shape them.
 
@@ -24,7 +24,7 @@ This work was developed independently by Oros and serves the Rising T1DE Allianc
 
 **Institutional home.** This document is the methodology artifact for Capability 1, Ecosystem Stewardship, in the Oros Capability, Expertise and Stewardship Model. That capability is oriented around a recurring set of questions: what data is required, who needs it, when, and why, and how does it integrate into care delivery? This document is where those questions are answered in a form a site can work with.
 
-# 2. The Derivation Chain
+## 2. The Derivation Chain
 
 Information needs are never invented. They are derived, and the derivation always follows the same chain:
 
@@ -44,13 +44,13 @@ Two rules govern the chain.
 
 **Destinations are first-class.** Where information lands is a decision, not an afterthought. The destination is chosen by the site based on where the decision is actually made: a worklist, a dashboard, a registry, a report, an inbox. A flow that arrives somewhere nobody looks has not arrived.
 
-# 3. Three Requirement Origins, One per Use Case Category
+## 3. Three Requirement Origins, One per Use Case Category
 
 Information requirements do not all come from the same place. Some arrive fully specified from outside the site. Some follow from the clinical condition itself. Some exist only because a local team decided to work a particular way. The three use case categories in the Oros taxonomy correspond to these three origins, and each one is discovered differently.
 
 One clarification before the chapters. Referral management is a workflow, not a category. It sits inside care coordination and delivery, alongside outreach, medication management, and the other things care teams do. The taxonomy has three values, not four.
 
-## 3.1 Externally Authored: Clinical Quality and VBC Reporting
+### 3.1 Externally Authored: Clinical Quality and VBC Reporting
 
 Requirements in this category are written by someone else. A quality program, a value-based care contract, or a reimbursement model specifies what must be measured, over which population, in which period, and to what standard. The site does not derive these requirements. It inherits them by choosing to participate.
 
@@ -60,7 +60,7 @@ The CMS ACCESS Model illustrates the pattern. Its cardio-kidney-metabolic track 
 
 One state deserves naming because it is common and often mishandled. A site may have identified a program it intends to join before that program’s requirements are stable. Newer models publish guidance in stages, and operational detail can lag the announcement by months. The correct response is to record the program as identified with requirements not yet stable, capture what is known, and revisit. This is a legitimate entry in a site specification, not a gap in it. Treating an unstable requirement as if it were settled produces flows built to the wrong specification, which is more expensive than waiting.
 
-## 3.2 Therapeutically Authored: Risk Stratification
+### 3.2 Therapeutically Authored: Risk Stratification
 
 Requirements in this category come from the condition. What makes a patient with diabetes higher risk than another is a clinical question, answered by evidence and shaped by what the available devices and measurements can actually see. No external program dictates it, and no local preference invents it. It follows from the therapeutic area.
 
@@ -74,7 +74,7 @@ Two implications for information needs follow. First, criteria of this kind are 
 
 Published criteria also change. Consensus guidelines are revised, new evidence lands, and the device landscape shifts underneath both. Requirements in this category are the most stable of the three over a one-year horizon and among the least stable over a five-year one.
 
-## 3.3 Locally Authored: Care Coordination and Delivery
+### 3.3 Locally Authored: Care Coordination and Delivery
 
 Requirements in this category exist because a local team designed a way of working. There is no external specification and no published baseline. A clinic decides that a nurse reviews a flagged list on Monday mornings, that outreach happens by phone with a portal message as fallback, that a patient not reached in two attempts is escalated, and that a referral to endocrinology carries a specific packet of context with it. Every one of those decisions creates information requirements, and none of them was written down anywhere before the team made them.
 
@@ -84,7 +84,7 @@ Referral management belongs here, and it is the workflow that most often exposes
 
 This is explicitly the chapter that gains resolution through operation. At initial discovery, a site can usually describe its care coordination workflows only in outline, because much of what the workflow actually requires becomes visible when people start doing it. A first pass captures the intended design. The second pass, after some months of operation, captures what the design turned out to need. That is expected, and section 5 treats it as the normal condition rather than as incomplete work.
 
-# 4. Working with Reality: Configurations and Trajectories
+## 4. Working with Reality: Configurations and Trajectories
 
 The derivation chain tells you what a workflow needs. It does not tell you what a site currently has. That gap is where most of the real work lives.
 
@@ -92,7 +92,7 @@ Every flow has a **current configuration**, meaning the way that information act
 
 The **bridge** is the gap between current and target. Naming it that way keeps attention on the distance to be closed rather than on the deficiency of the present state. A bridge may be closed in one step, in several, or never, and a site that decides not to close a bridge has made a legitimate decision as long as the decision is recorded.
 
-## Consequences, in a fixed vocabulary
+### Consequences, in a fixed vocabulary
 
 Configuration choices have consequences, and describing them in consistent terms is what makes them comparable across flows and discussable with non-technical leadership. Five terms are used throughout:
 
@@ -108,19 +108,19 @@ Configuration choices have consequences, and describing them in consistent terms
 
 **The cadence constraint, stated plainly: the pathway sets the achievable tempo.** A workflow cannot run faster than the information reaching it. This is the most common source of frustration in program design, because clinical teams design the workflow they want and discover the tempo constraint afterward. Upgrades buy tempo. That is usually the honest justification for a pathway change, and it is a better one than any abstract appeal to interoperability.
 
-## Non-technical factors are legitimate
+### Non-technical factors are legitimate
 
 Configuration decisions are shaped by budget, existing vendor relationships, leadership preference, and available integration capacity, and these are legitimate inputs rather than obstacles to the correct technical answer.
 
-## The environment moves
+### The environment moves
 
 Pathway viability is not fixed. Products change their export capabilities, contracts expire, vendors are acquired, regulatory requirements shift what must be supported, and payment programs change what they will pay for. A configuration that was unavailable at initial discovery may be available two years later, and one that worked may stop working. Re-discovery therefore revisits two things at once: what the site now wants, and what the environment now offers. Neither alone is sufficient.
 
-## Access basis
+### Access basis
 
 Each configuration records the basis on which the site has access to the information, because that basis determines how durable the flow is. Four classes cover most cases: **operational contract**, **research protocol**, **grant-funded pilot**, and **informal arrangement**. All four can carry real clinical value. They differ in what happens when circumstances change. A flow resting on a grant-funded pilot has a known end date. A flow resting on an informal arrangement rests on a relationship. Recording the basis is not a judgment about the flow, it is a statement about what would have to be renewed, renegotiated, or replaced for the workflow to survive.
 
-## The negotiation loop
+### The negotiation loop
 
 Sometimes the information a workflow needs cannot be delivered as the workflow was designed. When that happens there are exactly three responses:
 
@@ -132,7 +132,7 @@ Sometimes the information a workflow needs cannot be delivered as the workflow w
 
 All three are valid. What is not valid is leaving the choice unmade, because an unmade choice becomes a workflow that quietly underperforms with no one accountable for why. The decision is recorded, and where a limitation is accepted, the concession is recorded explicitly with the named local authority who accepted it. That naming matters. Concessions accepted by an identified clinical or operational leader are revisitable decisions. Concessions absorbed by no one become permanent by default.
 
-# 5. From Framework to Site
+## 5. From Framework to Site
 
 Instantiation is cyclical, not an event.
 
@@ -146,7 +146,7 @@ The engagement produces a **Site Information Flow Specification**, written in th
 
 Change management sets the pace. The rate at which a site can absorb workflow change, not the rate at which pathways can be technically improved, determines how quickly a specification moves from current toward target configurations. This document names that force so it is planned around rather than discovered late. Guidance on managing it belongs to the clinical transformation work, not here.
 
-# 6. Relationships
+## 6. Relationships
 
 The division of labor is simple. The Operational Care Model defines what clinical teams do. This document defines what information those doings require and how it moves. The readiness infrastructure evaluates whether the data can actually deliver it.
 
@@ -162,7 +162,7 @@ The division of labor is simple. The Operational Care Model defines what clinica
 
 **Boundary.** The flow layer sits outside the three-object model and amends nothing within it. Variables, Condition Modules, and Use Case Specifications are unchanged by anything in this document. What is added is a layer describing how information reaches the point where those objects operate.
 
-# 7. Evolution
+## 7. Evolution
 
 This framework improves through use.
 
