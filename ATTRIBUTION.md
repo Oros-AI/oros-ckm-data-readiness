@@ -2,9 +2,10 @@
 
 ## Author
 
-Dominique Pahud is the author of all code and documentation in this
-repository, developed with AI-assisted tooling (Claude Code) under his
-direction.
+All code and documentation in this repository were created by Dominique
+Pahud, who directed, selected, and revised all content, using AI-assisted
+tooling (Claude Code). Copyright is claimed in the human-authored and
+human-revised expression. Oros AI LLC holds all rights in the repository.
 
 ## Predecessor acknowledgment
 
