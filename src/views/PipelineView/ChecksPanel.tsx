@@ -9,14 +9,18 @@ import { useState } from 'react';
 import type { CheckResultView, PipelineStageView } from '../../domain/types';
 import { tokens } from '../../theme/tokens';
 
+// 'Observed value' is the only wide column: it takes the remaining
+// table width while the compact columns hug their content (nowrap), so
+// Score and Threshold values sit unambiguously under their own headers
+// (demo-align R2).
 const COLUMNS = [
-  'Patient',
-  'Variable',
-  'Status',
-  'Score',
-  'Threshold',
-  'Observed value',
-  'Priority',
+  { label: 'Patient', wide: false },
+  { label: 'Variable', wide: false },
+  { label: 'Status', wide: false },
+  { label: 'Score', wide: false },
+  { label: 'Threshold', wide: false },
+  { label: 'Observed value', wide: true },
+  { label: 'Priority', wide: false },
 ] as const;
 
 function groupByCheckName(
@@ -127,16 +131,18 @@ function CheckGroup({ checkName, rows }: { checkName: string; rows: CheckResultV
               <tr>
                 {COLUMNS.map((column) => (
                   <th
-                    key={column}
+                    key={column.label}
                     style={{
                       textAlign: 'left',
                       padding: '0.2rem 0.5rem',
                       borderBottom: `1px solid ${tokens.neutral.border}`,
                       color: tokens.neutral.gray,
                       fontWeight: 600,
+                      whiteSpace: 'nowrap',
+                      width: column.wide ? '100%' : undefined,
                     }}
                   >
-                    {column}
+                    {column.label}
                   </th>
                 ))}
               </tr>
@@ -144,15 +150,17 @@ function CheckGroup({ checkName, rows }: { checkName: string; rows: CheckResultV
             <tbody>
               {rows.map((row) => (
                 <tr key={`${row.checkName}:${row.patientId}`}>
-                  <td style={cellStyle}>{row.patientId}</td>
-                  <td style={cellStyle}>{row.variableName}</td>
-                  <td style={cellStyle}>{row.status}</td>
-                  <td style={cellStyle}>{row.score}</td>
-                  <td style={cellStyle}>{row.threshold}</td>
+                  <td style={compactCellStyle}>{row.patientId}</td>
+                  <td style={compactCellStyle}>{row.variableName}</td>
+                  <td style={compactCellStyle}>{row.status}</td>
+                  {/* Binary checks carry no numeric score: render an
+                      explicit dash, never a blank cell (R2). */}
+                  <td style={compactCellStyle}>{row.score ?? '-'}</td>
+                  <td style={compactCellStyle}>{row.threshold}</td>
                   <td style={cellStyle} data-testid={`obs-${row.checkName}-${row.patientId}`}>
                     {row.observedValue}
                   </td>
-                  <td style={cellStyle}>{row.priority}</td>
+                  <td style={compactCellStyle}>{row.priority}</td>
                 </tr>
               ))}
             </tbody>
@@ -168,4 +176,9 @@ const cellStyle = {
   borderBottom: `1px solid ${tokens.neutral.border}`,
   color: tokens.brand.ink,
   verticalAlign: 'top',
+} as const;
+
+const compactCellStyle = {
+  ...cellStyle,
+  whiteSpace: 'nowrap',
 } as const;
