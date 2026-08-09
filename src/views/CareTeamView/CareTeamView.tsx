@@ -37,9 +37,20 @@ export function CareTeamView({ session }: { session: SessionId }) {
 
   const useCases = orderUseCases(data.useCases);
   const active = useCases.find((u) => u.useCaseName === selectedUseCase) ?? useCases[0];
-  const rows = (data.patientRows ?? []).filter((r) => r.useCaseName === active.useCaseName);
+  // Render-order comparator only (presentation rider): non-READY rows
+  // first so the work list leads, stable by patient ID within each
+  // group. No data changes.
+  const rows = (data.patientRows ?? [])
+    .filter((r) => r.useCaseName === active.useCaseName)
+    .sort((a, b) => {
+      const readyRank = (s: string) => (s === 'READY' ? 1 : 0);
+      const rankDelta = readyRank(a.overallStatus) - readyRank(b.overallStatus);
+      if (rankDelta !== 0) return rankDelta;
+      return a.patientId < b.patientId ? -1 : a.patientId > b.patientId ? 1 : 0;
+    });
   const total =
     active.patientCounts.ready + active.patientCounts.partiallyReady + active.patientCounts.notReady;
+  const notYetReady = total - active.patientCounts.ready;
 
   return (
     <section data-testid="care-team-view">
@@ -97,10 +108,16 @@ export function CareTeamView({ session }: { session: SessionId }) {
 
       <h2
         data-testid="care-team-header"
-        style={{ margin: '0 0 0.75rem', fontSize: '1.1rem', color: tokens.brand.ink }}
+        style={{ margin: '0 0 0.2rem', fontSize: '1.1rem', color: tokens.brand.ink }}
       >
-        {active.patientCounts.ready} of {total} patients ready for this workflow
+        This workflow can serve {active.patientCounts.ready} of {total} patients today
       </h2>
+      <p
+        data-testid="care-team-count-line"
+        style={{ margin: '0 0 0.75rem', fontSize: '0.85rem', color: tokens.neutral.gray }}
+      >
+        {notYetReady === 0 ? 'All patients ready' : `${notYetReady} not yet ready`}
+      </p>
 
       <ul data-testid="care-team-rows" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
         {rows.map((row) => {

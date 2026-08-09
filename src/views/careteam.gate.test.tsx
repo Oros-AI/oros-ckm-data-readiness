@@ -36,10 +36,10 @@ describe('care team view gate - Task 4 (CT-1..CT-6)', () => {
   });
 
   it('CT-2: diabetes is the default use case; header counts per session', async () => {
-    const expected: Record<Session, string> = {
-      A: '36 of 36 patients ready for this workflow',
-      B: '30 of 36 patients ready for this workflow',
-      C: '33 of 36 patients ready for this workflow',
+    const expected: Record<Session, { serve: string; count: string }> = {
+      A: { serve: 'This workflow can serve 36 of 36 patients today', count: 'All patients ready' },
+      B: { serve: 'This workflow can serve 30 of 36 patients today', count: '6 not yet ready' },
+      C: { serve: 'This workflow can serve 33 of 36 patients today', count: '3 not yet ready' },
     };
     for (const session of ['A', 'B', 'C'] as Session[]) {
       await openCareTeam(session);
@@ -48,7 +48,8 @@ describe('care team view gate - Task 4 (CT-1..CT-6)', () => {
           .getByTestId('care-team-usecase-diabetes_risk_stratification')
           .getAttribute('aria-pressed'),
       ).toBe('true');
-      expect(screen.getByTestId('care-team-header').textContent).toBe(expected[session]);
+      expect(screen.getByTestId('care-team-header').textContent).toBe(expected[session].serve);
+      expect(screen.getByTestId('care-team-count-line').textContent).toBe(expected[session].count);
       cleanup();
     }
   });
@@ -67,7 +68,25 @@ describe('care team view gate - Task 4 (CT-1..CT-6)', () => {
 
     await openCareTeam('B');
     const list = screen.getByTestId('care-team-rows');
-    expect(list.querySelectorAll('[data-testid^="care-team-row-"]')).toHaveLength(36);
+    const renderedRows = [...list.querySelectorAll('[data-testid^="care-team-row-"]')];
+    expect(renderedRows).toHaveLength(36);
+
+    // Presentation rider: non-READY rows render first (the first row is
+    // non-READY when any exist), READY rows follow, and no non-READY
+    // row appears after the first READY row; patient IDs ascend within
+    // each group.
+    const statuses = renderedRows.map((el) => el.getAttribute('data-status'));
+    expect(statuses[0]).not.toBe('READY');
+    const firstReadyIndex = statuses.indexOf('READY');
+    expect(firstReadyIndex).toBeGreaterThan(0);
+    expect(statuses.slice(firstReadyIndex).every((s) => s === 'READY')).toBe(true);
+    const ids = renderedRows.map((el) =>
+      (el.getAttribute('data-testid') ?? '').replace(/^care-team-row-/, ''),
+    );
+    const nonReadyIds = ids.slice(0, firstReadyIndex);
+    const readyIds = ids.slice(firstReadyIndex);
+    expect(nonReadyIds).toEqual([...nonReadyIds].sort());
+    expect(readyIds).toEqual([...readyIds].sort());
 
     for (const fixtureRow of fixtureRows) {
       const rendered = screen.getByTestId(`care-team-row-${fixtureRow.patientId}`);
@@ -105,7 +124,7 @@ describe('care team view gate - Task 4 (CT-1..CT-6)', () => {
     await openCareTeam('B');
     fireEvent.click(screen.getByTestId('care-team-usecase-vbc_reporting'));
     expect(screen.getByTestId('care-team-header').textContent).toBe(
-      '40 of 49 patients ready for this workflow',
+      'This workflow can serve 40 of 49 patients today',
     );
     // Session switch resets the selector to the default use case.
     fireEvent.click(screen.getByTestId('session-C'));
@@ -116,7 +135,7 @@ describe('care team view gate - Task 4 (CT-1..CT-6)', () => {
         .getAttribute('aria-pressed'),
     ).toBe('true');
     expect(screen.getByTestId('care-team-header').textContent).toBe(
-      '33 of 36 patients ready for this workflow',
+      'This workflow can serve 33 of 36 patients today',
     );
   });
 });
