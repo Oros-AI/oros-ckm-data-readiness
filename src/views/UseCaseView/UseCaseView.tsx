@@ -13,6 +13,11 @@ import { tokens } from '../../theme/tokens';
 import { CapabilityCard } from './CapabilityCard';
 import { CriteriaCard } from '../shared/CriteriaCard';
 
+// Session C carries this header line in the capabilities view, visible
+// without interaction (demo-align Item 4). Copy is LOCKED verbatim.
+const SESSION_C_HEADER_LINE =
+  'What remains open is real work - this screen is the work list.';
+
 interface UseCaseViewProps {
   session: SessionId;
   expandedBlockerId: string | null;
@@ -52,6 +57,19 @@ export function UseCaseView({
 
   return (
     <section data-testid="use-case-view">
+      {session === 'C' && (
+        <p
+          data-testid="session-c-header-line"
+          style={{
+            margin: '0 0 1rem',
+            fontSize: '0.95rem',
+            fontWeight: 600,
+            color: tokens.brand.ink,
+          }}
+        >
+          {SESSION_C_HEADER_LINE}
+        </p>
+      )}
       {data.useCases.map((useCase) => (
         <CapabilityCard
           key={useCase.useCaseName}
