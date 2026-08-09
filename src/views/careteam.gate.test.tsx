@@ -54,9 +54,9 @@ describe('care team view gate - Task 4 (CT-1..CT-6)', () => {
     }
   });
 
-  it('CT-3: persistent illustrative composite label', async () => {
+  it('CT-3: persistent Illustrative composite label', async () => {
     await openCareTeam('B');
-    expect(screen.getByTestId('illustrative-composite').textContent).toBe('illustrative composite');
+    expect(screen.getByTestId('illustrative-composite').textContent).toBe('Illustrative composite');
   });
 
   it('CT-4: B diabetes rows - 36 rows; non-READY rows carry fixture blockedReasons; READY rows none', async () => {
