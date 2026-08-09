@@ -15,6 +15,7 @@ import { CriteriaCard } from '../shared/CriteriaCard';
 
 interface CapabilityCardProps {
   useCase: UseCaseSummary;
+  workedExample?: boolean; // tags the demo's worked-example tile (Item 5)
   blockers: Blocker[]; // this card's blockerIds, resolved by the view
   criteria: ConfiguredCriterion[]; // criteria applying to exactly this use case
   expandedBlockerId: string | null;
@@ -26,6 +27,7 @@ interface CapabilityCardProps {
 
 export function CapabilityCard({
   useCase,
+  workedExample = false,
   blockers,
   criteria,
   expandedBlockerId,
@@ -60,6 +62,22 @@ export function CapabilityCard({
         <h2 style={{ margin: 0, fontSize: '1.1rem', color: tokens.brand.ink }}>
           {useCase.displayName}
         </h2>
+        {workedExample && (
+          <span
+            data-testid="worked-example-tag"
+            style={{
+              border: `1px solid ${tokens.brand.green}`,
+              backgroundColor: tokens.brand.greenTint2,
+              color: tokens.brand.green,
+              borderRadius: '4px',
+              padding: '0.1rem 0.45rem',
+              fontSize: '0.7rem',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            worked example
+          </span>
+        )}
         <ImplementationBadge state={useCase.implementationState} />
         <ReadinessChip status={useCase.overallStatus} />
       </header>

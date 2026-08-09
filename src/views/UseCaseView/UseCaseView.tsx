@@ -12,6 +12,7 @@ import type { Decision, SessionId } from '../../state/demoState';
 import { tokens } from '../../theme/tokens';
 import { CapabilityCard } from './CapabilityCard';
 import { CriteriaCard } from '../shared/CriteriaCard';
+import { orderUseCases, WORKED_EXAMPLE_USE_CASE } from './useCaseOrder';
 
 // Session C carries this header line in the capabilities view, visible
 // without interaction (demo-align Item 4). Copy is LOCKED verbatim.
@@ -70,10 +71,11 @@ export function UseCaseView({
           {SESSION_C_HEADER_LINE}
         </p>
       )}
-      {data.useCases.map((useCase) => (
+      {orderUseCases(data.useCases).map((useCase) => (
         <CapabilityCard
           key={useCase.useCaseName}
           useCase={useCase}
+          workedExample={useCase.useCaseName === WORKED_EXAMPLE_USE_CASE}
           blockers={useCase.blockerIds.flatMap((id) => {
             const blocker = blockersById.get(id);
             return blocker ? [blocker] : [];
