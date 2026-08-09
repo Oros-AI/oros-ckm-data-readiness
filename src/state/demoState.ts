@@ -10,7 +10,7 @@ import { useState } from 'react';
 import { LEAD_VIEW } from '../config/DemoConfig';
 
 export type SessionId = 'A' | 'B' | 'C';
-export type ViewId = 'use_case' | 'pipeline';
+export type ViewId = 'use_case' | 'pipeline' | 'care_team';
 export type Decision = 'approved' | 'rejected';
 
 // Decision keys are session-scoped composites: recommendationIds are
@@ -54,9 +54,10 @@ export function useDemoState(initialView: ViewId = LEAD_VIEW): DemoState {
 
   const selectView = (next: ViewId) => {
     setView(next);
-    // R1 (2026-07-13): entering the pipeline view closes the drawer;
+    // R1 (2026-07-13), extended at Task 4: leaving the use-case view
+    // closes the drawer (its trigger lives only there);
     // expandedBlockerId is left unchanged. Toggling never opens the drawer.
-    if (next === 'pipeline') setOpenDrawerBlockerId(null);
+    if (next !== 'use_case') setOpenDrawerBlockerId(null);
   };
 
   const toggleBlocker = (blockerId: string) => {

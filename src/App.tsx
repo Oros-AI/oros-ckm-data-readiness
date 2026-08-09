@@ -9,6 +9,7 @@ import { useDemoState } from './state/demoState';
 import type { SessionId, ViewId } from './state/demoState';
 import { UseCaseView } from './views/UseCaseView/UseCaseView';
 import { PipelineView } from './views/PipelineView/PipelineView';
+import { CareTeamView } from './views/CareTeamView/CareTeamView';
 import { RemediationDrawer } from './components/RemediationDrawer';
 import { getSessionSignpost } from './views/shared/sessionSignpost';
 import { SessionBanner } from './views/shared/SessionBanner';
@@ -19,6 +20,7 @@ const SESSIONS: SessionId[] = ['A', 'B', 'C'];
 const VIEWS: Array<{ id: ViewId; label: string }> = [
   { id: 'use_case', label: 'Capabilities' },
   { id: 'pipeline', label: 'Under the hood' },
+  { id: 'care_team', label: 'Care Team View' },
 ];
 
 export default function App() {
@@ -130,8 +132,10 @@ export default function App() {
           decisions={state.decisions}
           onOpenDrawer={state.openDrawer}
         />
-      ) : (
+      ) : state.view === 'pipeline' ? (
         <PipelineView session={state.session} />
+      ) : (
+        <CareTeamView session={state.session} />
       )}
 
       {/* Drawer shell mounts once here (spec §5); opened only from the
