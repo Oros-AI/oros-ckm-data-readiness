@@ -122,6 +122,15 @@ export default function App() {
         <h1 style={{ margin: 0, fontSize: '1.5rem', color: tokens.brand.ink }}>
           Can this population's data support each capability?
         </h1>
+        {/* Capabilities view only (demo-align Task 4 C5). */}
+        {state.view === 'use_case' && (
+          <p
+            data-testid="page-subtitle"
+            style={{ margin: '0.25rem 0 0', fontSize: '0.85rem', color: tokens.neutral.gray }}
+          >
+            Four capabilities over one population: two condition-specific, two population-wide.
+          </p>
+        )}
       </header>
 
       {state.view === 'use_case' ? (
