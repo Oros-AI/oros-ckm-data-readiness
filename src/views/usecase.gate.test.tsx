@@ -112,6 +112,13 @@ describe('front-door gate — Increment 2 (G2-7..G2-16)', () => {
       const cards = await openSession(session);
       const chips = cards.map((c) => within(c).getByTestId('readiness-chip').textContent);
       expect(chips).toEqual(expected[session]);
+      // Site-vs-patient disambiguation rider: the "Site readiness:"
+      // label renders exactly once per tile, describing the chip.
+      for (const card of cards) {
+        const labels = within(card).getAllByTestId('site-readiness-label');
+        expect(labels).toHaveLength(1);
+        expect(labels[0].textContent).toBe('Site readiness:');
+      }
       cleanup();
     }
   });

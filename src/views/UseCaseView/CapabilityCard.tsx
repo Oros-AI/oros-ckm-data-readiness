@@ -88,6 +88,14 @@ export function CapabilityCard({
           </span>
         )}
         <ImplementationBadge state={useCase.implementationState} />
+        {/* Site-vs-patient disambiguation: this label describes the
+            band chip that follows; the chip itself is unchanged. */}
+        <span
+          data-testid="site-readiness-label"
+          style={{ fontSize: '0.75rem', color: tokens.neutral.gray }}
+        >
+          Site readiness:
+        </span>
         <ReadinessChip status={useCase.overallStatus} />
       </header>
 
