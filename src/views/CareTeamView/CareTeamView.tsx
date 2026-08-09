@@ -89,29 +89,39 @@ export function CareTeamView({ session }: { session: SessionId }) {
             </button>
           ))}
         </div>
-        {/* Persistent honesty label: these are synthetic patients. */}
+      </div>
+
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'baseline',
+          gap: '0.75rem',
+          flexWrap: 'wrap',
+          margin: '0 0 0.2rem',
+        }}
+      >
+        <h2
+          data-testid="care-team-header"
+          style={{ margin: 0, fontSize: '1.1rem', color: tokens.brand.ink }}
+        >
+          This workflow can serve {active.patientCounts.ready} of {total} patients today
+        </h2>
+        {/* Persistent honesty label: these are synthetic patients.
+            Plain text, no chip treatment (disclaimer rider). */}
         <span
           data-testid="illustrative-composite"
           style={{
-            border: `1px solid ${tokens.neutral.border}`,
-            backgroundColor: tokens.neutral.light,
             color: tokens.neutral.gray,
-            borderRadius: '4px',
-            padding: '0.1rem 0.45rem',
             fontSize: '0.75rem',
+            fontStyle: 'italic',
             whiteSpace: 'nowrap',
+            marginLeft: 'auto',
           }}
         >
           illustrative composite
         </span>
       </div>
-
-      <h2
-        data-testid="care-team-header"
-        style={{ margin: '0 0 0.2rem', fontSize: '1.1rem', color: tokens.brand.ink }}
-      >
-        This workflow can serve {active.patientCounts.ready} of {total} patients today
-      </h2>
       <p
         data-testid="care-team-count-line"
         style={{ margin: '0 0 0.75rem', fontSize: '0.85rem', color: tokens.neutral.gray }}
