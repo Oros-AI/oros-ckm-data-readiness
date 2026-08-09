@@ -175,23 +175,43 @@ describe('pipeline view gate - Increment 4a (G4a-1..G4a-5)', () => {
 
   it('G4a-4: drill-down groups and counts - B 11/46, C 6/27, A none', async () => {
     await renderView('B');
+    // Item 6 (demo-align): detail is collapsed on load in all sessions;
+    // the toggle expands it. Content inside is unchanged.
+    expect(document.querySelectorAll('[data-testid^="checks-panel-"]')).toHaveLength(0);
+    fireEvent.click(screen.getByTestId('toggle-check-details'));
     expect(document.querySelectorAll('[data-testid^="checks-panel-"]')).toHaveLength(1);
     const bGroups = renderedGroups();
     expect(Object.fromEntries(bGroups.map((g) => [g.checkName, g.count]))).toEqual(B_GROUPS);
     expect(bGroups.reduce((sum, g) => sum + g.count, 0)).toBe(46);
+    expect(screen.getByTestId('work-items-rollup').textContent).toBe(
+      '46 open work items across 11 failing checks',
+    );
+    expect(document.querySelectorAll('[data-testid^="check-pass-"]')).toHaveLength(2);
     cleanup();
 
     await renderView('C');
+    expect(document.querySelectorAll('[data-testid^="checks-panel-"]')).toHaveLength(0);
+    fireEvent.click(screen.getByTestId('toggle-check-details'));
     expect(document.querySelectorAll('[data-testid^="checks-panel-"]')).toHaveLength(1);
     const cGroups = renderedGroups();
     expect(Object.fromEntries(cGroups.map((g) => [g.checkName, g.count]))).toEqual(C_GROUPS);
     expect(cGroups.reduce((sum, g) => sum + g.count, 0)).toBe(27);
+    expect(screen.getByTestId('work-items-rollup').textContent).toBe(
+      '27 open work items across 6 failing checks',
+    );
+    expect(document.querySelectorAll('[data-testid^="check-pass-"]')).toHaveLength(7);
     cleanup();
 
     await renderView('A');
-    expect(document.querySelectorAll('[data-testid^="checks-panel-"]')).toHaveLength(0);
+    // Task 4: A now carries 13 status-only PASS entries, so the toggle
+    // renders; expanded, there are no FAIL groups, 13 compact PASS
+    // rows, no records buttons, and the zero-form roll-up line.
+    fireEvent.click(screen.getByTestId('toggle-check-details'));
+    expect(document.querySelectorAll('[data-testid^="checks-panel-"]')).toHaveLength(1);
     expect(renderedGroups()).toHaveLength(0);
+    expect(document.querySelectorAll('[data-testid^="check-pass-"]')).toHaveLength(13);
     expect(screen.queryAllByText('Show records')).toHaveLength(0);
+    expect(screen.getByTestId('work-items-rollup').textContent).toBe('0 open work items');
   });
 
   it('G4a-5: expanding a group renders its records; observed value equals the fixture value', async () => {
@@ -204,6 +224,7 @@ describe('pipeline view gate - Increment 4a (G4a-1..G4a-5)', () => {
     expect(fixtureRows.length).toBe(3);
 
     await renderView('B');
+    fireEvent.click(screen.getByTestId('toggle-check-details'));
     const group = screen.getByTestId('check-group-layer3_mapped_values');
     fireEvent.click(within(group).getByText('Show records'));
 

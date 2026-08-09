@@ -16,11 +16,13 @@ afterEach(cleanup);
 const SESSIONS = ['A', 'B', 'C'] as const;
 type Session = (typeof SESSIONS)[number];
 
+// Demo script order (demo-align Item 5): worked example first, then
+// care coordination, vbc reporting, hypertension.
 const CARD_ORDER = [
   'diabetes_risk_stratification',
-  'hypertension_risk_stratification',
   'care_coordination',
   'vbc_reporting',
+  'hypertension_risk_stratification',
 ];
 
 // Canonical blocker-id lists — literals duplicated from
@@ -76,8 +78,11 @@ describe('front-door gate — Increment 2 (G2-7..G2-16)', () => {
       const data = await getReadinessData(session);
       const cards = await openSession(session);
       expect(cards.map((c) => c.getAttribute('data-usecase'))).toEqual(CARD_ORDER);
-      cards.forEach((card, i) => {
-        expect(within(card).getByText(data.useCases[i].displayName)).toBeTruthy();
+      cards.forEach((card) => {
+        const useCaseName = card.getAttribute('data-usecase') ?? '';
+        const useCase = data.useCases.find((u) => u.useCaseName === useCaseName);
+        expect(useCase).toBeDefined();
+        expect(within(card).getByText(useCase!.displayName)).toBeTruthy();
       });
       cleanup();
     }
@@ -100,13 +105,20 @@ describe('front-door gate — Increment 2 (G2-7..G2-16)', () => {
   it('G2-9: readiness chips per session in card order', async () => {
     const expected: Record<Session, string[]> = {
       A: ['READY', 'READY', 'READY', 'READY'],
-      B: ['NOT_READY', 'NOT_READY', 'PARTIALLY_READY', 'NOT_READY'],
-      C: ['PARTIALLY_READY', 'NOT_READY', 'READY', 'PARTIALLY_READY'],
+      B: ['NOT_READY', 'PARTIALLY_READY', 'NOT_READY', 'NOT_READY'],
+      C: ['PARTIALLY_READY', 'READY', 'PARTIALLY_READY', 'NOT_READY'],
     };
     for (const session of SESSIONS) {
       const cards = await openSession(session);
       const chips = cards.map((c) => within(c).getByTestId('readiness-chip').textContent);
       expect(chips).toEqual(expected[session]);
+      // Site-vs-patient disambiguation rider: the "Site readiness:"
+      // label renders exactly once per tile, describing the chip.
+      for (const card of cards) {
+        const labels = within(card).getAllByTestId('site-readiness-label');
+        expect(labels).toHaveLength(1);
+        expect(labels[0].textContent).toBe('Site readiness:');
+      }
       cleanup();
     }
   });
@@ -121,28 +133,31 @@ describe('front-door gate — Increment 2 (G2-7..G2-16)', () => {
     const bCards = await openSession('B');
     expect(bCards.map(counts)).toEqual([
       [30, 6, 0],
-      [29, 0, 6],
       [44, 0, 5],
       [40, 0, 9],
+      [29, 0, 6],
     ]);
     cleanup();
 
     const cCards = await openSession('C');
     expect(cCards.map(counts)).toEqual([
       [33, 3, 0],
-      [29, 0, 6],
       [49, 0, 0],
       [46, 0, 3],
+      [29, 0, 6],
     ]);
     cleanup();
 
     const aData = await getReadinessData('A');
     const aCards = await openSession('A');
-    aCards.forEach((card, i) => {
+    aCards.forEach((card) => {
+      const useCaseName = card.getAttribute('data-usecase') ?? '';
+      const useCase = aData.useCases.find((u) => u.useCaseName === useCaseName);
+      expect(useCase).toBeDefined();
       const [ready, partiallyReady, notReady] = counts(card);
-      expect(ready).toBe(aData.useCases[i].patientCounts.ready);
-      expect(partiallyReady).toBe(aData.useCases[i].patientCounts.partiallyReady);
-      expect(notReady).toBe(aData.useCases[i].patientCounts.notReady);
+      expect(ready).toBe(useCase!.patientCounts.ready);
+      expect(partiallyReady).toBe(useCase!.patientCounts.partiallyReady);
+      expect(notReady).toBe(useCase!.patientCounts.notReady);
       expect(partiallyReady).toBe(0);
       expect(notReady).toBe(0);
     });
@@ -257,6 +272,13 @@ describe('front-door gate — Increment 2 (G2-7..G2-16)', () => {
     const cards = await openSession('B');
     const [diabetesCard, ...stubCards] = cards;
 
+    // R1 (demo-align): both sections are collapsed by default behind
+    // labeled toggles; expand before asserting the unchanged content.
+    expect(within(diabetesCard).queryByTestId('criteria-section')).toBeNull();
+    fireEvent.click(within(diabetesCard).getByTestId('toggle-criteria'));
+    expect(screen.queryByTestId('site-band-criterion')).toBeNull();
+    fireEvent.click(screen.getByTestId('toggle-site-band'));
+
     const rendered = [...diabetesCard.querySelectorAll('[data-testid^="criterion-"]')].map((el) =>
       (el.getAttribute('data-testid') ?? '').replace(/^criterion-/, ''),
     );
@@ -277,6 +299,8 @@ describe('front-door gate — Increment 2 (G2-7..G2-16)', () => {
     }
 
     for (const stub of stubCards) {
+      // Stubs have no criteria, so no toggle and no section at all.
+      expect(within(stub).queryByTestId('toggle-criteria')).toBeNull();
       expect(within(stub).queryByTestId('criteria-section')).toBeNull();
       expect(stub.querySelectorAll('[data-testid^="criterion-"]')).toHaveLength(0);
     }

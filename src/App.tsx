@@ -9,8 +9,10 @@ import { useDemoState } from './state/demoState';
 import type { SessionId, ViewId } from './state/demoState';
 import { UseCaseView } from './views/UseCaseView/UseCaseView';
 import { PipelineView } from './views/PipelineView/PipelineView';
+import { CareTeamView } from './views/CareTeamView/CareTeamView';
 import { RemediationDrawer } from './components/RemediationDrawer';
 import { getSessionSignpost } from './views/shared/sessionSignpost';
+import { SessionBanner } from './views/shared/SessionBanner';
 import { tokens } from './theme/tokens';
 
 const SESSIONS: SessionId[] = ['A', 'B', 'C'];
@@ -18,6 +20,7 @@ const SESSIONS: SessionId[] = ['A', 'B', 'C'];
 const VIEWS: Array<{ id: ViewId; label: string }> = [
   { id: 'use_case', label: 'Capabilities' },
   { id: 'pipeline', label: 'Under the hood' },
+  { id: 'care_team', label: 'Care Team View' },
 ];
 
 export default function App() {
@@ -34,7 +37,10 @@ export default function App() {
         margin: '0 auto',
       }}
     >
-      <header style={{ marginBottom: '1.5rem' }}>
+      {/* Persistent session banner (demo-align Item 1): sticky, so the
+          active session stays visible at all times in both views. */}
+      <SessionBanner session={state.session} />
+      <header style={{ marginBottom: '1.5rem', marginTop: '1rem' }}>
         <div style={{ display: 'flex', gap: '1.2rem', flexWrap: 'wrap', marginBottom: '0.35rem' }}>
           <div
             role="group"
@@ -116,6 +122,15 @@ export default function App() {
         <h1 style={{ margin: 0, fontSize: '1.5rem', color: tokens.brand.ink }}>
           Can this population's data support each capability?
         </h1>
+        {/* Capabilities view only (demo-align Task 4 C5). */}
+        {state.view === 'use_case' && (
+          <p
+            data-testid="page-subtitle"
+            style={{ margin: '0.25rem 0 0', fontSize: '0.85rem', color: tokens.neutral.gray }}
+          >
+            Four capabilities over one population: two condition-specific, two population-wide.
+          </p>
+        )}
       </header>
 
       {state.view === 'use_case' ? (
@@ -126,8 +141,10 @@ export default function App() {
           decisions={state.decisions}
           onOpenDrawer={state.openDrawer}
         />
-      ) : (
+      ) : state.view === 'pipeline' ? (
         <PipelineView session={state.session} />
+      ) : (
+        <CareTeamView session={state.session} />
       )}
 
       {/* Drawer shell mounts once here (spec §5); opened only from the

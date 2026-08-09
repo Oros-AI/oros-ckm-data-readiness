@@ -300,6 +300,10 @@
       "status": "complete",
       "checkResults": [
         {
+          "checkName": "device_derived_metric_consistency_cgm",
+          "status": "PASS"
+        },
+        {
           "checkName": "device_patient_linkage_cgm",
           "variableName": "CGM Glucose",
           "status": "FAIL",
@@ -460,6 +464,14 @@
           "patientId": "PAT000050"
         },
         {
+          "checkName": "layer1_notnull_fields_a1c",
+          "status": "PASS"
+        },
+        {
+          "checkName": "layer1_notnull_fields_encounters",
+          "status": "PASS"
+        },
+        {
           "checkName": "layer1_notnull_fields_smoking",
           "variableName": "Smoking Status",
           "status": "FAIL",
@@ -520,6 +532,18 @@
           "patientId": "PAT000036"
         },
         {
+          "checkName": "layer2_ranges_numeric_a1c",
+          "status": "PASS"
+        },
+        {
+          "checkName": "layer2_value_standards",
+          "status": "PASS"
+        },
+        {
+          "checkName": "layer3_mapped_values",
+          "status": "PASS"
+        },
+        {
           "checkName": "layer5_date_concordance",
           "variableName": "Encounter Date",
           "status": "FAIL",
@@ -568,6 +592,10 @@
           "observedValue": "1 of 6 A1C results discordant — OBS000211 resulted 2024-07-20 vs ENC000294 dated \"20242007\"",
           "priority": "Medium",
           "patientId": "PAT000027"
+        },
+        {
+          "checkName": "layer6_denom_riskstrat",
+          "status": "PASS"
         }
       ]
     },
@@ -1155,7 +1183,10 @@
       "overallStatus": "PARTIALLY_READY",
       "fitnessScore": 0.84,
       "pathwayResult": "no_valid_pathway",
-      "activePathwayId": null
+      "activePathwayId": null,
+      "blockedReasons": [
+        "A1C dates don't match"
+      ]
     },
     {
       "patientId": "PAT000022",
@@ -1163,7 +1194,10 @@
       "overallStatus": "PARTIALLY_READY",
       "fitnessScore": 0.8,
       "pathwayResult": "no_valid_pathway",
-      "activePathwayId": null
+      "activePathwayId": null,
+      "blockedReasons": [
+        "A1C stale"
+      ]
     },
     {
       "patientId": "PAT000023",
@@ -1203,7 +1237,10 @@
       "overallStatus": "PARTIALLY_READY",
       "fitnessScore": 0.84,
       "pathwayResult": "no_valid_pathway",
-      "activePathwayId": null
+      "activePathwayId": null,
+      "blockedReasons": [
+        "A1C dates don't match"
+      ]
     },
     {
       "patientId": "PAT000028",
@@ -1411,7 +1448,10 @@
       "overallStatus": "NOT_READY",
       "fitnessScore": null,
       "pathwayResult": "no_valid_pathway",
-      "activePathwayId": null
+      "activePathwayId": null,
+      "blockedReasons": [
+        "smoking status never captured"
+      ]
     },
     {
       "patientId": "PAT000032",
@@ -1419,7 +1459,10 @@
       "overallStatus": "NOT_READY",
       "fitnessScore": null,
       "pathwayResult": "no_valid_pathway",
-      "activePathwayId": null
+      "activePathwayId": null,
+      "blockedReasons": [
+        "smoking status never captured"
+      ]
     },
     {
       "patientId": "PAT000033",
@@ -1427,7 +1470,10 @@
       "overallStatus": "NOT_READY",
       "fitnessScore": null,
       "pathwayResult": "no_valid_pathway",
-      "activePathwayId": null
+      "activePathwayId": null,
+      "blockedReasons": [
+        "smoking status never captured"
+      ]
     },
     {
       "patientId": "PAT000034",
@@ -1435,7 +1481,10 @@
       "overallStatus": "NOT_READY",
       "fitnessScore": null,
       "pathwayResult": "no_valid_pathway",
-      "activePathwayId": null
+      "activePathwayId": null,
+      "blockedReasons": [
+        "smoking status never captured"
+      ]
     },
     {
       "patientId": "PAT000035",
@@ -1443,7 +1492,10 @@
       "overallStatus": "NOT_READY",
       "fitnessScore": null,
       "pathwayResult": "no_valid_pathway",
-      "activePathwayId": null
+      "activePathwayId": null,
+      "blockedReasons": [
+        "smoking status never captured"
+      ]
     },
     {
       "patientId": "PAT000036",
@@ -1451,7 +1503,10 @@
       "overallStatus": "NOT_READY",
       "fitnessScore": null,
       "pathwayResult": "no_valid_pathway",
-      "activePathwayId": null
+      "activePathwayId": null,
+      "blockedReasons": [
+        "smoking status never captured"
+      ]
     },
     {
       "patientId": "PAT000037",
@@ -1723,7 +1778,10 @@
       "overallStatus": "NOT_READY",
       "fitnessScore": null,
       "pathwayResult": "no_valid_pathway",
-      "activePathwayId": null
+      "activePathwayId": null,
+      "blockedReasons": [
+        "encounter dates don't match"
+      ]
     },
     {
       "patientId": "PAT000022",
@@ -1771,7 +1829,10 @@
       "overallStatus": "NOT_READY",
       "fitnessScore": null,
       "pathwayResult": "no_valid_pathway",
-      "activePathwayId": null
+      "activePathwayId": null,
+      "blockedReasons": [
+        "encounter dates don't match"
+      ]
     },
     {
       "patientId": "PAT000028",
@@ -1899,7 +1960,10 @@
       "overallStatus": "NOT_READY",
       "fitnessScore": null,
       "pathwayResult": "no_valid_pathway",
-      "activePathwayId": null
+      "activePathwayId": null,
+      "blockedReasons": [
+        "encounter dates don't match"
+      ]
     },
     {
       "patientId": "PAT000045",

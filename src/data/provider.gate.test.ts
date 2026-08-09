@@ -188,14 +188,31 @@ describe('provider gate — Increment 1', () => {
     }
   });
 
-  it('A13: score-stage checkResults — A 0, B 46, C 27; all FAIL', () => {
+  it('A13: score-stage checkResults - all 13 checks; FAIL rows A 0, B 46, C 27; PASS entries status-only', () => {
+    // Task 4 (demo-align): the score stage carries every registry
+    // check. FAIL checks keep per-record rows; PASS checks carry one
+    // status-only entry with zero records.
     const scoreResults = (data: ReadinessData) =>
       data.pipeline.find((s) => s.stageId === 'score')?.checkResults ?? [];
-    expect(scoreResults(A).length).toBe(0);
-    expect(scoreResults(B).length).toBe(46);
-    expect(scoreResults(C).length).toBe(27);
+    expect(scoreResults(A).length).toBe(13);
+    expect(scoreResults(B).length).toBe(48);
+    expect(scoreResults(C).length).toBe(34);
+    const failRows = (data: ReadinessData) => scoreResults(data).filter((r) => r.status === 'FAIL');
+    expect(failRows(A).length).toBe(0);
+    expect(failRows(B).length).toBe(46);
+    expect(failRows(C).length).toBe(27);
     for (const { data } of bySession()) {
-      for (const row of scoreResults(data)) expect(row.status).toBe('FAIL');
+      const distinctChecks = new Set(scoreResults(data).map((r) => r.checkName));
+      expect(distinctChecks.size).toBe(13);
+      for (const row of scoreResults(data)) {
+        if (row.status === 'PASS') {
+          expect(row.patientId).toBeUndefined();
+          expect(row.score).toBeUndefined();
+        } else {
+          expect(row.status).toBe('FAIL');
+          expect(row.patientId).toBeDefined();
+        }
+      }
     }
   });
 

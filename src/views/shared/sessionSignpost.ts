@@ -10,7 +10,7 @@ import type { SessionId } from '../../state/demoState';
 export function getSessionSignpost(session: SessionId): string {
   switch (session) {
     case 'A':
-      return 'Session A is the clean baseline. Every use case is ready.';
+      return 'Session A is the clean baseline. Every use case is unlocked.';
     case 'B':
       return 'Session B is the same population with deliberately seeded data defects. Each blocker shows what failed and where it routes.';
     case 'C':

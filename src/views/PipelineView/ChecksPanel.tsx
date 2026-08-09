@@ -9,14 +9,18 @@ import { useState } from 'react';
 import type { CheckResultView, PipelineStageView } from '../../domain/types';
 import { tokens } from '../../theme/tokens';
 
+// 'Observed value' is the only wide column: it takes the remaining
+// table width while the compact columns hug their content (nowrap), so
+// Score and Threshold values sit unambiguously under their own headers
+// (demo-align R2).
 const COLUMNS = [
-  'Patient',
-  'Variable',
-  'Status',
-  'Score',
-  'Threshold',
-  'Observed value',
-  'Priority',
+  { label: 'Patient', wide: false },
+  { label: 'Variable', wide: false },
+  { label: 'Status', wide: false },
+  { label: 'Score', wide: false },
+  { label: 'Threshold', wide: false },
+  { label: 'Observed value', wide: true },
+  { label: 'Priority', wide: false },
 ] as const;
 
 function groupByCheckName(
@@ -40,6 +44,15 @@ export function ChecksPanel({ stage }: { stage: PipelineStageView }) {
   const rows = stage.checkResults ?? [];
   if (rows.length === 0) return null;
   const groups = groupByCheckName(rows);
+  // Roll-up (demo-align R3, revised at Task 4): computed from the
+  // rendered data at runtime, never hardcoded. N counts FAIL records
+  // only; M counts checks with >=1 FAIL record (PASS checks now appear
+  // as status-only entries and are excluded from both).
+  const failGroups = groups.filter((group) => group.rows.some((r) => r.status === 'FAIL'));
+  const failingRecords = failGroups.reduce(
+    (sum, group) => sum + group.rows.filter((r) => r.status === 'FAIL').length,
+    0,
+  );
 
   return (
     <section
@@ -55,10 +68,55 @@ export function ChecksPanel({ stage }: { stage: PipelineStageView }) {
       <h3 style={{ margin: '0 0 0.5rem', fontSize: '0.9rem', color: tokens.brand.ink }}>
         Check results: {stage.label}
       </h3>
-      {groups.map((group) => (
-        <CheckGroup key={group.checkName} checkName={group.checkName} rows={group.rows} />
-      ))}
+      <p
+        data-testid="work-items-rollup"
+        style={{ margin: '0 0 0.5rem', fontSize: '0.8rem', color: tokens.neutral.gray }}
+      >
+        {failGroups.length === 0
+          ? '0 open work items'
+          : `${failingRecords} open work items across ${failGroups.length} failing checks`}
+      </p>
+      {groups.map((group) =>
+        group.rows.some((r) => r.status === 'FAIL') ? (
+          <CheckGroup key={group.checkName} checkName={group.checkName} rows={group.rows} />
+        ) : (
+          <PassRow key={group.checkName} checkName={group.checkName} />
+        ),
+      )}
     </section>
+  );
+}
+
+// Compact rendering for a check with no failing records (demo-align
+// Task 4): check name and PASS state only, no count badge, no records
+// button.
+function PassRow({ checkName }: { checkName: string }) {
+  return (
+    <div
+      data-testid={`check-pass-${checkName}`}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.5rem',
+        border: `1px solid ${tokens.neutral.border}`,
+        backgroundColor: tokens.neutral.light,
+        borderRadius: '4px',
+        padding: '0.35rem 0.6rem',
+        marginBottom: '0.3rem',
+      }}
+    >
+      <span
+        style={{
+          flex: 1,
+          fontFamily: tokens.typography.mono.family,
+          fontSize: '0.8rem',
+          color: tokens.brand.ink,
+        }}
+      >
+        {checkName}
+      </span>
+      <span style={{ fontSize: '0.75rem', color: tokens.neutral.gray }}>PASS</span>
+    </div>
   );
 }
 
@@ -127,16 +185,18 @@ function CheckGroup({ checkName, rows }: { checkName: string; rows: CheckResultV
               <tr>
                 {COLUMNS.map((column) => (
                   <th
-                    key={column}
+                    key={column.label}
                     style={{
                       textAlign: 'left',
                       padding: '0.2rem 0.5rem',
                       borderBottom: `1px solid ${tokens.neutral.border}`,
                       color: tokens.neutral.gray,
                       fontWeight: 600,
+                      whiteSpace: 'nowrap',
+                      width: column.wide ? '100%' : undefined,
                     }}
                   >
-                    {column}
+                    {column.label}
                   </th>
                 ))}
               </tr>
@@ -144,15 +204,18 @@ function CheckGroup({ checkName, rows }: { checkName: string; rows: CheckResultV
             <tbody>
               {rows.map((row) => (
                 <tr key={`${row.checkName}:${row.patientId}`}>
-                  <td style={cellStyle}>{row.patientId}</td>
-                  <td style={cellStyle}>{row.variableName}</td>
-                  <td style={cellStyle}>{row.status}</td>
-                  <td style={cellStyle}>{row.score}</td>
-                  <td style={cellStyle}>{row.threshold}</td>
+                  <td style={compactCellStyle}>{row.patientId}</td>
+                  <td style={compactCellStyle}>{row.variableName}</td>
+                  <td style={compactCellStyle}>{row.status}</td>
+                  {/* Binary checks carry no numeric score or threshold:
+                      render an explicit dash, never a blank cell (R2;
+                      threshold symmetry added at Task 4 C3). */}
+                  <td style={compactCellStyle}>{row.score ?? '-'}</td>
+                  <td style={compactCellStyle}>{row.threshold ?? '-'}</td>
                   <td style={cellStyle} data-testid={`obs-${row.checkName}-${row.patientId}`}>
                     {row.observedValue}
                   </td>
-                  <td style={cellStyle}>{row.priority}</td>
+                  <td style={compactCellStyle}>{row.priority}</td>
                 </tr>
               ))}
             </tbody>
@@ -168,4 +231,9 @@ const cellStyle = {
   borderBottom: `1px solid ${tokens.neutral.border}`,
   color: tokens.brand.ink,
   verticalAlign: 'top',
+} as const;
+
+const compactCellStyle = {
+  ...cellStyle,
+  whiteSpace: 'nowrap',
 } as const;

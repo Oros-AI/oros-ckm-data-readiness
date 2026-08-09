@@ -31,6 +31,23 @@ const FIXTURES_DIR = path.resolve(__dirname, '../src/data/fixtures');
 
 const DATASET_STATE = { A: 'clean', B: 'buggy', C: 'remediated' };
 
+// Care-team blocked-reason strings (demo-align Task 4): check_id to
+// plain-language reason, LOCKED verbatim. A blocking check with no
+// entry here is a hard stop (throw), never an invented string.
+const BLOCKED_REASONS = {
+  device_patient_linkage_cgm: 'device not linked',
+  fitness_recency_a1c: 'A1C stale',
+  layer1_notnull_fields_smoking: 'smoking status never captured',
+  layer1_notnull_fields_encounters: 'record gap at the handoff',
+  device_temporal_density_cgm_14d: 'device wear gaps',
+  device_derived_metric_consistency_cgm: "device metrics don't reconcile",
+  layer2_ranges_numeric_a1c: 'implausible A1C value',
+  layer2_value_standards: 'invalid diagnosis code',
+  layer3_mapped_values: 'invalid medication code',
+  layer5_date_concordance: "encounter dates don't match",
+  layer5_date_concordance_a1c: "A1C dates don't match",
+};
+
 function toNumber(value) {
   if (value === null || value === undefined) return null;
   const n = Number(value);
@@ -278,7 +295,14 @@ async function main() {
         }
         const view = { stageId: stage.stageId, label: stage.label, description: stage.description, status };
         if (stage.stageId === 'score') {
-          view.checkResults = [...failRows]
+          // All registry checks appear (demo-align Task 4): FAIL checks
+          // keep their per-record detail exactly as before; PASS checks
+          // carry a status-only entry and zero records. Check-level
+          // status is FAIL iff the check has >=1 FAIL row this session.
+          const passEntries = [...new Set(sChecks.map((r) => r.check_name))]
+            .filter((checkName) => !failByCheck.has(checkName))
+            .map((checkName) => ({ checkName, status: 'PASS' }));
+          const failEntries = [...failRows]
             .sort((a, b) => byString(a.check_name, b.check_name) || byString(a.patient_id, b.patient_id))
             .map((r) => ({
               checkName: r.check_name,
@@ -290,6 +314,9 @@ async function main() {
               priority: r.priority,
               patientId: r.patient_id,
             }));
+          view.checkResults = [...passEntries, ...failEntries].sort(
+            (a, b) => byString(a.checkName, b.checkName) || byString(a.patientId ?? '', b.patientId ?? ''),
+          );
         }
         return view;
       });
@@ -303,6 +330,25 @@ async function main() {
           `export_fixtures: session ${label}: pathway rows (${sPathway.length}) != readiness rows (${sUcr.length}) — join not total`,
         );
       }
+      // blockedReasons support (demo-align Task 4): map each FAILing
+      // check to its owning use case (from work items, the same source
+      // the blockers use) and index FAIL rows per patient.
+      const useCaseByCheck = new Map();
+      for (const w of sWorkItems) {
+        const existing = useCaseByCheck.get(w.check_name);
+        if (existing && existing !== w.use_case_name) {
+          throw new Error(
+            `export_fixtures: session ${label}: check ${w.check_name} maps to two use cases (${existing}, ${w.use_case_name})`,
+          );
+        }
+        useCaseByCheck.set(w.check_name, w.use_case_name);
+      }
+      const failsByPatient = new Map();
+      for (const row of failRows) {
+        if (!failsByPatient.has(row.patient_id)) failsByPatient.set(row.patient_id, []);
+        failsByPatient.get(row.patient_id).push(row);
+      }
+
       const patientRows = sUcr
         .map((r) => {
           const pathway = pathwayByKey.get(`${r.patient_id}|${r.use_case_name}`);
@@ -311,7 +357,7 @@ async function main() {
               `export_fixtures: session ${label}: no pathway row for (${r.patient_id}, ${r.use_case_name}) — join not total`,
             );
           }
-          return {
+          const row = {
             patientId: r.patient_id,
             useCaseName: r.use_case_name,
             overallStatus: r.overall_status,
@@ -319,6 +365,27 @@ async function main() {
             pathwayResult: pathway.pathway_result,
             activePathwayId: pathway.active_pathway_id,
           };
+          if (r.overall_status !== 'READY') {
+            // Deduplicated at the check grain, ordered by check_name
+            // (deterministic source order).
+            const blockingChecks = [
+              ...new Set(
+                (failsByPatient.get(r.patient_id) ?? [])
+                  .filter((f) => useCaseByCheck.get(f.check_name) === r.use_case_name)
+                  .map((f) => f.check_name),
+              ),
+            ].sort(byString);
+            row.blockedReasons = blockingChecks.map((checkName) => {
+              const reason = BLOCKED_REASONS[checkName];
+              if (!reason) {
+                throw new Error(
+                  `export_fixtures: session ${label}: blocking check '${checkName}' has no BLOCKED_REASONS entry`,
+                );
+              }
+              return reason;
+            });
+          }
+          return row;
         })
         .sort((a, b) => byString(a.useCaseName, b.useCaseName) || byString(a.patientId, b.patientId));
 

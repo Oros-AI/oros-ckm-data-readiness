@@ -104,10 +104,15 @@ export function AiAssistStrip({ stages }: { stages: PipelineStageView[] }) {
 
 export function PipelineView({ session }: { session: SessionId }) {
   const [data, setData] = useState<ReadinessData | null>(null);
+  // Under-the-hood detail (demo-align Item 6): the check-results
+  // section is collapsed on load in ALL sessions, expandable on click.
+  // Content inside is unchanged; only its default visibility changes.
+  const [showCheckDetails, setShowCheckDetails] = useState(false);
 
   useEffect(() => {
     let alive = true;
     setData(null);
+    setShowCheckDetails(false);
     getReadinessData(session).then((d) => {
       if (alive) setData(d);
     });
@@ -138,10 +143,37 @@ export function PipelineView({ session }: { session: SessionId }) {
         <StatusLegend />
       </div>
       <StageArc stages={data.pipeline} />
+      {/* Loop caption (demo-align R4): all sessions, muted and
+          subordinate to the stage row. */}
+      <p
+        data-testid="loop-caption"
+        style={{ margin: '0.3rem 0 0', fontSize: '0.75rem', color: tokens.neutral.gray }}
+      >
+        Remediate, Re-score, and Unlock repeat each pass.
+      </p>
       <AiAssistStrip stages={data.pipeline} />
-      {stagesWithRows.map((stage) => (
-        <ChecksPanel key={stage.stageId} stage={stage} />
-      ))}
+      {stagesWithRows.length > 0 && (
+        <button
+          type="button"
+          data-testid="toggle-check-details"
+          aria-expanded={showCheckDetails}
+          onClick={() => setShowCheckDetails((current) => !current)}
+          style={{
+            marginTop: '1rem',
+            border: `1px solid ${tokens.neutral.border}`,
+            backgroundColor: tokens.neutral.surface,
+            color: tokens.brand.ink,
+            borderRadius: '4px',
+            padding: '0.3rem 0.9rem',
+            fontSize: '0.85rem',
+            cursor: 'pointer',
+          }}
+        >
+          {showCheckDetails ? 'Hide check results' : 'Show check results'}
+        </button>
+      )}
+      {showCheckDetails &&
+        stagesWithRows.map((stage) => <ChecksPanel key={stage.stageId} stage={stage} />)}
     </section>
   );
 }

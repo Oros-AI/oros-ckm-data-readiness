@@ -11,7 +11,7 @@ import App from '../App';
 afterEach(cleanup);
 
 const SIGNPOSTS = {
-  A: 'Session A is the clean baseline. Every use case is ready.',
+  A: 'Session A is the clean baseline. Every use case is unlocked.',
   B: 'Session B is the same population with deliberately seeded data defects. Each blocker shows what failed and where it routes.',
   C: 'Session C is after one remediation pass. Some defects are fixed. The rest remain visible and routed to the people who can fix them.',
 } as const;

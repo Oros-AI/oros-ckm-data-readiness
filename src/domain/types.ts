@@ -118,13 +118,16 @@ export interface PipelineStageView {
 
 export interface CheckResultView {
   checkName: string;
-  variableName: string;
   status: CheckStatus;
-  score: number | null;
-  threshold: number | null;
-  observedValue: string | number | null;
-  priority: Priority;
-  patientId: string;
+  // Per-record fields: present on FAIL record rows, absent on the
+  // status-only PASS check entries (demo-align Task 4: the score stage
+  // now carries every registry check; PASS checks have zero records).
+  variableName?: string;
+  score?: number | null;
+  threshold?: number | null;
+  observedValue?: string | number | null;
+  priority?: Priority;
+  patientId?: string;
 }
 
 // ---- recommendation seam (Demo UI/UX Spec §10; Increment 3a) ----
@@ -161,4 +164,8 @@ export interface PatientUseCaseRow {
   fitnessScore: number | null;
   pathwayResult: PathwayResult;
   activePathwayId: string | null;
+  // Present on non-READY rows only (demo-align Task 4): locked
+  // plain-language reasons for the checks blocking this patient for
+  // this use case, exporter-derived, never invented in the UI.
+  blockedReasons?: string[];
 }

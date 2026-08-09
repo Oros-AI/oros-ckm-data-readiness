@@ -4,6 +4,7 @@
 // null by design at this level) and nothing pathway-related (the fixture
 // carries null; mechanical pathway ids are never rendered raw).
 
+import { useEffect, useState } from 'react';
 import type { Blocker, ConfiguredCriterion, UseCaseSummary } from '../../domain/types';
 import { keyDecision } from '../../state/demoState';
 import type { Decision, SessionId } from '../../state/demoState';
@@ -15,6 +16,7 @@ import { CriteriaCard } from '../shared/CriteriaCard';
 
 interface CapabilityCardProps {
   useCase: UseCaseSummary;
+  workedExample?: boolean; // tags the demo's worked-example tile (Item 5)
   blockers: Blocker[]; // this card's blockerIds, resolved by the view
   criteria: ConfiguredCriterion[]; // criteria applying to exactly this use case
   expandedBlockerId: string | null;
@@ -26,6 +28,7 @@ interface CapabilityCardProps {
 
 export function CapabilityCard({
   useCase,
+  workedExample = false,
   blockers,
   criteria,
   expandedBlockerId,
@@ -34,6 +37,24 @@ export function CapabilityCard({
   decisions,
   onOpenDrawer,
 }: CapabilityCardProps) {
+  // Configured criteria are collapsed by default (demo-align R1), same
+  // pattern as the check-results toggle; collapsed state re-applies on
+  // session switch. Content inside is unchanged.
+  const [showCriteria, setShowCriteria] = useState(false);
+  useEffect(() => {
+    setShowCriteria(false);
+  }, [session]);
+
+  // Cohort denominator (demo-align Item 2): the three status counts
+  // partition the use case's evaluated cohort, so Y in "X of Y" is
+  // derived from the data already on the card (diabetes 36,
+  // hypertension 35, care coordination 49, vbc reporting 49), never
+  // hardcoded.
+  const cohortSize =
+    useCase.patientCounts.ready +
+    useCase.patientCounts.partiallyReady +
+    useCase.patientCounts.notReady;
+
   return (
     <article
       data-testid="capability-card"
@@ -50,15 +71,41 @@ export function CapabilityCard({
         <h2 style={{ margin: 0, fontSize: '1.1rem', color: tokens.brand.ink }}>
           {useCase.displayName}
         </h2>
+        {workedExample && (
+          <span
+            data-testid="worked-example-tag"
+            style={{
+              border: `1px solid ${tokens.brand.green}`,
+              backgroundColor: tokens.brand.greenTint2,
+              color: tokens.brand.green,
+              borderRadius: '4px',
+              padding: '0.1rem 0.45rem',
+              fontSize: '0.7rem',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            worked example
+          </span>
+        )}
         <ImplementationBadge state={useCase.implementationState} />
+        {/* Site-vs-patient disambiguation: this label describes the
+            band chip that follows; the chip itself is unchanged. */}
+        <span
+          data-testid="site-readiness-label"
+          style={{ fontSize: '0.75rem', color: tokens.neutral.gray }}
+        >
+          Site readiness:
+        </span>
         <ReadinessChip status={useCase.overallStatus} />
       </header>
 
       <p style={{ margin: '0.5rem 0 0', fontSize: '0.9rem', color: tokens.neutral.gray }}>
-        Patients: <span data-testid="count-ready">{useCase.patientCounts.ready}</span> ready ·{' '}
-        <span data-testid="count-partially-ready">{useCase.patientCounts.partiallyReady}</span>{' '}
-        partially ready ·{' '}
-        <span data-testid="count-not-ready">{useCase.patientCounts.notReady}</span> not ready
+        Patients: <span data-testid="count-ready">{useCase.patientCounts.ready}</span> of{' '}
+        {cohortSize} ready ·{' '}
+        <span data-testid="count-partially-ready">{useCase.patientCounts.partiallyReady}</span> of{' '}
+        {cohortSize} partially ready ·{' '}
+        <span data-testid="count-not-ready">{useCase.patientCounts.notReady}</span> of {cohortSize}{' '}
+        not yet ready
       </p>
 
       {blockers.length > 0 && (
@@ -139,16 +186,37 @@ export function CapabilityCard({
       )}
 
       {criteria.length > 0 && (
-        <section data-testid="criteria-section" style={{ marginTop: '0.75rem' }}>
-          <h3 style={{ margin: '0 0 0.35rem', fontSize: '0.8rem', color: tokens.neutral.gray }}>
-            Configured criteria
-          </h3>
-          <div style={{ display: 'grid', gap: '0.4rem' }}>
-            {criteria.map((criterion) => (
-              <CriteriaCard key={criterion.criterionId} criterion={criterion} />
-            ))}
-          </div>
-        </section>
+        <div style={{ marginTop: '0.75rem' }}>
+          <button
+            type="button"
+            data-testid="toggle-criteria"
+            aria-expanded={showCriteria}
+            onClick={() => setShowCriteria((current) => !current)}
+            style={{
+              border: `1px solid ${tokens.neutral.border}`,
+              backgroundColor: tokens.neutral.surface,
+              color: tokens.brand.ink,
+              borderRadius: '4px',
+              padding: '0.25rem 0.7rem',
+              fontSize: '0.8rem',
+              cursor: 'pointer',
+            }}
+          >
+            {showCriteria ? 'Hide configured criteria' : 'Show configured criteria'}
+          </button>
+          {showCriteria && (
+            <section data-testid="criteria-section" style={{ marginTop: '0.5rem' }}>
+              <h3 style={{ margin: '0 0 0.35rem', fontSize: '0.8rem', color: tokens.neutral.gray }}>
+                Configured criteria
+              </h3>
+              <div style={{ display: 'grid', gap: '0.4rem' }}>
+                {criteria.map((criterion) => (
+                  <CriteriaCard key={criterion.criterionId} criterion={criterion} />
+                ))}
+              </div>
+            </section>
+          )}
+        </div>
       )}
     </article>
   );
