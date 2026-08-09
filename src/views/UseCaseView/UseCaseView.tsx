@@ -35,10 +35,15 @@ export function UseCaseView({
   onOpenDrawer,
 }: UseCaseViewProps) {
   const [data, setData] = useState<ReadinessData | null>(null);
+  // Site-band derivation box is collapsed by default (demo-align R1),
+  // same treatment as configured criteria; re-collapses on session
+  // switch. Content inside is unchanged.
+  const [showSiteBand, setShowSiteBand] = useState(false);
 
   useEffect(() => {
     let alive = true;
     setData(null);
+    setShowSiteBand(false);
     getReadinessData(session).then((d) => {
       if (alive) setData(d);
     });
@@ -90,16 +95,37 @@ export function UseCaseView({
       ))}
 
       {siteBandCriteria.length > 0 && (
-        <aside data-testid="site-band-criterion" style={{ marginTop: '0.5rem' }}>
-          <h3 style={{ margin: '0 0 0.35rem', fontSize: '0.8rem', color: tokens.neutral.gray }}>
-            How the site-level readiness label above is derived
-          </h3>
-          <div style={{ display: 'grid', gap: '0.4rem' }}>
-            {siteBandCriteria.map((criterion) => (
-              <CriteriaCard key={criterion.criterionId} criterion={criterion} />
-            ))}
-          </div>
-        </aside>
+        <div style={{ marginTop: '0.5rem' }}>
+          <button
+            type="button"
+            data-testid="toggle-site-band"
+            aria-expanded={showSiteBand}
+            onClick={() => setShowSiteBand((current) => !current)}
+            style={{
+              border: `1px solid ${tokens.neutral.border}`,
+              backgroundColor: tokens.neutral.surface,
+              color: tokens.brand.ink,
+              borderRadius: '4px',
+              padding: '0.25rem 0.7rem',
+              fontSize: '0.8rem',
+              cursor: 'pointer',
+            }}
+          >
+            {showSiteBand ? 'Hide site-level label derivation' : 'Show site-level label derivation'}
+          </button>
+          {showSiteBand && (
+            <aside data-testid="site-band-criterion" style={{ marginTop: '0.5rem' }}>
+              <h3 style={{ margin: '0 0 0.35rem', fontSize: '0.8rem', color: tokens.neutral.gray }}>
+                How the site-level readiness label above is derived
+              </h3>
+              <div style={{ display: 'grid', gap: '0.4rem' }}>
+                {siteBandCriteria.map((criterion) => (
+                  <CriteriaCard key={criterion.criterionId} criterion={criterion} />
+                ))}
+              </div>
+            </aside>
+          )}
+        </div>
       )}
     </section>
   );

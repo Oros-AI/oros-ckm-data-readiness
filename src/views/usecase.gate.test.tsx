@@ -265,6 +265,13 @@ describe('front-door gate — Increment 2 (G2-7..G2-16)', () => {
     const cards = await openSession('B');
     const [diabetesCard, ...stubCards] = cards;
 
+    // R1 (demo-align): both sections are collapsed by default behind
+    // labeled toggles; expand before asserting the unchanged content.
+    expect(within(diabetesCard).queryByTestId('criteria-section')).toBeNull();
+    fireEvent.click(within(diabetesCard).getByTestId('toggle-criteria'));
+    expect(screen.queryByTestId('site-band-criterion')).toBeNull();
+    fireEvent.click(screen.getByTestId('toggle-site-band'));
+
     const rendered = [...diabetesCard.querySelectorAll('[data-testid^="criterion-"]')].map((el) =>
       (el.getAttribute('data-testid') ?? '').replace(/^criterion-/, ''),
     );
@@ -285,6 +292,8 @@ describe('front-door gate — Increment 2 (G2-7..G2-16)', () => {
     }
 
     for (const stub of stubCards) {
+      // Stubs have no criteria, so no toggle and no section at all.
+      expect(within(stub).queryByTestId('toggle-criteria')).toBeNull();
       expect(within(stub).queryByTestId('criteria-section')).toBeNull();
       expect(stub.querySelectorAll('[data-testid^="criterion-"]')).toHaveLength(0);
     }

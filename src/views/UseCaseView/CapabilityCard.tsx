@@ -4,6 +4,7 @@
 // null by design at this level) and nothing pathway-related (the fixture
 // carries null; mechanical pathway ids are never rendered raw).
 
+import { useEffect, useState } from 'react';
 import type { Blocker, ConfiguredCriterion, UseCaseSummary } from '../../domain/types';
 import { keyDecision } from '../../state/demoState';
 import type { Decision, SessionId } from '../../state/demoState';
@@ -36,6 +37,14 @@ export function CapabilityCard({
   decisions,
   onOpenDrawer,
 }: CapabilityCardProps) {
+  // Configured criteria are collapsed by default (demo-align R1), same
+  // pattern as the check-results toggle; collapsed state re-applies on
+  // session switch. Content inside is unchanged.
+  const [showCriteria, setShowCriteria] = useState(false);
+  useEffect(() => {
+    setShowCriteria(false);
+  }, [session]);
+
   // Cohort denominator (demo-align Item 2): the three status counts
   // partition the use case's evaluated cohort, so Y in "X of Y" is
   // derived from the data already on the card (diabetes 36,
@@ -169,16 +178,37 @@ export function CapabilityCard({
       )}
 
       {criteria.length > 0 && (
-        <section data-testid="criteria-section" style={{ marginTop: '0.75rem' }}>
-          <h3 style={{ margin: '0 0 0.35rem', fontSize: '0.8rem', color: tokens.neutral.gray }}>
-            Configured criteria
-          </h3>
-          <div style={{ display: 'grid', gap: '0.4rem' }}>
-            {criteria.map((criterion) => (
-              <CriteriaCard key={criterion.criterionId} criterion={criterion} />
-            ))}
-          </div>
-        </section>
+        <div style={{ marginTop: '0.75rem' }}>
+          <button
+            type="button"
+            data-testid="toggle-criteria"
+            aria-expanded={showCriteria}
+            onClick={() => setShowCriteria((current) => !current)}
+            style={{
+              border: `1px solid ${tokens.neutral.border}`,
+              backgroundColor: tokens.neutral.surface,
+              color: tokens.brand.ink,
+              borderRadius: '4px',
+              padding: '0.25rem 0.7rem',
+              fontSize: '0.8rem',
+              cursor: 'pointer',
+            }}
+          >
+            {showCriteria ? 'Hide configured criteria' : 'Show configured criteria'}
+          </button>
+          {showCriteria && (
+            <section data-testid="criteria-section" style={{ marginTop: '0.5rem' }}>
+              <h3 style={{ margin: '0 0 0.35rem', fontSize: '0.8rem', color: tokens.neutral.gray }}>
+                Configured criteria
+              </h3>
+              <div style={{ display: 'grid', gap: '0.4rem' }}>
+                {criteria.map((criterion) => (
+                  <CriteriaCard key={criterion.criterionId} criterion={criterion} />
+                ))}
+              </div>
+            </section>
+          )}
+        </div>
       )}
     </article>
   );
