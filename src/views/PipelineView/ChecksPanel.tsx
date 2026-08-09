@@ -44,10 +44,15 @@ export function ChecksPanel({ stage }: { stage: PipelineStageView }) {
   const rows = stage.checkResults ?? [];
   if (rows.length === 0) return null;
   const groups = groupByCheckName(rows);
-  // Roll-up (demo-align R3): computed from the rendered data at
-  // runtime, never hardcoded. N sums the per-check counts shown in the
-  // badges; M counts the check rows rendered.
-  const failingRecords = groups.reduce((sum, group) => sum + group.rows.length, 0);
+  // Roll-up (demo-align R3, revised at Task 4): computed from the
+  // rendered data at runtime, never hardcoded. N counts FAIL records
+  // only; M counts checks with >=1 FAIL record (PASS checks now appear
+  // as status-only entries and are excluded from both).
+  const failGroups = groups.filter((group) => group.rows.some((r) => r.status === 'FAIL'));
+  const failingRecords = failGroups.reduce(
+    (sum, group) => sum + group.rows.filter((r) => r.status === 'FAIL').length,
+    0,
+  );
 
   return (
     <section
@@ -67,12 +72,51 @@ export function ChecksPanel({ stage }: { stage: PipelineStageView }) {
         data-testid="work-items-rollup"
         style={{ margin: '0 0 0.5rem', fontSize: '0.8rem', color: tokens.neutral.gray }}
       >
-        {failingRecords} open work items across {groups.length} failing checks
+        {failGroups.length === 0
+          ? '0 open work items'
+          : `${failingRecords} open work items across ${failGroups.length} failing checks`}
       </p>
-      {groups.map((group) => (
-        <CheckGroup key={group.checkName} checkName={group.checkName} rows={group.rows} />
-      ))}
+      {groups.map((group) =>
+        group.rows.some((r) => r.status === 'FAIL') ? (
+          <CheckGroup key={group.checkName} checkName={group.checkName} rows={group.rows} />
+        ) : (
+          <PassRow key={group.checkName} checkName={group.checkName} />
+        ),
+      )}
     </section>
+  );
+}
+
+// Compact rendering for a check with no failing records (demo-align
+// Task 4): check name and PASS state only, no count badge, no records
+// button.
+function PassRow({ checkName }: { checkName: string }) {
+  return (
+    <div
+      data-testid={`check-pass-${checkName}`}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.5rem',
+        border: `1px solid ${tokens.neutral.border}`,
+        backgroundColor: tokens.neutral.light,
+        borderRadius: '4px',
+        padding: '0.35rem 0.6rem',
+        marginBottom: '0.3rem',
+      }}
+    >
+      <span
+        style={{
+          flex: 1,
+          fontFamily: tokens.typography.mono.family,
+          fontSize: '0.8rem',
+          color: tokens.brand.ink,
+        }}
+      >
+        {checkName}
+      </span>
+      <span style={{ fontSize: '0.75rem', color: tokens.neutral.gray }}>PASS</span>
+    </div>
   );
 }
 

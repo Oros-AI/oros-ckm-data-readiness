@@ -174,7 +174,60 @@
       "label": "Score",
       "description": "The deterministic core: every check, variable, and pathway is evaluated against the configured criteria — same inputs, same results, every time.",
       "status": "complete",
-      "checkResults": []
+      "checkResults": [
+        {
+          "checkName": "device_derived_metric_consistency_cgm",
+          "status": "PASS"
+        },
+        {
+          "checkName": "device_patient_linkage_cgm",
+          "status": "PASS"
+        },
+        {
+          "checkName": "device_temporal_density_cgm_14d",
+          "status": "PASS"
+        },
+        {
+          "checkName": "fitness_recency_a1c",
+          "status": "PASS"
+        },
+        {
+          "checkName": "layer1_notnull_fields_a1c",
+          "status": "PASS"
+        },
+        {
+          "checkName": "layer1_notnull_fields_encounters",
+          "status": "PASS"
+        },
+        {
+          "checkName": "layer1_notnull_fields_smoking",
+          "status": "PASS"
+        },
+        {
+          "checkName": "layer2_ranges_numeric_a1c",
+          "status": "PASS"
+        },
+        {
+          "checkName": "layer2_value_standards",
+          "status": "PASS"
+        },
+        {
+          "checkName": "layer3_mapped_values",
+          "status": "PASS"
+        },
+        {
+          "checkName": "layer5_date_concordance",
+          "status": "PASS"
+        },
+        {
+          "checkName": "layer5_date_concordance_a1c",
+          "status": "PASS"
+        },
+        {
+          "checkName": "layer6_denom_riskstrat",
+          "status": "PASS"
+        }
+      ]
     },
     {
       "stageId": "readiness_report",

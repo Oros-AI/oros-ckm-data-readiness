@@ -590,6 +590,10 @@
           "patientId": "PAT000050"
         },
         {
+          "checkName": "layer1_notnull_fields_a1c",
+          "status": "PASS"
+        },
+        {
           "checkName": "layer1_notnull_fields_encounters",
           "variableName": "Encounter Record",
           "status": "FAIL",
@@ -858,6 +862,10 @@
           "observedValue": "1 of 6 A1C results discordant — OBS000211 resulted 2024-07-20 vs ENC000294 dated \"20242007\"",
           "priority": "Medium",
           "patientId": "PAT000027"
+        },
+        {
+          "checkName": "layer6_denom_riskstrat",
+          "status": "PASS"
         }
       ]
     },
@@ -949,7 +957,10 @@
       "overallStatus": "NOT_READY",
       "fitnessScore": null,
       "pathwayResult": "no_valid_pathway",
-      "activePathwayId": null
+      "activePathwayId": null,
+      "blockedReasons": [
+        "invalid medication code"
+      ]
     },
     {
       "patientId": "PAT000009",
@@ -1005,7 +1016,10 @@
       "overallStatus": "NOT_READY",
       "fitnessScore": null,
       "pathwayResult": "no_valid_pathway",
-      "activePathwayId": null
+      "activePathwayId": null,
+      "blockedReasons": [
+        "invalid medication code"
+      ]
     },
     {
       "patientId": "PAT000016",
@@ -1077,7 +1091,10 @@
       "overallStatus": "NOT_READY",
       "fitnessScore": null,
       "pathwayResult": "no_valid_pathway",
-      "activePathwayId": null
+      "activePathwayId": null,
+      "blockedReasons": [
+        "invalid diagnosis code"
+      ]
     },
     {
       "patientId": "PAT000025",
@@ -1141,7 +1158,10 @@
       "overallStatus": "NOT_READY",
       "fitnessScore": null,
       "pathwayResult": "no_valid_pathway",
-      "activePathwayId": null
+      "activePathwayId": null,
+      "blockedReasons": [
+        "invalid medication code"
+      ]
     },
     {
       "patientId": "PAT000033",
@@ -1205,7 +1225,10 @@
       "overallStatus": "NOT_READY",
       "fitnessScore": null,
       "pathwayResult": "no_valid_pathway",
-      "activePathwayId": null
+      "activePathwayId": null,
+      "blockedReasons": [
+        "invalid diagnosis code"
+      ]
     },
     {
       "patientId": "PAT000041",
@@ -1405,7 +1428,11 @@
       "overallStatus": "PARTIALLY_READY",
       "fitnessScore": 0.84,
       "pathwayResult": "no_valid_pathway",
-      "activePathwayId": null
+      "activePathwayId": null,
+      "blockedReasons": [
+        "device not linked",
+        "A1C dates don't match"
+      ]
     },
     {
       "patientId": "PAT000017",
@@ -1421,7 +1448,11 @@
       "overallStatus": "PARTIALLY_READY",
       "fitnessScore": 0.84,
       "pathwayResult": "no_valid_pathway",
-      "activePathwayId": null
+      "activePathwayId": null,
+      "blockedReasons": [
+        "device not linked",
+        "A1C dates don't match"
+      ]
     },
     {
       "patientId": "PAT000019",
@@ -1445,7 +1476,10 @@
       "overallStatus": "PARTIALLY_READY",
       "fitnessScore": 0.84,
       "pathwayResult": "no_valid_pathway",
-      "activePathwayId": null
+      "activePathwayId": null,
+      "blockedReasons": [
+        "A1C dates don't match"
+      ]
     },
     {
       "patientId": "PAT000022",
@@ -1453,7 +1487,10 @@
       "overallStatus": "PARTIALLY_READY",
       "fitnessScore": 0.8,
       "pathwayResult": "no_valid_pathway",
-      "activePathwayId": null
+      "activePathwayId": null,
+      "blockedReasons": [
+        "A1C stale"
+      ]
     },
     {
       "patientId": "PAT000023",
@@ -1461,7 +1498,10 @@
       "overallStatus": "PARTIALLY_READY",
       "fitnessScore": 0.76,
       "pathwayResult": "no_valid_pathway",
-      "activePathwayId": null
+      "activePathwayId": null,
+      "blockedReasons": [
+        "implausible A1C value"
+      ]
     },
     {
       "patientId": "PAT000024",
@@ -1493,7 +1533,10 @@
       "overallStatus": "PARTIALLY_READY",
       "fitnessScore": 0.84,
       "pathwayResult": "no_valid_pathway",
-      "activePathwayId": null
+      "activePathwayId": null,
+      "blockedReasons": [
+        "A1C dates don't match"
+      ]
     },
     {
       "patientId": "PAT000028",
@@ -1701,7 +1744,10 @@
       "overallStatus": "NOT_READY",
       "fitnessScore": null,
       "pathwayResult": "no_valid_pathway",
-      "activePathwayId": null
+      "activePathwayId": null,
+      "blockedReasons": [
+        "smoking status never captured"
+      ]
     },
     {
       "patientId": "PAT000032",
@@ -1709,7 +1755,10 @@
       "overallStatus": "NOT_READY",
       "fitnessScore": null,
       "pathwayResult": "no_valid_pathway",
-      "activePathwayId": null
+      "activePathwayId": null,
+      "blockedReasons": [
+        "smoking status never captured"
+      ]
     },
     {
       "patientId": "PAT000033",
@@ -1717,7 +1766,10 @@
       "overallStatus": "NOT_READY",
       "fitnessScore": null,
       "pathwayResult": "no_valid_pathway",
-      "activePathwayId": null
+      "activePathwayId": null,
+      "blockedReasons": [
+        "smoking status never captured"
+      ]
     },
     {
       "patientId": "PAT000034",
@@ -1725,7 +1777,10 @@
       "overallStatus": "NOT_READY",
       "fitnessScore": null,
       "pathwayResult": "no_valid_pathway",
-      "activePathwayId": null
+      "activePathwayId": null,
+      "blockedReasons": [
+        "smoking status never captured"
+      ]
     },
     {
       "patientId": "PAT000035",
@@ -1733,7 +1788,10 @@
       "overallStatus": "NOT_READY",
       "fitnessScore": null,
       "pathwayResult": "no_valid_pathway",
-      "activePathwayId": null
+      "activePathwayId": null,
+      "blockedReasons": [
+        "smoking status never captured"
+      ]
     },
     {
       "patientId": "PAT000036",
@@ -1741,7 +1799,10 @@
       "overallStatus": "NOT_READY",
       "fitnessScore": null,
       "pathwayResult": "no_valid_pathway",
-      "activePathwayId": null
+      "activePathwayId": null,
+      "blockedReasons": [
+        "smoking status never captured"
+      ]
     },
     {
       "patientId": "PAT000037",
@@ -1973,7 +2034,10 @@
       "overallStatus": "NOT_READY",
       "fitnessScore": null,
       "pathwayResult": "no_valid_pathway",
-      "activePathwayId": null
+      "activePathwayId": null,
+      "blockedReasons": [
+        "encounter dates don't match"
+      ]
     },
     {
       "patientId": "PAT000017",
@@ -1981,7 +2045,10 @@
       "overallStatus": "NOT_READY",
       "fitnessScore": null,
       "pathwayResult": "no_valid_pathway",
-      "activePathwayId": null
+      "activePathwayId": null,
+      "blockedReasons": [
+        "encounter dates don't match"
+      ]
     },
     {
       "patientId": "PAT000018",
@@ -1989,7 +2056,10 @@
       "overallStatus": "NOT_READY",
       "fitnessScore": null,
       "pathwayResult": "no_valid_pathway",
-      "activePathwayId": null
+      "activePathwayId": null,
+      "blockedReasons": [
+        "encounter dates don't match"
+      ]
     },
     {
       "patientId": "PAT000019",
@@ -2013,7 +2083,10 @@
       "overallStatus": "NOT_READY",
       "fitnessScore": null,
       "pathwayResult": "no_valid_pathway",
-      "activePathwayId": null
+      "activePathwayId": null,
+      "blockedReasons": [
+        "encounter dates don't match"
+      ]
     },
     {
       "patientId": "PAT000022",
@@ -2061,7 +2134,10 @@
       "overallStatus": "NOT_READY",
       "fitnessScore": null,
       "pathwayResult": "no_valid_pathway",
-      "activePathwayId": null
+      "activePathwayId": null,
+      "blockedReasons": [
+        "encounter dates don't match"
+      ]
     },
     {
       "patientId": "PAT000028",
@@ -2173,7 +2249,10 @@
       "overallStatus": "NOT_READY",
       "fitnessScore": null,
       "pathwayResult": "no_valid_pathway",
-      "activePathwayId": null
+      "activePathwayId": null,
+      "blockedReasons": [
+        "record gap at the handoff"
+      ]
     },
     {
       "patientId": "PAT000043",
@@ -2181,7 +2260,10 @@
       "overallStatus": "NOT_READY",
       "fitnessScore": null,
       "pathwayResult": "no_valid_pathway",
-      "activePathwayId": null
+      "activePathwayId": null,
+      "blockedReasons": [
+        "record gap at the handoff"
+      ]
     },
     {
       "patientId": "PAT000044",
@@ -2189,7 +2271,10 @@
       "overallStatus": "NOT_READY",
       "fitnessScore": null,
       "pathwayResult": "no_valid_pathway",
-      "activePathwayId": null
+      "activePathwayId": null,
+      "blockedReasons": [
+        "encounter dates don't match"
+      ]
     },
     {
       "patientId": "PAT000045",
@@ -2197,7 +2282,10 @@
       "overallStatus": "NOT_READY",
       "fitnessScore": null,
       "pathwayResult": "no_valid_pathway",
-      "activePathwayId": null
+      "activePathwayId": null,
+      "blockedReasons": [
+        "record gap at the handoff"
+      ]
     },
     {
       "patientId": "PAT000046",
