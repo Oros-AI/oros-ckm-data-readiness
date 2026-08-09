@@ -175,6 +175,10 @@ describe('pipeline view gate - Increment 4a (G4a-1..G4a-5)', () => {
 
   it('G4a-4: drill-down groups and counts - B 11/46, C 6/27, A none', async () => {
     await renderView('B');
+    // Item 6 (demo-align): detail is collapsed on load in all sessions;
+    // the toggle expands it. Content inside is unchanged.
+    expect(document.querySelectorAll('[data-testid^="checks-panel-"]')).toHaveLength(0);
+    fireEvent.click(screen.getByTestId('toggle-check-details'));
     expect(document.querySelectorAll('[data-testid^="checks-panel-"]')).toHaveLength(1);
     const bGroups = renderedGroups();
     expect(Object.fromEntries(bGroups.map((g) => [g.checkName, g.count]))).toEqual(B_GROUPS);
@@ -182,6 +186,8 @@ describe('pipeline view gate - Increment 4a (G4a-1..G4a-5)', () => {
     cleanup();
 
     await renderView('C');
+    expect(document.querySelectorAll('[data-testid^="checks-panel-"]')).toHaveLength(0);
+    fireEvent.click(screen.getByTestId('toggle-check-details'));
     expect(document.querySelectorAll('[data-testid^="checks-panel-"]')).toHaveLength(1);
     const cGroups = renderedGroups();
     expect(Object.fromEntries(cGroups.map((g) => [g.checkName, g.count]))).toEqual(C_GROUPS);
@@ -189,6 +195,8 @@ describe('pipeline view gate - Increment 4a (G4a-1..G4a-5)', () => {
     cleanup();
 
     await renderView('A');
+    // No rows in A: no toggle, no panels.
+    expect(screen.queryByTestId('toggle-check-details')).toBeNull();
     expect(document.querySelectorAll('[data-testid^="checks-panel-"]')).toHaveLength(0);
     expect(renderedGroups()).toHaveLength(0);
     expect(screen.queryAllByText('Show records')).toHaveLength(0);
@@ -204,6 +212,7 @@ describe('pipeline view gate - Increment 4a (G4a-1..G4a-5)', () => {
     expect(fixtureRows.length).toBe(3);
 
     await renderView('B');
+    fireEvent.click(screen.getByTestId('toggle-check-details'));
     const group = screen.getByTestId('check-group-layer3_mapped_values');
     fireEvent.click(within(group).getByText('Show records'));
 
