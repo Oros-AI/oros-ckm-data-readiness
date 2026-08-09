@@ -207,10 +207,11 @@ function CheckGroup({ checkName, rows }: { checkName: string; rows: CheckResultV
                   <td style={compactCellStyle}>{row.patientId}</td>
                   <td style={compactCellStyle}>{row.variableName}</td>
                   <td style={compactCellStyle}>{row.status}</td>
-                  {/* Binary checks carry no numeric score: render an
-                      explicit dash, never a blank cell (R2). */}
+                  {/* Binary checks carry no numeric score or threshold:
+                      render an explicit dash, never a blank cell (R2;
+                      threshold symmetry added at Task 4 C3). */}
                   <td style={compactCellStyle}>{row.score ?? '-'}</td>
-                  <td style={compactCellStyle}>{row.threshold}</td>
+                  <td style={compactCellStyle}>{row.threshold ?? '-'}</td>
                   <td style={cellStyle} data-testid={`obs-${row.checkName}-${row.patientId}`}>
                     {row.observedValue}
                   </td>
