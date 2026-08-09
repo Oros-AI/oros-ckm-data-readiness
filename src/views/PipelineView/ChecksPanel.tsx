@@ -44,6 +44,10 @@ export function ChecksPanel({ stage }: { stage: PipelineStageView }) {
   const rows = stage.checkResults ?? [];
   if (rows.length === 0) return null;
   const groups = groupByCheckName(rows);
+  // Roll-up (demo-align R3): computed from the rendered data at
+  // runtime, never hardcoded. N sums the per-check counts shown in the
+  // badges; M counts the check rows rendered.
+  const failingRecords = groups.reduce((sum, group) => sum + group.rows.length, 0);
 
   return (
     <section
@@ -59,6 +63,12 @@ export function ChecksPanel({ stage }: { stage: PipelineStageView }) {
       <h3 style={{ margin: '0 0 0.5rem', fontSize: '0.9rem', color: tokens.brand.ink }}>
         Check results: {stage.label}
       </h3>
+      <p
+        data-testid="work-items-rollup"
+        style={{ margin: '0 0 0.5rem', fontSize: '0.8rem', color: tokens.neutral.gray }}
+      >
+        {failingRecords} open work items across {groups.length} failing checks
+      </p>
       {groups.map((group) => (
         <CheckGroup key={group.checkName} checkName={group.checkName} rows={group.rows} />
       ))}
