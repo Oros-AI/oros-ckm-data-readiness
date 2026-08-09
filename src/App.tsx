@@ -11,6 +11,7 @@ import { UseCaseView } from './views/UseCaseView/UseCaseView';
 import { PipelineView } from './views/PipelineView/PipelineView';
 import { RemediationDrawer } from './components/RemediationDrawer';
 import { getSessionSignpost } from './views/shared/sessionSignpost';
+import { SessionBanner } from './views/shared/SessionBanner';
 import { tokens } from './theme/tokens';
 
 const SESSIONS: SessionId[] = ['A', 'B', 'C'];
@@ -34,7 +35,10 @@ export default function App() {
         margin: '0 auto',
       }}
     >
-      <header style={{ marginBottom: '1.5rem' }}>
+      {/* Persistent session banner (demo-align Item 1): sticky, so the
+          active session stays visible at all times in both views. */}
+      <SessionBanner session={state.session} />
+      <header style={{ marginBottom: '1.5rem', marginTop: '1rem' }}>
         <div style={{ display: 'flex', gap: '1.2rem', flexWrap: 'wrap', marginBottom: '0.35rem' }}>
           <div
             role="group"
