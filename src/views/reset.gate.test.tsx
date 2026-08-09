@@ -20,7 +20,7 @@ import { useDemoState } from '../state/demoState';
 
 afterEach(cleanup);
 
-const SIGNPOST_A = 'Session A is the clean baseline. Every use case is ready.';
+const SIGNPOST_A = 'Session A is the clean baseline. Every use case is unlocked.';
 const PIPELINE_CAPTION =
   'Pre-computed results from the scoring engine, presented stage by stage.';
 

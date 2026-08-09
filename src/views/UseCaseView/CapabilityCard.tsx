@@ -70,7 +70,7 @@ export function CapabilityCard({
         <span data-testid="count-partially-ready">{useCase.patientCounts.partiallyReady}</span> of{' '}
         {cohortSize} partially ready ·{' '}
         <span data-testid="count-not-ready">{useCase.patientCounts.notReady}</span> of {cohortSize}{' '}
-        not ready
+        not yet ready
       </p>
 
       {blockers.length > 0 && (
