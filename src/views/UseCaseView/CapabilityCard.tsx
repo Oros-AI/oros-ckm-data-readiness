@@ -34,6 +34,16 @@ export function CapabilityCard({
   decisions,
   onOpenDrawer,
 }: CapabilityCardProps) {
+  // Cohort denominator (demo-align Item 2): the three status counts
+  // partition the use case's evaluated cohort, so Y in "X of Y" is
+  // derived from the data already on the card (diabetes 36,
+  // hypertension 35, care coordination 49, vbc reporting 49), never
+  // hardcoded.
+  const cohortSize =
+    useCase.patientCounts.ready +
+    useCase.patientCounts.partiallyReady +
+    useCase.patientCounts.notReady;
+
   return (
     <article
       data-testid="capability-card"
@@ -55,10 +65,12 @@ export function CapabilityCard({
       </header>
 
       <p style={{ margin: '0.5rem 0 0', fontSize: '0.9rem', color: tokens.neutral.gray }}>
-        Patients: <span data-testid="count-ready">{useCase.patientCounts.ready}</span> ready ·{' '}
-        <span data-testid="count-partially-ready">{useCase.patientCounts.partiallyReady}</span>{' '}
-        partially ready ·{' '}
-        <span data-testid="count-not-ready">{useCase.patientCounts.notReady}</span> not ready
+        Patients: <span data-testid="count-ready">{useCase.patientCounts.ready}</span> of{' '}
+        {cohortSize} ready ·{' '}
+        <span data-testid="count-partially-ready">{useCase.patientCounts.partiallyReady}</span> of{' '}
+        {cohortSize} partially ready ·{' '}
+        <span data-testid="count-not-ready">{useCase.patientCounts.notReady}</span> of {cohortSize}{' '}
+        not ready
       </p>
 
       {blockers.length > 0 && (
