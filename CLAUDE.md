@@ -370,6 +370,50 @@ The repository is PUBLIC (Apache 2.0) as of 2026-07-18. Release preparation, gat
 - **Verified extraction fact sheet** produced in `evidence/` (git-ignored): population 50 patients per session, 13 checks, 507 use-case readiness rows, fixtures byte-identical to the fx-window baselines.
 - **Step 10 COMPLETE (2026-07-18):** demo deployed to Cloudflare Pages (production branch ckm-poc-build, Vite build) behind Cloudflare Access with email one-time-PIN allowlist. Posture amended from Vercel to Cloudflare Pages + Access: same protection intent (collaborator review infrastructure, link follows a framed conversation), zero cost. Pushes to ckm-poc-build auto-deploy. Remaining next planned: docx-to-markdown conversion of the four public `.docx` docs; Increment 7 visual polish deferred.
 
+#### Demo-to-deck alignment - COMPLETE (2026-08-09, merge commit `6db44e1`)
+Full alignment arc executed on short-lived branch demo-align (iterate-and-see mode:
+Cloudflare preview as review surface, visual review replacing per-commit gates,
+standard gate at final merge). 20 commits merged no-ff into ckm-poc-build
+(`1d407e7..6db44e1`); production deploy verified by fingerprint. demo-align deleted
+post-merge. Demo Script v1.1 ratified (B-first; folds D-2 grid-payoff, D-4
+receives-language + next-pass line, D-5 trust line; beat 6b Care Team View included).
+
+**Shipped:** persistent session banner (locked sublabels, gold B / green A-C);
+denominators on every count; vocabulary alignment (ready / not yet ready, unlocked,
+Session never Dataset, exact band names); Session C work-list header; tile order =
+script order with worked-example tag; under-the-hood + configured-criteria +
+site-band collapses (re-collapse on session switch); check-results table fixes
+(column alignment, dash for null score and threshold); work-items roll-up line
+(B 46/11, C 27/6, A "0 open work items"); pipeline loop caption; page subtitle
+(two condition-specific, two population-wide); "Site readiness:" label before band
+chips; Care Team View (third view: per-patient readiness rows with blockedReasons,
+non-READY sorted first, serve line + not-yet-ready count line, "Illustrative
+composite" footer, guardrails held: readiness only, no clinical values, Bob
+narration-only).
+
+**Exporter/fixtures:** export_fixtures.mjs emits blockedReasons (eleven locked
+strings: four deck D-3 + seven ratified 2026-08-09; unmapped blocking check throws)
+and all-13 checkResults (PASS entries status-only). Fixtures regenerated A/B/C;
+structural verification stripped-equals-old TRUE x3, per-use-case reason counts
+B 6/5/9/6 C 3/0/3/6, zero empty-reason rows, LF-only. Evidence: gate_merge_1..6
+plus C2 verification (evidence/, git-ignored).
+
+**Environment:** TCC volume-denial recurrence at session start (known pattern:
+tmux server loses Removable Volumes claim mid-session; fixed by tmux kill-server +
+fresh session; no settings change needed). Cloudflare Access CONFIRMED covering
+preview subdomains (incognito PIN test 2026-08-09).
+
+**Ledger, rehearsal-fed (fight log decides):** T3-8 unlock delta; tag tooltips
+(narration first); section headers + tile reorder (subtitle may suffice); CTV
+count-line redundancy; orange-Unlock narration; CTV presentation-layer rethink;
+site-chip crib answer. **Copy ledger adds:** site-band derivation string
+(incomplete three-tier rule); date-concordance phenotype rename to match-language
+(catalog-tier). **Crib v2 queue adds:** score/threshold semantics line; registry
+growth line; tag-field correction; 13-checks-on-screen now true; layer6_denom
+naming check; v1.1 pointer. **PROMOTED:** Dependabot investigate-only pass (2 high
+on public default branch; pre-existing, zero deps added this arc; complete before
+funder-room window). **WATCH:** deck thread owes Preview-slide B-first amendment.
+
 #### Governance adoption and first milestone-merge - COMPLETE (2026-08-06, commit `cc4b220`)
 Collaboration Framework working draft 2026-08-05 adopted at repo root, incorporating the Dan Connolly governance review: Principle 3 rebuilt around the recognition-vs-copyright distinction, Principle 4 extended against license restriction, Principle 5 clarified on contribution-back as a framework condition. ATTRIBUTION.md authorship statement revised to the directed, selected, and revised formulation; NOTICE unchanged. Milestone-merge practice established per the standing branch convention: `main` fast-forwarded `59a73de` -> `cc4b220`, level with `ckm-poc-build`; `main` serves as the blessed milestone marker, `ckm-poc-build` remains the moving edge. Default branch and Cloudflare Pages configuration untouched. LICENSE history recorded for the record set: MIT added at `c58c42e` (2026-04-04), replaced with Apache 2.0 at `2835140` (2026-07-11), prior to the 2026-07-18 public release.
 
