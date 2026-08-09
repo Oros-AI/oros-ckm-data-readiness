@@ -143,6 +143,14 @@ export function PipelineView({ session }: { session: SessionId }) {
         <StatusLegend />
       </div>
       <StageArc stages={data.pipeline} />
+      {/* Loop caption (demo-align R4): all sessions, muted and
+          subordinate to the stage row. */}
+      <p
+        data-testid="loop-caption"
+        style={{ margin: '0.3rem 0 0', fontSize: '0.75rem', color: tokens.neutral.gray }}
+      >
+        Remediate, Re-score, and Unlock repeat each pass.
+      </p>
       <AiAssistStrip stages={data.pipeline} />
       {stagesWithRows.length > 0 && (
         <button
