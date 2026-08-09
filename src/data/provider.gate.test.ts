@@ -188,7 +188,7 @@ describe('provider gate — Increment 1', () => {
     }
   });
 
-  it('A13: score-stage checkResults — all 13 checks; FAIL rows A 0, B 46, C 27; PASS entries status-only', () => {
+  it('A13: score-stage checkResults - all 13 checks; FAIL rows A 0, B 46, C 27; PASS entries status-only', () => {
     // Task 4 (demo-align): the score stage carries every registry
     // check. FAIL checks keep per-record rows; PASS checks carry one
     // status-only entry with zero records.
